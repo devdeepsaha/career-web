@@ -144,8 +144,34 @@ def solve_doubt_endpoint():
         return jsonify({"error": "Sorry, I couldn't process that question."}), 500
 
 
+# In your app.py file
+
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test_endpoint():
+    data = request.get_json()
+    exam = data.get('exam')
+    subject = data.get('subject')
+    # --- UPDATED: Get the number of questions from the request, default to 5 ---
+    num_questions = data.get('num_questions', 5)
+
+    # --- UPDATED: Use the num_questions variable in the prompt ---
+    prompt = f"""
+    Act as an AI question paper generator for Indian competitive exams.
+    Generate a mock test with {num_questions} multiple-choice questions (MCQs) for the following exam and subject:
+    - Exam: {exam}
+    - Subject: {subject}
+    
+    Ensure the questions cover a range of important topics within the subject and have varying difficulty.
+    Return the response ONLY as a valid JSON array of objects. Each object must have three keys: "question", "options" (an array of 4 strings), and "answer".
+    """
+    try:
+        response = model.generate_content(prompt)
+        cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
+        questions = json.loads(cleaned_text)
+        return jsonify(questions)
+    except Exception as e:
+        print(f"An error occurred in mock test generation: {e}")
+        return jsonify({"error": "Failed to generate mock test"}), 500
     data = request.get_json()
     exam = data.get('exam')
     subject = data.get('subject')
@@ -168,8 +194,59 @@ def generate_mock_test_endpoint():
         return jsonify({"error": "Failed to generate mock test"}), 500
 
 
+# In your app.py file
+
 @app.route('/analyze-performance', methods=['POST'])
 def analyze_performance_endpoint():
+    data = request.get_json()
+    questions = data.get('questions', [])
+    user_answers = data.get('userAnswers', {})
+    
+    if not questions:
+        return jsonify({"error": "No questions provided for analysis."}), 400
+
+    correct_answers = 0
+    detailed_results = []
+
+    for i, q in enumerate(questions):
+        user_answer = user_answers.get(str(i))
+        is_correct = (user_answer == q['answer'])
+        if is_correct:
+            correct_answers += 1
+        
+        detailed_results.append({
+            "question": q['question'],
+            "options": q['options'],
+            "correct_answer": q['answer'],
+            "user_answer": user_answer,
+            "is_correct": is_correct
+        })
+    
+    score = int((correct_answers / len(questions)) * 100)
+    incorrect_answers = len(questions) - correct_answers
+
+    prompt = f"""
+    Act as an AI performance analyst. A student scored {score}%. They got {correct_answers} correct and {incorrect_answers} incorrect.
+    Based on the detailed results: {json.dumps(detailed_results, indent=2)}
+
+    Provide a brief, encouraging analysis. Identify the student's key strong and weak areas based on the topics of the questions they got right versus wrong.
+    Give one actionable tip for improvement. Use Markdown for formatting.
+    """
+    try:
+        response = model.generate_content(prompt)
+        analysis_text = response.text
+        return jsonify({
+            "score": score,
+            "accuracy": score,
+            "analysis": analysis_text,
+            "total_questions": len(questions),
+            "correct_answers": correct_answers,
+            "incorrect_answers": incorrect_answers,
+            "detailed_results": detailed_results # This is the new, detailed data
+        })
+    except Exception as e:
+        print(f"An error occurred in performance analysis: {e}")
+        return jsonify({"error": "Failed to analyze performance"}), 500
     data = request.get_json()
     questions = data.get('questions', [])
     user_answers = data.get('userAnswers', {})
@@ -214,17 +291,27 @@ def find_scholarships_endpoint():
     destination = data.get('destination')
     religion = data.get('religion')
 
+# In your app.py, inside the find_scholarships_endpoint function
+
     prompt = f"""
-    Act as a scholarship advisor for students. A student has the following profile:
+    Act as a scholarship advisor for students in India. A student has the following profile:
     - Academic Marks: {marks}
     - Annual Family Income (in INR): {income}
     - Student's Home Region: {region}
-    - Student's Religion: {religion}
     - Desired Study Destination: {destination}
 
-    Based on this profile, find 3-4 relevant scholarships. For each scholarship, provide its name, a brief description, key eligibility criteria, and a direct, clean, and valid URL to the application or information page. The URL string must not contain any extra text, notes, or parentheses. It must be a direct link.
+    Based on this profile, find 3-4 relevant scholarships.
+    
+    **Your Response MUST follow these strict instructions:**
+    1.  The output must be a valid JSON array of objects.
+    2.  Each object must represent a single scholarship and have the following keys: "name", "description", "eligibility", "direct_url", and "search_url".
+    3.  For the "direct_url" key, provide the most accurate and official URL you know for the scholarship.
+    4.  For the "search_url" key, you MUST provide a formatted Google search URL for the scholarship's name. The format should be: "https://www.google.com/search?q=YOUR+SCHOLARSHIP+NAME+scholarship". Replace spaces in the name with plus signs (+). THIS IS A RELIABLE BACKUP for the user.
+    
+    Example for "PM Scholarship Scheme":
+    "search_url": "https://www.google.com/search?q=PM+Scholarship+Scheme+scholarship"
 
-    Return the response ONLY as a valid JSON array of objects.
+    Return ONLY the JSON array.
     """
     try:
         response = model.generate_content(prompt)

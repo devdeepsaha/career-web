@@ -11,14 +11,11 @@ const ThemeToggle = ({ theme, setTheme }) => {
     return (
         <button
             onClick={toggleTheme}
-            className="relative w-14 h-7 bg-gray-200 dark:bg-slate-700 rounded-full flex items-center p-1 transition-colors duration-300"
+            className="relative h-10 w-10 rounded-full flex items-center justify-center bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900"
             aria-label="Toggle theme"
         >
-            <div className={`absolute w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-300 ${theme === 'dark' ? 'translate-x-7' : 'translate-x-0'}`}></div>
-            <div className="flex justify-between w-full">
-                <SunIcon />
-                <MoonIcon />
-            </div>
+            {theme === 'light' ? <MoonIcon /> : <SunIcon />}
         </button>
     );
 };

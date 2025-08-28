@@ -63,7 +63,7 @@ export default function App() {
             </main>
 
             <footer className="text-center py-6 text-gray-500 dark:text-slate-400 text-sm border-t dark:border-slate-700 mt-12">
-                <p>Powered by AI & your ambition. Created as a demo application.</p>
+                <p>Made by Devdeep. All Rights Reserved</p>
             </footer>
         </div>
     );

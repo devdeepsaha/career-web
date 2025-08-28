@@ -72,7 +72,7 @@ const ScholarshipFinderPage = () => {
                     </div>
                 </div>
                 <div className="lg:w-2/3">
-                    {isLoading && <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md animate-pulse h-24"></div>)}</div>}
+                    {isLoading && <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md animate-pulse h-32"></div>)}</div>}
                     {error && <p className="text-red-500 text-center">{error}</p>}
                     <div className="space-y-4">
                         {scholarships.map((s, i) => (
@@ -80,9 +80,14 @@ const ScholarshipFinderPage = () => {
                                 <h3 className="font-bold text-xl text-blue-800 dark:text-blue-400">{s.name}</h3>
                                 <p className="text-gray-600 dark:text-slate-300 mt-2">{s.description}</p>
                                 <p className="text-sm text-gray-500 dark:text-slate-400 mt-2"><strong>Eligibility:</strong> {s.eligibility}</p>
-                                <div className="mt-4">
-                                    <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">
-                                        Apply Now &rarr;
+                                
+                                {/* --- UPDATED: Display two buttons for the links --- */}
+                                <div className="mt-4 flex items-center gap-4">
+                                    <a href={s.direct_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">
+                                        Official Link &rarr;
+                                    </a>
+                                    <a href={s.search_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 text-sm">
+                                        Search on Google
                                     </a>
                                 </div>
                             </div>
