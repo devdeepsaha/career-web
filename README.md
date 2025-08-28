@@ -140,7 +140,4 @@ This project is licensed under the MIT License – feel free to use and modify.
 
 ```
 
---- 
 
-Do you want me to also generate a **`requirements.txt`** file for your backend so it’s ready to use?
-```
