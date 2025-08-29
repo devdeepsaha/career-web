@@ -4,6 +4,9 @@ import RoadmapDisplay from './RoadmapDisplay';
 import EmptyStateGraphic from './EmptyStateGraphic';
 import CareerPlannerChatbot from '../../components/chat/CareerPlannerChatbot';
 
+// --- FIX: DEFINE THE API URL FOR VITE ---
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+
 const CareerPlannerPage = () => {
     // Existing State
     const [skills, setSkills] = useState('');
@@ -27,7 +30,8 @@ const CareerPlannerPage = () => {
         }
         setError(''); setIsLoading(true); setRoadmap([]); setIsRoadmapVisible(true);
         try {
-            const response = await fetch('http://localhost:5001/generate-roadmap', {
+            // --- FIX: USE THE API_URL VARIABLE IN THE FETCH CALL ---
+            const response = await fetch(`${API_URL}/generate-roadmap`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

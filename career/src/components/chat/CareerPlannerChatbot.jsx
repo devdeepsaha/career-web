@@ -3,6 +3,9 @@ import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 
+// --- FIX: DEFINE THE API URL ONCE, OUTSIDE THE COMPONENT ---
+const API_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:5001';
+
 const CareerPlannerChatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([{ sender: 'ai', text: 'Hi! How can I help you with your career path today?' }]);
@@ -24,7 +27,8 @@ const CareerPlannerChatbot = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5001/chat', {
+            // --- FIX: REMOVED THE API_URL DEFINITION FROM HERE ---
+            const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ history: [...messages, userMessage] })

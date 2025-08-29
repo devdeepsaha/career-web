@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 
+// --- FIX: DEFINE THE API URL FOR VITE ---
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+
 const ScholarshipFinderPage = () => {
     const [marks, setMarks] = useState('');
     const [income, setIncome] = useState('');
@@ -16,7 +19,8 @@ const ScholarshipFinderPage = () => {
         setError('');
         setScholarships([]);
         try {
-            const response = await fetch('http://localhost:5001/find-scholarships', {
+            // --- FIX: USE THE API_URL VARIABLE IN THE FETCH CALL ---
+            const response = await fetch(`${API_URL}/find-scholarships`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ marks, income, region, destination, religion })
@@ -81,7 +85,6 @@ const ScholarshipFinderPage = () => {
                                 <p className="text-gray-600 dark:text-slate-300 mt-2">{s.description}</p>
                                 <p className="text-sm text-gray-500 dark:text-slate-400 mt-2"><strong>Eligibility:</strong> {s.eligibility}</p>
                                 
-                                {/* --- UPDATED: Display two buttons for the links --- */}
                                 <div className="mt-4 flex items-center gap-4">
                                     <a href={s.direct_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">
                                         Official Link &rarr;
