@@ -4,7 +4,7 @@ import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 
 // Define the API URL once, outside the component. This is the main fix.
-const API_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
 
 const AITutorPage = () => {
     const [tutorView, setTutorView] = useState('practice');

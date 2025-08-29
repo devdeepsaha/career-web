@@ -4,7 +4,7 @@ import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 
 // --- FIX: DEFINE THE API URL ONCE, OUTSIDE THE COMPONENT ---
-const API_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
 
 const CareerPlannerChatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
