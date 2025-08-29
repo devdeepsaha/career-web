@@ -3,6 +3,9 @@ import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 
+// Define the API URL once, outside the component. This is the main fix.
+const API_URL = import.meta.env.REACT_APP_API_URL || 'http://localhost:5001';
+
 const AITutorPage = () => {
     const [tutorView, setTutorView] = useState('practice');
     const [exam, setExam] = useState('JEE');
@@ -26,7 +29,7 @@ const AITutorPage = () => {
         setQuestion(null);
         setQuestionError('');
         try {
-            const response = await fetch('http://localhost:5001/get-question', {
+            const response = await fetch(`${API_URL}/get-question`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ exam, subject, topic, difficulty })
@@ -47,7 +50,7 @@ const AITutorPage = () => {
         setChatMessages(prev => [...prev, userMessage]);
         setIsChatLoading(true);
         try {
-            const response = await fetch('http://localhost:5001/solve-doubt', {
+            const response = await fetch(`${API_URL}/solve-doubt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question: messageText, history: [...chatMessages, userMessage] })
@@ -71,7 +74,7 @@ const AITutorPage = () => {
     const startTest = async () => {
         setTestState('loading');
         try {
-            const response = await fetch('http://localhost:5001/generate-mock-test', {
+            const response = await fetch(`${API_URL}/generate-mock-test`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ exam, subject, num_questions: numQuestions })
@@ -91,7 +94,7 @@ const AITutorPage = () => {
     const submitTest = useCallback(async () => {
         setTestState('loading');
         try {
-            const response = await fetch('http://localhost:5001/analyze-performance', {
+            const response = await fetch(`${API_URL}/analyze-performance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ questions: testQuestions, userAnswers: testAnswers })
@@ -115,8 +118,7 @@ const AITutorPage = () => {
         return (
             <MockTest
                 questions={testQuestions}
-                // --- THIS LINE IS NOW CORRECTED ---
-                userAnswers={testAnswers} 
+                userAnswers={testAnswers}
                 setUserAnswers={setTestAnswers}
                 submitTest={submitTest}
                 isLoading={testState === 'loading'}
@@ -132,8 +134,8 @@ const AITutorPage = () => {
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
             <div className="text-center mb-12">
-                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">AI Tutor for Competitive Exams 🇮🇳</h1>
-                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">Personalized practice and instant doubt clarification for JEE, NEET, UPSC, and more.</p>
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">AI Tutor for Competitive Exams 🇮🇳</h1>
+                <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">Personalized practice and instant doubt clarification for JEE, NEET, UPSC, and more.</p>
             </div>
             <div className="max-w-4xl mx-auto p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
                <div className="flex justify-center border-b border-gray-200 dark:border-slate-700 mb-6">

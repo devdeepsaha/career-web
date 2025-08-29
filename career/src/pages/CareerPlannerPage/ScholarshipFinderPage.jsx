@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 
+// --- FIX: DEFINE THE API URL FOR VITE ---
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+
 const ScholarshipFinderPage = () => {
     const [marks, setMarks] = useState('');
     const [income, setIncome] = useState('');
@@ -16,7 +19,8 @@ const ScholarshipFinderPage = () => {
         setError('');
         setScholarships([]);
         try {
-            const response = await fetch('http://localhost:5001/find-scholarships', {
+            // --- FIX: USE THE API_URL VARIABLE IN THE FETCH CALL ---
+            const response = await fetch(`${API_URL}/find-scholarships`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ marks, income, region, destination, religion })
@@ -40,10 +44,10 @@ const ScholarshipFinderPage = () => {
             </div>
             <div className="flex flex-col lg:flex-row gap-8">
                 <div className="lg:w-1/3">
-                    {/* ... (Form JSX) ... */}
+                    {/* Assuming your Form JSX goes here and uses the findScholarships function */}
                 </div>
                 <div className="lg:w-2/3">
-                   {/* ... (Results JSX) ... */}
+                   {/* Assuming your Scholarship Results JSX goes here */}
                 </div>
             </div>
         </div>
