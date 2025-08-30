@@ -5,29 +5,123 @@ import google.generativeai as genai
 import json
 import os
 from dotenv import load_dotenv
+from collections import deque # Using deque for efficient list management
 
 # --- Load environment variables from .env file ---
 load_dotenv()
 
 # --- Create the Flask App ---
 app = Flask(__name__)
+# A secret key is still good practice, but not used for question history anymore
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    raise ValueError("Flask secret key not found. Please set the FLASK_SECRET_KEY environment variable.")
 CORS(app)
 
+# --- NEW: Define the path for our persistent history file ---
+HISTORY_FILE = 'question_history.json'
+HISTORY_LENGTH = 40
+
+# --- NEW: Function to read history from the file ---
+def read_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, 'r') as f:
+            # Handle empty file case
+            content = f.read()
+            if not content:
+                return []
+            return json.loads(content)
+    except (json.JSONDecodeError, IOError):
+        return []
+
+# --- NEW: Function to write history to the file ---
+def write_history(new_question):
+    history = read_history()
+    # Use a deque to easily manage the fixed length
+    history_deque = deque(history, maxlen=HISTORY_LENGTH)
+    history_deque.append(new_question)
+    try:
+        with open(HISTORY_FILE, 'w') as f:
+            json.dump(list(history_deque), f)
+    except IOError as e:
+        print(f"Error writing to history file: {e}")
+
+
 # --- Configure the Gemini API securely with your key ---
-# This safely gets your key from the .env file
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError("API Key not found. Please set the GOOGLE_API_KEY environment variable.")
 genai.configure(api_key=api_key)
 
-# --- Use the latest recommended model ---
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+# --- Define a generation config to increase creativity and reduce repetition ---
+generation_config = genai.types.GenerationConfig(
+    temperature=0.9 # High temperature for more variety
+)
+
+# --- Use the latest recommended model with the config ---
+model = genai.GenerativeModel(
+    'gemini-1.5-flash-latest',
+    generation_config=generation_config
+)
 
 
+@app.route('/get-question', methods=['POST'])
+def get_question_endpoint():
+    data = request.get_json()
+    exam = data.get('exam')
+    subject = data.get('subject')
+    topic = data.get('topic')
+    difficulty = data.get('difficulty')
+    
+    # --- MODIFIED: Read the persistent history from the file ---
+    seen_questions = read_history()
+    
+    # --- Add Negative Constraints for Generic Topics ---
+    extra_instructions = ""
+    if subject.lower() == 'gk':
+        extra_instructions = "IMPORTANT: Avoid overly common GK topics. Do not ask about country capitals, the inventor of the telephone, the Taj Mahal, or Mahatma Gandhi. Ask about lesser-known facts in science, Indian culture, or world geography."
+
+    prompt = f"""
+    Act as an AI Tutor for Indian competitive exams.
+    Generate one multiple-choice question (MCQ) for the following criteria:
+    - Exam: {exam}
+    - Subject: {subject}
+    - Topic: {topic}
+    - Difficulty: {difficulty}
+
+    {extra_instructions}
+
+    CRITICAL INSTRUCTION: Do NOT generate a question that is the same as any of these recently asked questions:
+    {json.dumps(seen_questions)}
+
+    Return the response ONLY as a single valid JSON object with three keys: "question", "options" (an array of 4 strings), and "answer".
+    """
+    try:
+        # Regeneration loop to ensure uniqueness
+        for _ in range(3): 
+            response = model.generate_content(prompt)
+            cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
+            question_data = json.loads(cleaned_text)
+            
+            if question_data['question'] not in seen_questions:
+                # --- MODIFIED: Write the new question to the persistent file ---
+                write_history(question_data['question'])
+                return jsonify(question_data)
+        
+        # If still a duplicate, return it but don't save it to the history
+        return jsonify(question_data)
+
+    except Exception as e:
+        print(f"An error occurred in question generation: {e}")
+        return jsonify({"error": "Failed to generate question"}), 500
+
+
+# (The rest of your endpoints remain unchanged)
 @app.route('/generate-roadmap', methods=['POST'])
 def generate_roadmap_endpoint():
     data = request.get_json()
-    # Get all the new, flexible data from the frontend
     skills = data.get('skills', '')
     interests = data.get('interests', '')
     goals = data.get('goals', '')
@@ -35,7 +129,6 @@ def generate_roadmap_endpoint():
     education = data.get('education', '')
     targetCompanies = data.get('targetCompanies', '')
 
-    # This is the final, highly adaptive prompt
     prompt = f"""
     You are an elite career counselor for students in India from all fields (engineering, medical, arts, commerce, etc.). Your task is to generate a hyper-detailed, actionable roadmap based on the user's profile.
 
@@ -62,7 +155,6 @@ def generate_roadmap_endpoint():
 
     Generate the JSON array based on these adaptive rules.
     """
-
     try:
         response = model.generate_content(prompt)
         cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
@@ -70,9 +162,7 @@ def generate_roadmap_endpoint():
         return jsonify(roadmap_steps)
     except Exception as e:
         print(f"An error occurred in roadmap generation: {e}")
-        if "json.decoder.JSONDecodeError" in str(e):
-             return jsonify({"error": "AI response was not in valid JSON format."}), 500
-        return jsonify({"error": "Failed to generate content from AI."}), 500
+        return jsonify({"error": "Failed to generate roadmap from AI."}), 500
 
 
 @app.route('/chat', methods=['POST'])
@@ -89,7 +179,6 @@ def chat_endpoint():
 
     chat_history = messages_for_ai[:-1]
     last_user_message = messages_for_ai[-1]['parts'][0]
-
     try:
         chat = model.start_chat(history=chat_history)
         response = chat.send_message(last_user_message)
@@ -97,32 +186,6 @@ def chat_endpoint():
     except Exception as e:
         print(f"An error occurred in chat: {e}")
         return jsonify({"error": "Sorry, I couldn't process that message."}), 500
-
-
-@app.route('/get-question', methods=['POST'])
-def get_question_endpoint():
-    data = request.get_json()
-    exam = data.get('exam')
-    subject = data.get('subject')
-    topic = data.get('topic')
-    difficulty = data.get('difficulty')
-    prompt = f"""
-    Act as an AI Tutor for Indian competitive exams.
-    Generate one multiple-choice question (MCQ) for the following criteria:
-    - Exam: {exam}
-    - Subject: {subject}
-    - Topic: {topic}
-    - Difficulty: {difficulty}
-    Return the response ONLY as a single valid JSON object with three keys: "question", "options" (an array of 4 strings), and "answer".
-    """
-    try:
-        response = model.generate_content(prompt)
-        cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
-        question_data = json.loads(cleaned_text)
-        return jsonify(question_data)
-    except Exception as e:
-        print(f"An error occurred in question generation: {e}")
-        return jsonify({"error": "Failed to generate question"}), 500
 
 
 @app.route('/solve-doubt', methods=['POST'])
@@ -144,17 +207,12 @@ def solve_doubt_endpoint():
         return jsonify({"error": "Sorry, I couldn't process that question."}), 500
 
 
-# In your app.py file
-
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test_endpoint():
     data = request.get_json()
     exam = data.get('exam')
     subject = data.get('subject')
-    # --- UPDATED: Get the number of questions from the request, default to 5 ---
     num_questions = data.get('num_questions', 5)
-
-    # --- UPDATED: Use the num_questions variable in the prompt ---
     prompt = f"""
     Act as an AI question paper generator for Indian competitive exams.
     Generate a mock test with {num_questions} multiple-choice questions (MCQs) for the following exam and subject:
@@ -172,29 +230,7 @@ def generate_mock_test_endpoint():
     except Exception as e:
         print(f"An error occurred in mock test generation: {e}")
         return jsonify({"error": "Failed to generate mock test"}), 500
-    data = request.get_json()
-    exam = data.get('exam')
-    subject = data.get('subject')
-    prompt = f"""
-    Act as an AI question paper generator for Indian competitive exams.
-    Generate a short mock test with 5 multiple-choice questions (MCQs) for the following exam and subject:
-    - Exam: {exam}
-    - Subject: {subject}
-    
-    Ensure the questions cover a range of important topics within the subject and have varying difficulty.
-    Return the response ONLY as a valid JSON array of objects. Each object must have three keys: "question", "options" (an array of 4 strings), and "answer".
-    """
-    try:
-        response = model.generate_content(prompt)
-        cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
-        questions = json.loads(cleaned_text)
-        return jsonify(questions)
-    except Exception as e:
-        print(f"An error occurred in mock test generation: {e}")
-        return jsonify({"error": "Failed to generate mock test"}), 500
 
-
-# In your app.py file
 
 @app.route('/analyze-performance', methods=['POST'])
 def analyze_performance_endpoint():
@@ -207,7 +243,6 @@ def analyze_performance_endpoint():
 
     correct_answers = 0
     detailed_results = []
-
     for i, q in enumerate(questions):
         user_answer = user_answers.get(str(i))
         is_correct = (user_answer == q['answer'])
@@ -222,7 +257,11 @@ def analyze_performance_endpoint():
             "is_correct": is_correct
         })
     
-    score = int((correct_answers / len(questions)) * 100)
+    # Handle division by zero if there are no questions
+    score = 0
+    if len(questions) > 0:
+        score = int((correct_answers / len(questions)) * 100)
+    
     incorrect_answers = len(questions) - correct_answers
 
     prompt = f"""
@@ -242,41 +281,8 @@ def analyze_performance_endpoint():
             "total_questions": len(questions),
             "correct_answers": correct_answers,
             "incorrect_answers": incorrect_answers,
-            "detailed_results": detailed_results # This is the new, detailed data
+            "detailed_results": detailed_results
         })
-    except Exception as e:
-        print(f"An error occurred in performance analysis: {e}")
-        return jsonify({"error": "Failed to analyze performance"}), 500
-    data = request.get_json()
-    questions = data.get('questions', [])
-    user_answers = data.get('userAnswers', {})
-    
-    if not questions:
-        return jsonify({"score": 0, "accuracy": 0, "analysis": "No questions provided for analysis."})
-
-    correct_answers = 0
-    for i, q in enumerate(questions):
-        if str(i) in user_answers and user_answers[str(i)] == q['answer']:
-            correct_answers += 1
-    
-    score = int((correct_answers / len(questions)) * 100)
-    accuracy = score
-
-    prompt = f"""
-    Act as an AI performance analyst for a student who just completed a mock test.
-    The student's score was {score}%.
-    Here are the questions and the student's answers (if they answered):
-    {json.dumps({'questions': questions, 'user_answers': user_answers}, indent=2)}
-
-    Provide a brief, encouraging analysis of the student's performance. 
-    Identify 1-2 potential weak areas and 1-2 strong areas based on the questions they got wrong or right.
-    Suggest a simple, actionable tip for improvement.
-    Use Markdown for formatting, like **bolding key terms**.
-    """
-    try:
-        response = model.generate_content(prompt)
-        analysis_text = response.text
-        return jsonify({"score": score, "accuracy": accuracy, "analysis": analysis_text})
     except Exception as e:
         print(f"An error occurred in performance analysis: {e}")
         return jsonify({"error": "Failed to analyze performance"}), 500
@@ -290,8 +296,6 @@ def find_scholarships_endpoint():
     region = data.get('region')
     destination = data.get('destination')
     religion = data.get('religion')
-
-# In your app.py, inside the find_scholarships_endpoint function
 
     prompt = f"""
     Act as a scholarship advisor for students in India. A student has the following profile:
