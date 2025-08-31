@@ -5,7 +5,7 @@ import AITutorPage from './pages/AITutorPage/AITutorPage';
 import ScholarshipFinderPage from './pages/ScholarshipFinderPage/ScholarshipFinderPage';
 import TeamProfile from './components/TeamProfile/TeamProfile';
 import ThemeToggle from './components/shared/ThemeToggle';
-import Sidebar from './components/Sidebar/Sidebar';
+import Sidebar from './components/sidebar/Sidebar';
 
 export default function App() {
     const { t } = useTranslation(); // <-- Step 2: Initialize the hook
