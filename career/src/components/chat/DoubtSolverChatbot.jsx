@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next'; // Import the hook
 import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 
 const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend }) => {
+    const { t } = useTranslation(); // Initialize the hook
     const [input, setInput] = useState('');
     const chatEndRef = useRef(null);
 
@@ -23,7 +25,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 z-50"
-                aria-label="Toggle Doubt Solver Chat"
+                aria-label={t('doubtChat_toggleAriaLabel')}
             >
                 {isOpen ? <XIcon /> : <MessageSquareIcon />}
             </button>
@@ -31,7 +33,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
             {isOpen && (
                 <div className="fixed bottom-24 right-6 w-80 h-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-slate-700 z-40">
                     <div className="p-4 bg-green-600 text-white rounded-t-2xl">
-                        <h3 className="font-bold text-lg">Instant Doubt Solver</h3>
+                        <h3 className="font-bold text-lg">{t('doubtChat_header')}</h3>
                     </div>
                     <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-slate-900 min-h-0">
                         {messages.map((msg, index) => (
@@ -41,7 +43,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
                                 </div>
                             </div>
                         ))}
-                        {isLoading && <div className="flex justify-start"><div className="py-2 px-4 rounded-2xl bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white">Thinking...</div></div>}
+                        {isLoading && <div className="flex justify-start"><div className="py-2 px-4 rounded-2xl bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white">{t('doubtChat_thinking')}</div></div>}
                         <div ref={chatEndRef} />
                     </div>
                     <form onSubmit={onFormSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
@@ -51,11 +53,11 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 className="flex-1 p-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-l-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800 dark:text-white"
-                                placeholder="Ask a doubt..."
+                                placeholder={t('doubtChat_placeholder')}
                                 disabled={isLoading}
                             />
                             <button type="submit" className="bg-green-600 text-white px-4 rounded-r-lg hover:bg-green-700 disabled:bg-green-400" disabled={isLoading}>
-                                Send
+                                {t('doubtChat_sendButton')}
                             </button>
                         </div>
                     </form>
