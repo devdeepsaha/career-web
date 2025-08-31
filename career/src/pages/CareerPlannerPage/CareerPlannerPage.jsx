@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import UserInputForm from './UserInputForm';
 import RoadmapDisplay from './RoadmapDisplay';
 import EmptyStateGraphic from './EmptyStateGraphic';
 import CareerPlannerChatbot from '../../components/chat/CareerPlannerChatbot';
 
-// --- FIX: DEFINE THE API URL FOR VITE ---
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
 
 const CareerPlannerPage = () => {
+    const { t, i18n } = useTranslation(); // Get the i18n instance
+    
     // Existing State
     const [skills, setSkills] = useState('');
     const [interests, setInterests] = useState('');
@@ -18,25 +20,29 @@ const CareerPlannerPage = () => {
     const [isRoadmapVisible, setIsRoadmapVisible] = useState(false);
     const [targetCompanies, setTargetCompanies] = useState('');
     
-    // --- UPDATED State with new options and defaults ---
+    // UPDATED State with new options and defaults
     const [status, setStatus] = useState('Class 12th Student');
-    const [education, setEducation] = useState(''); // Now a text field, starts empty
+    const [education, setEducation] = useState('');
 
     const generateRoadmap = async (e) => {
         e.preventDefault();
         if (!skills || !interests || !goals) {
-            setError('Please fill out all fields.');
+            setError(t('careerPlanner_error_fillFields'));
             return;
         }
         setError(''); setIsLoading(true); setRoadmap([]); setIsRoadmapVisible(true);
         try {
-            // --- FIX: USE THE API_URL VARIABLE IN THE FETCH CALL ---
             const response = await fetch(`${API_URL}/generate-roadmap`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    skills, interests, goals, status, targetCompanies,
-                    education
+                    skills, 
+                    interests, 
+                    goals, 
+                    status, 
+                    targetCompanies,
+                    education,
+                    language: i18n.language // <-- Language added here
                 }),
             });
             if (!response.ok) throw new Error('Network response was not ok');
@@ -44,7 +50,7 @@ const CareerPlannerPage = () => {
             setRoadmap(generatedSteps);
         } catch (err) {
             console.error("Failed to fetch roadmap:", err);
-            setError("Sorry, we couldn't generate your roadmap. Please try again.");
+            setError(t('careerPlanner_error_generateFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -53,8 +59,8 @@ const CareerPlannerPage = () => {
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
             <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">AI-Powered Career Planner 🎯</h1>
-                <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">Your personal guide to navigating the complexities of your professional journey.</p>
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('careerPlanner_title')}</h1>
+                <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('careerPlanner_subtitle')}</p>
             </div>
             <div className="flex flex-col lg:flex-row">
                 <UserInputForm
