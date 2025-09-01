@@ -24,7 +24,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
         <>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 z-50"
+                className="fixed fixed bottom-20 md:bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 z-50"
                 aria-label={t('doubtChat_toggleAriaLabel')}
             >
                 {isOpen ? <XIcon /> : <MessageSquareIcon />}
