@@ -4,7 +4,7 @@ const teamData = [
     name: 'Devdeep Saha',
     accentColor: 'green',
     role: 'Innovator • Developer • Creator',
-    image: '/dev1.jpg', // Your actual image URL
+    image: '/dev1.webp', // Your actual image URL
     bio: 'Devdeep is the main architect and lead developer of the Potho Prodorshok website. Beyond software, Devdeep explores 3D design with Blender and creates digital art, while also pursuing his passion for music (ukulele, guitar, synth, flute, kalimba). His vision is to combine technology, design, and creativity to craft solutions that are innovative, accessible, and inspiring.',
     tagline: "Building meaningful experiences through technology, design, and creativity",
     motivations: [
@@ -34,7 +34,7 @@ const teamData = [
     name: 'Imran Mollick',
     accentColor: 'yellow',
     role: 'Frontend Specialist',
-    image: '/imran.png', // Replace with actual image URL
+    image: '/imran.webp', // Replace with actual image URL
     bio: 'Imran is a meticulous frontend specialist who excels at turning complex designs into smooth, pixel-perfect user experiences. He has a keen eye for detail and a passion for writing clean, maintainable code that ensures the app is both beautiful and performant.',
     tagline: "Crafting digital experiences with precision and passion.",
     motivations: [
@@ -64,7 +64,7 @@ const teamData = [
     name: 'Debasish Ghosh',
     accentColor: 'red',
     role: 'QA & Bug Fixes',
-    image: '/deba.png', // Replace with actual image URL
+    image: '/deba.webp', // Replace with actual image URL
     bio: 'Debasish is the guardian of quality for Potho Prodroshok. He has an unparalleled talent for identifying elusive bugs and ensuring the application is stable and reliable for all users. His methodical approach to testing and debugging is crucial to the platform\'s success.',
     tagline: "Striving for perfection, one bug at a time.",
     motivations: [
@@ -94,7 +94,7 @@ const teamData = [
     name: 'Ritabhas Ghosh',
     accentColor: 'blue',
     role: 'Creative Idea Giver',
-    image: '/rishi.png', // Replace with actual image URL
+    image: '/rishi.webp', // Replace with actual image URL
     bio: 'Ritobhas is the creative force behind the innovative features of Potho Prodroshok. He excels at brainstorming new ideas and envisioning how the platform can better serve students. His out-of-the-box thinking helps to constantly push the boundaries of what the app can do.',
     tagline: "Imagining a better future for student guidance.",
     motivations: [
