@@ -92,6 +92,8 @@
   "scholarship_results_eligibility": "Eligibility",
   "scholarship_results_officialLink": "Official Link",
   "scholarship_results_searchGoogle": "Search on Google",
+  "scholarship_emptyStateText": "Enter your details to find matching scholarships.",
+
 
   "stepType_course": "Recommended Course",
   "stepType_project": "Hands-on Project",
@@ -142,5 +144,6 @@
   "teamProfile_skills": "Skills",
   "teamProfile_team": "Our Team",
   "teamProfile_goals": "Goals"
+
 }
 
