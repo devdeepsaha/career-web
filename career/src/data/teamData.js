@@ -3,21 +3,31 @@ const teamData = [
     id: 'devdeep',
     name: 'Devdeep Saha',
     accentColor: 'green',
-    role: 'Lead Developer & Visionary',
+    role: 'Innovator • Developer • Creator',
     image: '/dev1.jpg', // Your actual image URL
-    bio: 'Devdeep is the architect behind Potho Prodroshok, leading the development team with a passion for educational technology. With a strong background in full-stack development, he ensures the platform is robust, scalable, and user-friendly. His vision is to empower students with accessible and effective career guidance tools.',
-    tagline: "Empowering futures through innovation and accessible learning.",
+    bio: 'Devdeep is the main architect and lead developer of the Potho Prodorshok website. Beyond software, Devdeep explores 3D design with Blender and creates digital art, while also pursuing his passion for music (ukulele, guitar, synth, flute, kalimba). His vision is to combine technology, design, and creativity to craft solutions that are innovative, accessible, and inspiring.',
+    tagline: "Building meaningful experiences through technology, design, and creativity",
     motivations: [
       { label: "Impact", value: 90 },
       { label: "Innovation", value: 80 },
       { label: "Learning", value: 75 },
     ],
-    frustrations: [
-      "Complex legacy systems",
-      "Lack of clear documentation",
-      "Inefficient collaboration tools",
+     personality: [
+      { label: "Extrovert", value: 90 },
+      { label: "Analytical/Creative", value: 65 },
+      { label: "Active", value: 85 },
     ],
-    skills: ["React", "Node.js", "Python", "Cloud (AWS)", "UI/UX Design"],
+    frustrations: [
+      "Lack of recognition for creative efforts",
+      "Overly rigid systems that block innovation",
+      "Blender crashing after hours of work"
+    ],
+    goals: [
+      "Collaborate with companies like Netflix for design/creative roles",
+      "Build a portfolio of impactful projects",
+      "Mentor junior developers",
+    ],
+    skills: ["React", "Node.js", "Python", "Cloud (AWS)", "UI/UX Design", "Blender", "Video Editing", "Music"],
   },
   {
     id: 'imran',
@@ -32,10 +42,20 @@ const teamData = [
       { label: "Performance", value: 85 },
       { label: "User Joy", value: 70 },
     ],
+     personality: [
+      { label: "Extrovert", value: 60 },
+      { label: "Creative", value: 67 },
+      { label: "Active", value: 40 },
+    ],
     frustrations: [
       "Inconsistent design systems",
       "Slow API response times",
       "Cross-browser CSS bugs",
+    ],
+    goals: [
+      "Expand knowledge in AI/ML",
+      "Contribute to open-source projects",
+      "Mentor junior developers",
     ],
     skills: ["React", "Tailwind CSS", "JavaScript", "Animation", "UI Testing"],
   },
@@ -52,10 +72,20 @@ const teamData = [
       { label: "Problem Solving", value: 88 },
       { label: "User Trust", value: 80 },
     ],
+     personality: [
+      { label: "Extrovert", value: 30 },
+      { label: "Creative", value: 95 },
+      { label: "Active", value: 55 },
+    ],
     frustrations: [
       "Undocumented features",
       "Non-reproducible bugs",
       "Last-minute code changes",
+    ],
+    goals: [
+      "Expand knowledge in AI/ML",
+      "Contribute to open-source projects",
+      "Mentor junior developers",
     ],
     skills: ["QA Testing", "Debugging", "Python", "JavaScript", "Automation"],
   },
@@ -72,10 +102,20 @@ const teamData = [
       { label: "User Needs", value: 85 },
       { label: "Blue-Sky Thinking", value: 80 },
     ],
+     personality: [
+      { label: "Extrovert", value: 50 },
+      { label: "Creative", value: 95 },
+      { label: "Active", value: 55 },
+    ],
     frustrations: [
       "Technical limitations",
       "Sticking to the status quo",
       "Ideas without execution",
+    ],
+    goals: [
+      "Expand knowledge in AI/ML",
+      "Contribute to open-source projects",
+      "Mentor junior developers",
     ],
     skills: ["Brainstorming", "Market Research", "Product Vision", "User Stories", "Creative Strategy"],
   },

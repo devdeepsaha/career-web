@@ -6,7 +6,7 @@ import ScholarshipFinderPage from './pages/ScholarshipFinderPage/ScholarshipFind
 import TeamProfile from './components/TeamProfile/TeamProfile';
 import ThemeToggle from './components/shared/ThemeToggle';
 import Sidebar from './components/sidebar/Sidebar';
-import BottomNav from './components/sidebar/BottomNav'; // Import the BottomNav component
+import BottomNav from './components/sidebar/BottomNav';
 
 export default function App() {
     const { t } = useTranslation();
@@ -49,49 +49,60 @@ export default function App() {
             <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} onNavigate={navigateTo} />
             
             <header className="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-20">
-                <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                    <div className="flex-1 flex items-center">
-                        <button onClick={toggleSidebar} className="p-2 mr-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <div className="container mx-auto px-4 relative h-16 flex items-center">
+                    
+                    {/* Left Side: Hamburger, Logo, and Title */}
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
+                        <button onClick={toggleSidebar} className="p-2 mr-2 text-gray-600 dark:text-gray-300 hover:text-[#06402b] dark:hover:text-[#80ef80]">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-                        <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('header_title')}</h1>
+                        <div className="flex items-center">
+                            {/* Dark Logo (visible in light mode) */}
+                            <img src="/logo-dark.png" alt="Logo" className="h-8 w-auto mr-3 block dark:hidden" />
+                            {/* Light Logo (visible in dark mode) */}
+                            <img src="/logo-light.png" alt="Logo" className="h-8 w-auto mr-3 hidden dark:block" />
+                            <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('header_title')}</h1>
+                        </div>
                     </div>
                     
-                    <nav className="hidden lg:flex justify-center space-x-1 md:space-x-4 flex-1">
+                    {/* Centered Navigation (hidden until xl screens) */}
+                    <nav className="hidden xl:flex justify-center w-full space-x-2">
                         <button
                             onClick={() => navigateTo('planner')}
-                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'planner' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'planner' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_planner')}
                         </button>
                         <button
                             onClick={() => navigateTo('tutor')}
-                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'tutor' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'tutor' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_tutor')}
                         </button>
                         <button
                             onClick={() => navigateTo('scholarship')}
-                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'scholarship' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'scholarship' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_scholarship')}
                         </button>
                         <button
                             onClick={() => navigateTo('team')}
-                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-[#80ef80] text-[#06402b]' : 'text-gray-600 dark:text-slate-300 hover:bg-[#80ef80]/10 dark:hover:bg-[#80ef80]/20 hover:text-[#06402b]'}`}>
-                          {t('nav_team')}
-                       </button>
+                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-[#80ef80] text-[#06402b]' : 'text-gray-600 dark:text-slate-300 hover:bg-[#80ef80]/10 dark:hover:bg-[#80ef80]/20 hover:text-[#06402b]'}`}
+                        >
+                            {t('nav_team')}
+                        </button>
                     </nav>
                     
-                    <div className="flex-1 flex justify-end">
+                    {/* Right Side: Theme Toggle */}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
                         <ThemeToggle theme={theme} setTheme={setTheme} />
                     </div>
                 </div>
             </header>
 
-            <main className="pb-16 lg:pb-0">
+            <main className="pb-16 xl:pb-0">
                 {renderActiveTab()}
             </main>
 

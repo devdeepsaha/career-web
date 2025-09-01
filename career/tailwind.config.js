@@ -1,12 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class', // <-- ADD THIS LINE
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        // This is your default body font
+        sans: ['Poppins', 'sans-serif'], 
+        
+        // --- ADD THIS LINE ---
+        // This creates a new 'font-title' utility class
+        title: ['Outfit', 'sans-serif'], 
+      },
+    },
   },
   plugins: [],
 }
