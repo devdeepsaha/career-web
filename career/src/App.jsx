@@ -59,7 +59,7 @@ export default function App() {
                         <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('header_title')}</h1>
                     </div>
                     
-                    <nav className="hidden md:flex justify-center space-x-1 md:space-x-4 flex-1">
+                    <nav className="hidden lg:flex justify-center space-x-1 md:space-x-4 flex-1">
                         <button
                             onClick={() => navigateTo('planner')}
                             className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'planner' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
@@ -92,7 +92,7 @@ export default function App() {
                 </div>
             </header>
 
-            <main className="pb-16 md:pb-0">
+            <main className="pb-16 lg:pb-0">
                 {renderActiveTab()}
             </main>
 

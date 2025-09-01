@@ -18,7 +18,7 @@ const BottomNav = ({ activeTab, onNavigate }) => {
 
     return (
         // This container is hidden on medium screens and larger (md:hidden)
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t dark:border-slate-700 shadow-lg z-20">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t dark:border-slate-700 shadow-lg z-20">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => (
                     <button

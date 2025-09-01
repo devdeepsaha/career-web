@@ -37,6 +37,7 @@ const UserInputForm = ({
                             <select id="status" value={status} onChange={(e) => setStatus(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition duration-200 text-gray-800 dark:text-white">
                                 <option>{t('userInput_status_12th')}</option>
                                 <option>{t('userInput_status_10th')}</option>
+                                <option>{t('userInput_status_dropper')}</option>
                                 <option>{t('userInput_status_1st2ndYear')}</option>
                                 <option>{t('userInput_status_finalYear')}</option>
                                 <option>{t('userInput_status_graduate')}</option>
