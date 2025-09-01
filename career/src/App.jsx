@@ -62,28 +62,27 @@ export default function App() {
                     <nav className="hidden lg:flex justify-center space-x-1 md:space-x-4 flex-1">
                         <button
                             onClick={() => navigateTo('planner')}
-                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'planner' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'planner' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_planner')}
                         </button>
                         <button
                             onClick={() => navigateTo('tutor')}
-                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'tutor' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'tutor' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_tutor')}
                         </button>
                         <button
                             onClick={() => navigateTo('scholarship')}
-                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'scholarship' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'scholarship' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
                         >
                             {t('nav_scholarship')}
                         </button>
                         <button
                             onClick={() => navigateTo('team')}
-                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
-                        >
-                            {t('nav_team')}
-                        </button>
+                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-[#80ef80] text-[#06402b]' : 'text-gray-600 dark:text-slate-300 hover:bg-[#80ef80]/10 dark:hover:bg-[#80ef80]/20 hover:text-[#06402b]'}`}>
+                          {t('nav_team')}
+                       </button>
                     </nav>
                     
                     <div className="flex-1 flex justify-end">
