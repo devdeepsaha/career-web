@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next'; // <-- Step 1: Import the hook
+import { useTranslation } from 'react-i18next';
 import CareerPlannerPage from './pages/CareerPlannerPage/CareerPlannerPage';
 import AITutorPage from './pages/AITutorPage/AITutorPage';
 import ScholarshipFinderPage from './pages/ScholarshipFinderPage/ScholarshipFinderPage';
 import TeamProfile from './components/TeamProfile/TeamProfile';
 import ThemeToggle from './components/shared/ThemeToggle';
 import Sidebar from './components/sidebar/Sidebar';
+import BottomNav from './components/sidebar/BottomNav'; // Import the BottomNav component
 
 export default function App() {
-    const { t } = useTranslation(); // <-- Step 2: Initialize the hook
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('planner'); 
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -55,7 +56,6 @@ export default function App() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-                        {/* --- Step 3: Use the t() function for the title --- */}
                         <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('header_title')}</h1>
                     </div>
                     
@@ -78,7 +78,12 @@ export default function App() {
                         >
                             {t('nav_scholarship')}
                         </button>
-                        
+                        <button
+                            onClick={() => navigateTo('team')}
+                            className={`px-3 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-indigo-100 dark:hover:bg-slate-700'}`}
+                        >
+                            {t('nav_team')}
+                        </button>
                     </nav>
                     
                     <div className="flex-1 flex justify-end">
@@ -87,13 +92,15 @@ export default function App() {
                 </div>
             </header>
 
-            <main>
+            <main className="pb-16 md:pb-0">
                 {renderActiveTab()}
             </main>
 
             <footer className="text-center py-6 text-gray-500 dark:text-slate-400 text-sm border-t dark:border-slate-700 mt-12">
                 <p>Made by Devdeep. All Rights Reserved</p>
             </footer>
+            
+            <BottomNav activeTab={activeTab} onNavigate={navigateTo} />
         </div>
     );
 }
