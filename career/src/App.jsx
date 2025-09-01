@@ -80,7 +80,7 @@ export default function App() {
                         </button>
                         <button
                             onClick={() => navigateTo('team')}
-                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-[#06402b] text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-[#06402b]/10 dark:hover:bg-[#06402b]/20 hover:text-[#06402b]'}`}>
+                            className={`px-2 py-2 text-sm md:text-base font-semibold rounded-md transition-colors ${activeTab === 'team' ? 'bg-[#80ef80] text-[#06402b]' : 'text-gray-600 dark:text-slate-300 hover:bg-[#80ef80]/10 dark:hover:bg-[#80ef80]/20 hover:text-[#06402b]'}`}>
                           {t('nav_team')}
                        </button>
                     </nav>
