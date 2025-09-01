@@ -8,7 +8,7 @@
   "sidebar_team": "Our Team",
   "sidebar_language": "Change Language",
 
-  "aiTutor_title": "AI Tutor for Competitive Exams 🇮🇳",
+  "aiTutor_title": "AI Tutor for Competitive Exams ",
   "aiTutor_subtitle": "Personalized practice and instant doubt clarification for JEE, NEET, UPSC, and more.",
   "aiTutor_tab_practice": "Practice Questions",
   "aiTutor_tab_mockTests": "Mock Tests",
@@ -61,8 +61,8 @@
   "perfDash_review_yourAnswer": "(Your Answer)",
   "perfDash_retakeButton": "Take Another Test",
 
-  "careerPlanner_title": "AI-Powered Career Planner 🎯",
-  "careerPlanner_subtitle": "Your personal guide to navigating the complexities of your professional journey.",
+  "careerPlanner_title": "Potho Prodorshok",
+  "careerPlanner_subtitle": "You Dream, We Plan.",
   "careerPlanner_error_fillFields": "Please fill out all fields.",
   "careerPlanner_error_generateFailed": "Sorry, we couldn't generate your roadmap. Please try again.",
 
@@ -133,6 +133,14 @@
   "doubtChat_header": "Instant Doubt Solver",
   "doubtChat_thinking": "Thinking...",
   "doubtChat_placeholder": "Ask a doubt...",
-  "doubtChat_sendButton": "Send"
+  "doubtChat_sendButton": "Send",
+
+  "teamProfile_personality": "Personality Traits",
+  "teamProfile_bio": "Bio",
+  "teamProfile_motivations": "Motivations", 
+  "teamProfile_frustrations": "Frustrations",
+  "teamProfile_skills": "Skills",
+  "teamProfile_team": "Our Team",
+  "teamProfile_goals": "Goals"
 }
 
