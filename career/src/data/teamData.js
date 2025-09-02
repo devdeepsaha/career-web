@@ -3,7 +3,7 @@ const teamData = [
     id: 'devdeep',
     name: 'Devdeep Saha',
     accentColor: 'green',
-    role: 'Innovator • Developer • Creator',
+    role: 'Developer • Designer',
     image: '/dev1.webp', // Your actual image URL
     bio: 'Devdeep is the main architect and lead developer of the Potho Prodorshok website. Beyond software, Devdeep explores 3D design with Blender and creates digital art, while also pursuing his passion for music (ukulele, guitar, synth, flute, kalimba). His vision is to combine technology, design, and creativity to craft solutions that are innovative, accessible, and inspiring.',
     tagline: "Building meaningful experiences through technology, design, and creativity",
