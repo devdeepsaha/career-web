@@ -18,7 +18,16 @@ const StatBar = ({ label, value, colorClass }) => (
 const colorMap = {
     green: { bgPage: 'bg-green-50 dark:bg-slate-900', bgCard: 'bg-white dark:bg-slate-800', bgBox: 'bg-green-100 dark:bg-slate-700/50', text: 'text-green-600 dark:text-green-400', bgStatBar: 'bg-green-500', textTag: 'text-green-800 dark:text-green-300', bgTag: 'bg-green-200 dark:bg-green-900/40', hoverBorder: 'hover:border-green-500' },
     blue: { bgPage: 'bg-blue-50 dark:bg-slate-900', bgCard: 'bg-white dark:bg-slate-800', bgBox: 'bg-blue-100 dark:bg-slate-700/50', text: 'text-blue-600 dark:text-blue-400', bgStatBar: 'bg-blue-500', textTag: 'text-blue-800 dark:text-blue-300', bgTag: 'bg-blue-200 dark:bg-blue-900/40', hoverBorder: 'hover:border-blue-500' },
-    red: { bgPage: 'bg-red-50 dark:bg-slate-900', bgCard: 'bg-white dark:bg-slate-800', bgBox: 'bg-red-100 dark:bg-slate-700/50', text: 'text-red-600 dark:text-red-400', bgStatBar: 'bg-red-500', textTag: 'text-red-800 dark:text-red-300', bgTag: 'bg-red-200 dark:bg-red-900/40', hoverBorder: 'hover:border-red-500' },
+   red: {
+    bgPage: 'bg-gray-200 dark:bg-slate-900',       // White page background in light mode
+    bgCard: 'bg-gray-50 dark:bg-slate-800',    // Slightly off-white card background
+    bgBox: 'bg-gray-200 dark:bg-slate-700/50',  // Light grey boxes
+    text: 'text-gray-800 dark:text-white',   // Dark text in light mode, light text in dark mode
+    bgStatBar: 'bg-white',                   // You might want a different accent color for stat bars
+    textTag: 'text-gray-700 dark:text-gray-300',// Dark grey tag text
+    bgTag: 'bg-gray-300 dark:bg-gray-700',      // Light grey tags
+    hoverBorder: 'hover:border-white',       // You might want a different accent color for hover borders
+},
     yellow: { bgPage: 'bg-yellow-50 dark:bg-slate-900', bgCard: 'bg-white dark:bg-slate-800', bgBox: 'bg-yellow-100 dark:bg-slate-700/50', text: 'text-yellow-600 dark:text-yellow-400', bgStatBar: 'bg-yellow-500', textTag: 'text-yellow-800 dark:text-yellow-300', bgTag: 'bg-yellow-200 dark:bg-yellow-900/40', hoverBorder: 'hover:border-yellow-500' },
 };
 
