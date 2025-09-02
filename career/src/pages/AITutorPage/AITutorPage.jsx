@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
@@ -11,15 +12,15 @@ const AITutorPage = () => {
     const [tutorView, setTutorView] = useState('practice');
 
     // State for Practice Questions
-    const [practiceExam, setPracticeExam] = useState('JEE');
+    const [practiceExam, setPracticeExam] = useState('Boards(Class 10th)');
     const [practiceSubject, setPracticeSubject] = useState('All');
     const [practiceTopic, setPracticeTopic] = useState('All');
     const [practiceDifficulty, setPracticeDifficulty] = useState('Medium');
 
     // State for Mock Tests
-    const [mockExam, setMockExam] = useState('JEE');
-    const [mockSubject, setMockSubject] = useState('Physics');
-    const [mockTopic, setMockTopic] = useState('Kinematics');
+    const [mockExam, setMockExam] = useState('Boards(Class 10th)');
+    const [mockSubject, setMockSubject] = useState('English');
+    const [mockTopic, setMockTopic] = useState('All');
     const [mockDifficulty, setMockDifficulty] = useState('All');
 
     // General component state
@@ -156,10 +157,18 @@ const AITutorPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
-            <div className="text-center mb-12">
+            <Helmet>
+                <title>Free MCQs practice for JEE, NEET & UPSC | Potho-Prodorshok</title>
+                <meta 
+                    name="description" 
+                    content="Practice for competitive exams with our free AI Tutor. Get unlimited questions, mock tests, and instant doubt-solving for JEE, NEET, UPSC, and more." 
+                />
+            </Helmet>
+             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('aiTutor_title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('aiTutor_subtitle')}</p>
             </div>
+            
             <div className="max-w-4xl mx-auto p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
                 <div className="flex justify-center border-b border-gray-200 dark:border-slate-700 mb-6">
                     <button onClick={() => setTutorView('practice')} className={`px-6 py-2 font-semibold ${tutorView === 'practice' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-slate-400'}`}>{t('aiTutor_tab_practice')}</button>

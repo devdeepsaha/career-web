@@ -58,6 +58,13 @@ const CareerPlannerPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
+            <Helmet>
+                <title>Plan your career today! | Potho-Prodorshok</title>
+                <meta 
+                    name="description" 
+                    content="Use our AI-powered Career Planner to create a personalized roadmap based on your skills, interests, and goals. Start planning your future today!" 
+                />
+            </Helmet>
             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('careerPlanner_title')}</h1>
                 <p className="mt-4 text-2xl text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('careerPlanner_subtitle')}</p>

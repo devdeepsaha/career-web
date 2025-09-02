@@ -44,6 +44,13 @@ const ScholarshipFinderPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
+            <Helmet>
+                <title>Find Scholarships | Potho-Prodorshok</title>
+                <meta 
+                    name="description" 
+                    content="Discover scholarships that match your profile. Use our Scholarship Finder to explore opportunities based on your marks, income, region, and more." 
+                />
+            </Helmet>
             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('scholarship_title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('scholarship_subtitle')}</p>
