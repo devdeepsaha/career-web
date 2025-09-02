@@ -157,13 +157,13 @@ const AITutorPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
-            <Helmet>
+
                 <title>Free MCQs practice for JEE, NEET & UPSC | Potho-Prodorshok</title>
                 <meta 
                     name="description" 
                     content="Practice for competitive exams with our free AI Tutor. Get unlimited questions, mock tests, and instant doubt-solving for JEE, NEET, UPSC, and more." 
                 />
-            </Helmet>
+            
              <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('aiTutor_title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('aiTutor_subtitle')}</p>
