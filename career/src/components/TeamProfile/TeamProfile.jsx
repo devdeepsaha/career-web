@@ -8,7 +8,7 @@ const StatBar = ({ label, value, colorClass }) => (
         <div className="flex justify-between mb-1">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-slate-900 rounded-full h-2">
+        <div className="w-full bg-transparent dark:bg-slate-900 rounded-full h-2">
             <div className={`${colorClass} h-2 rounded-full`} style={{ width: `${value}%` }}></div>
         </div>
     </div>
