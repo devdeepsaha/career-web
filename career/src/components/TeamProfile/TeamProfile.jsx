@@ -134,7 +134,7 @@ const TeamProfile = () => {
             <div className="hidden xl:block max-w-7xl mx-auto relative px-24"> {/* Added padding for space on the left */}
                 
                 {/* Teammates panel, absolutely positioned */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-0 flex flex-col items-center space-y-4">
+                <div className="absolute top-1/2-translate-y-1/2 left-0 flex flex-col items-center space-y-4">
                     <h4 className="text-xl font-bold text-gray-800 dark:text-white text-center mb-4">{t('teamProfile_team')}</h4>
                     {otherMembers.map(member => {
                         const memberColors = colorMap[member.accentColor] || colorMap.green;
