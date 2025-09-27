@@ -55,7 +55,7 @@ generation_config = genai.types.GenerationConfig(
 
 # --- Use the latest recommended model with the config ---
 model = genai.GenerativeModel(
-    'gemini-1.5-flash',
+    'gemini-pro',
     generation_config=generation_config
 )
 
