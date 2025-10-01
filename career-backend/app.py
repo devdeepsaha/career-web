@@ -6,7 +6,9 @@ import json
 import os
 from dotenv import load_dotenv
 from collections import deque
+import pkg_resources
 
+print("Gemini SDK version:", pkg_resources.get_distribution("google-generativeai").version)
 # --- Load environment variables from .env file ---
 load_dotenv()
 
