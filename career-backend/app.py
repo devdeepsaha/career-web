@@ -46,16 +46,15 @@ def write_history(new_question):
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError("API Key not found.")
+
 genai.configure(api_key=api_key)
 
-# --- Define a generation config to increase creativity ---
-generation_config = genai.types.GenerationConfig(
-    temperature=0.9
-)
+generation_config = {
+    "temperature": 0.9
+}
 
-# --- Use the latest recommended model with the config ---
 model = genai.GenerativeModel(
-    'gemini-pro',
+    "gemini-1.5-flash",
     generation_config=generation_config
 )
 
