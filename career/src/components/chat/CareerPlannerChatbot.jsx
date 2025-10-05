@@ -4,7 +4,7 @@ import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 
-const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const CareerPlannerChatbot = () => {
     const { t, i18n } = useTranslation();

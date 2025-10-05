@@ -12,6 +12,7 @@
   "dependencies": {
     "@lottiefiles/react-lottie-player": "^3.6.0",
     "chart.js": "^4.5.0",
+    "framer-motion": "^12.23.22",
     "i18next": "^25.4.2",
     "lottie-react": "^2.4.1",
     "react": "^19.1.0",

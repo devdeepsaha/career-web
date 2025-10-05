@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ScholarshipEmptyState from './ScholarshipEmptyState';
 
-const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const ScholarshipFinderPage = () => {
     const { t, i18n } = useTranslation();

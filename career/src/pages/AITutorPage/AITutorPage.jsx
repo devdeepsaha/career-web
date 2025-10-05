@@ -4,7 +4,7 @@ import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 
-const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const AITutorPage = () => {
     const { t, i18n } = useTranslation();

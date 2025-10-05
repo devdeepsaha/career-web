@@ -5,7 +5,7 @@ import RoadmapDisplay from './RoadmapDisplay';
 import EmptyStateGraphic from './EmptyStateGraphic';
 import CareerPlannerChatbot from '../../components/chat/CareerPlannerChatbot';
 
-const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const CareerPlannerPage = () => {
     const { t, i18n } = useTranslation(); // Get the i18n instance

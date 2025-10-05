@@ -36,23 +36,33 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
         cutout: '70%',
     };
 
+    const colorByScore = (score) => {
+        if (score >= 70) return 'text-green-500';
+        if (score >= 40) return 'text-yellow-500';
+        return 'text-red-500';
+    };
+
     return (
         <div className="container mx-auto px-4 py-12 md:py-16">
+            {/* --- Header --- */}
             <div className="text-center mb-10">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('perfDash_title')}</h1>
                 <p className="mt-3 text-lg text-gray-500 dark:text-slate-400">{t('perfDash_subtitle')}</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* --- Score & Chart --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                 <div className="lg:col-span-1 space-y-8">
+                    {/* Score Card */}
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700 text-center">
                         <p className="text-lg font-medium text-gray-500 dark:text-slate-400">{t('perfDash_score_title')}</p>
-                        <p className={`text-6xl font-bold mt-2 ${result.score >= 70 ? 'text-green-500' : result.score >= 40 ? 'text-yellow-500' : 'text-red-500'}`}>{result.score}%</p>
+                        <p className={`text-6xl font-bold mt-2 ${colorByScore(result.score)}`}>{result.score}%</p>
                         <p className="text-md text-gray-600 dark:text-slate-300 mt-3">
                             {t('perfDash_score_details', { correct: result.correct_answers, total: result.total_questions })}
                         </p>
                     </div>
 
+                    {/* Doughnut Chart */}
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
                         <h3 className="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">{t('perfDash_chart_title')}</h3>
                         <div className="h-64 relative">
@@ -61,14 +71,54 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border dark:border-slate-700">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">{t('perfDash_analysis_title')}</h3>
+                {/* --- AI Analysis --- */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border dark:border-slate-700 space-y-6">
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{t('perfDash_analysis_title')}</h3>
+                    
+                    {/* Performance Summary */}
                     <div className="prose prose-lg dark:prose-invert max-w-none">
                         <SimpleMarkdownRenderer text={result.analysis} />
                     </div>
+
+                    {/* Strengths */}
+                    {result.strengths?.length > 0 && (
+                        <div>
+                            <h4 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">Strengths ✅</h4>
+                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                                {result.strengths.map((item, idx) => (
+                                    <li key={idx}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Weaknesses */}
+                    {result.weaknesses?.length > 0 && (
+                        <div>
+                            <h4 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Weaknesses ❌</h4>
+                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                                {result.weaknesses.map((item, idx) => (
+                                    <li key={idx}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Recommendations */}
+                    {result.recommendations?.length > 0 && (
+                        <div>
+                            <h4 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Recommendations 💡</h4>
+                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                                {result.recommendations.map((item, idx) => (
+                                    <li key={idx}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* --- Detailed Q&A Review --- */}
             <div className="mt-12">
                 <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8">{t('perfDash_review_title')}</h2>
                 <div className="space-y-6">
@@ -88,21 +138,18 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                                 {item.options.map((option, optIndex) => {
                                     const isCorrectAnswer = option === item.correct_answer;
                                     const isUserAnswer = option === item.user_answer;
-                                    
+
                                     let style = "border-gray-300 dark:border-slate-600";
-                                    // Always highlight the correct answer in green
-                                    if(isCorrectAnswer) style = "bg-green-100 dark:bg-green-900/30 border-green-500 font-semibold";
-                                    // If the user's answer is wrong, override the style to be red
-                                    if(isUserAnswer && !item.is_correct) style = "bg-red-100 dark:bg-red-900/30 border-red-500";
+                                    if (isCorrectAnswer) style = "bg-green-100 dark:bg-green-900/30 border-green-500 font-semibold";
+                                    if (isUserAnswer && !item.is_correct) style = "bg-red-100 dark:bg-red-900/30 border-red-500";
 
                                     return (
                                         <div key={optIndex} className={`p-3 border-l-4 rounded-md transition-colors ${style}`}>
                                             {option}
                                             {isUserAnswer && <span className="text-xs font-bold ml-2 text-gray-500 dark:text-slate-400">{t('perfDash_review_yourAnswer')}</span>}
-                                            {/* --- NEW: Add a label for the correct answer if the user was wrong --- */}
                                             {isCorrectAnswer && !isUserAnswer && <span className="text-xs font-bold ml-2 text-green-600 dark:text-green-400">{t('perfDash_review_correctTag')}</span>}
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>
@@ -110,8 +157,12 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                 </div>
             </div>
 
+            {/* --- Retake Button --- */}
             <div className="text-center mt-12">
-                <button onClick={retakeTest} className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-transform transform hover:scale-105">
+                <button
+                    onClick={retakeTest}
+                    className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-transform transform hover:scale-105"
+                >
                     {t('perfDash_retakeButton')}
                 </button>
             </div>
