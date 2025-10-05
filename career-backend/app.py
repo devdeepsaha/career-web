@@ -23,7 +23,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY missing")
-CORS(app, origins=["http://localhost:5173"])  # Frontend port
+CORS(app, origins=["http://localhost:5173","https://pothoprodorshok.onrender.com"])  # Frontend port
 # 👇 Add this route
 @app.route('/')
 def home():
