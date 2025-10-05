@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from collections import deque
 import pkg_resources
 
+
+
 # ------------------- Version Check -------------------
 try:
     print("Gemini SDK version:", pkg_resources.get_distribution("google-generativeai").version)
@@ -22,7 +24,10 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY")
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY missing")
 CORS(app, origins=["http://localhost:5173"])  # Frontend port
-
+# 👇 Add this route
+@app.route('/')
+def home():
+    return jsonify({"message": "Server is running!"}), 200
 # ------------------- History -------------------
 HISTORY_FILE = 'question_history.json'
 HISTORY_LENGTH = 40
