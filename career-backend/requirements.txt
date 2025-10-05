@@ -1,5 +1,6 @@
-flask
+Flask
 flask-cors
-google-generativeai
 python-dotenv
-gunicorn  
+google-generativeai
+setuptools>=65.0.0
+gunicorn
