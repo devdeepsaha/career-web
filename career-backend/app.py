@@ -62,7 +62,7 @@ generation_config = {
 
 # --- Initialize model ---
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",   # ✅ correct syntax for v1
+    model_name="gemini-2.5-flash",   # ✅ correct syntax for v1
     generation_config=generation_config
 )
 
