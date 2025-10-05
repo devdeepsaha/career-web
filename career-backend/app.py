@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 from collections import deque
 import pkg_resources
+import signal
 
 # --- Print Gemini SDK version for debugging ---
 try:
@@ -72,6 +73,10 @@ def get_language_name(data):
     language_map = {'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali'}
     return language_map.get(language_code, 'English')
 
+# --- Timeout handler for long AI calls ---
+def timeout_handler(signum, frame):
+    raise TimeoutError("AI generation timed out")
+signal.signal(signal.SIGALRM, timeout_handler)
 
 # ------------------ ROUTES ------------------
 
@@ -103,14 +108,18 @@ def generate_roadmap_endpoint():
     Each object must have keys: "type", "title", "description", "source", "url".
     """
     try:
+        signal.alarm(110)  # 110 sec timeout
         response = model.generate_content(prompt)
+        signal.alarm(0)
         cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
         roadmap_steps = json.loads(cleaned_text)
         return jsonify(roadmap_steps)
+    except TimeoutError as te:
+        print(f"Timeout: {te}")
+        return jsonify({"error": "AI generation took too long. Try again later."}), 500
     except Exception as e:
         print(f"An error occurred in roadmap generation: {e}")
         return jsonify({"error": "Failed to generate roadmap from AI."}), 500
-
 
 @app.route('/chat', methods=['POST'])
 def chat_endpoint():
@@ -132,13 +141,17 @@ def chat_endpoint():
         return jsonify({"error": "No history provided."}), 400
 
     try:
+        signal.alarm(110)
         chat = model.start_chat(history=messages_for_ai[:-1])
         response = chat.send_message(messages_for_ai[-1]['parts'][0])
+        signal.alarm(0)
         return jsonify({"reply": response.text})
+    except TimeoutError as te:
+        print(f"Timeout: {te}")
+        return jsonify({"error": "AI chat took too long. Try again later."}), 500
     except Exception as e:
         print(f"An error occurred in chat: {e}")
         return jsonify({"error": "Sorry, I couldn't process that message."}), 500
-
 
 @app.route('/get-question', methods=['POST'])
 def get_question_endpoint():
@@ -158,18 +171,23 @@ def get_question_endpoint():
     CRITICAL: Output must be JSON with keys "question", "options" (array of 4), and "answer".
     """
     try:
+        signal.alarm(110)
         for _ in range(3):
             response = model.generate_content(prompt)
             cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
             question_data = json.loads(cleaned_text)
             if question_data['question'] not in seen_questions:
                 write_history(question_data['question'])
+                signal.alarm(0)
                 return jsonify(question_data)
+        signal.alarm(0)
         return jsonify(question_data)
+    except TimeoutError as te:
+        print(f"Timeout: {te}")
+        return jsonify({"error": "AI question generation took too long. Try again later."}), 500
     except Exception as e:
         print(f"An error occurred in question generation: {e}")
         return jsonify({"error": "Failed to generate question"}), 500
-
 
 @app.route('/solve-doubt', methods=['POST'])
 def solve_doubt_endpoint():
@@ -182,12 +200,16 @@ def solve_doubt_endpoint():
     Provide a clear, step-by-step explanation in {language_name}.
     """
     try:
+        signal.alarm(110)
         response = model.generate_content(prompt)
+        signal.alarm(0)
         return jsonify({"explanation": response.text})
+    except TimeoutError as te:
+        print(f"Timeout: {te}")
+        return jsonify({"error": "AI explanation took too long. Try again later."}), 500
     except Exception as e:
         print(f"An error occurred in doubt solving: {e}")
         return jsonify({"error": "Sorry, I couldn't process that question."}), 500
-
 
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test_endpoint():
@@ -204,15 +226,20 @@ def generate_mock_test_endpoint():
     Output JSON with keys: "question", "options" (4 items), "answer".
     """
     try:
+        signal.alarm(110)
         response = model.generate_content(prompt)
+        signal.alarm(0)
         cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
         questions = json.loads(cleaned_text)
         return jsonify(questions)
+    except TimeoutError as te:
+        print(f"Timeout: {te}")
+        return jsonify({"error": "AI mock test generation took too long. Try again later."}), 500
     except Exception as e:
         print(f"An error occurred in mock test generation: {e}")
         return jsonify({"error": "Failed to generate mock test"}), 500
 
-
-# --- Run the Flask server ---
+# --- Run the Flask server on Render ---
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
