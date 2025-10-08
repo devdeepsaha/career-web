@@ -65,6 +65,43 @@
   scrollbar-color: #22c55e #f0f0f0; /* thumb track for light mode */
 }
 
-.dark .chat-scrollbar {
-  scrollbar-color: #15803d #1e293b; /* thumb track for dark mode */
+.dark .chat-scrollbarr {
+  scrollbar-color: #134faeff #1e293b; /* thumb track for dark mode */
+}
+
+/* Default scrollbar */
+.chat-scrollbarr::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.chat-scrollbarr::-webkit-scrollbar-track {
+  background: #f0f0f0; /* light mode track */
+  border-radius: 4px;
+}
+
+.chat-scrollbarr::-webkit-scrollbar-thumb {
+  background-color: #437ad2ff; /* light mode thumb (green-500) */
+  border-radius: 4px;
+  border: 2px solid #f0f0f0; /* space around thumb */
+}
+
+/* Dark mode scrollbar */
+.dark .chat-scrollbarr::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+}
+
+.dark .chat-scrollbarr::-webkit-scrollbar-thumb {
+  background-color: #134faeff; /* green-700 */
+  border: 2px solid #1e293b;
+}
+
+/* Optional: Firefox scrollbar support */
+.chat-scrollbarr {
+  scrollbar-width: thin;
+  scrollbar-color: #134faeff #f0f0f0; /* thumb track for light mode */
+}
+
+.dark .chat-scrollbarr {
+  scrollbar-color: #134faeff #1e293b; /* thumb track for dark mode */
 }
