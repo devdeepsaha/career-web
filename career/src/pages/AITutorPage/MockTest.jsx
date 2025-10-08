@@ -24,6 +24,9 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
         setUserAnswers(prev => ({ ...prev, [qIndex]: option }));
     };
 
+    const cleanLatex = (str) => 
+    str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
+
     if (!questions || questions.length === 0) {
         return (
             <div className="fixed inset-0 bg-gray-50 dark:bg-slate-900 z-50 flex items-center justify-center">
@@ -50,14 +53,14 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-inner p-6 overflow-y-auto">
                 <div className="mb-4">
                     {/* 2. Wrap the question in Latex */}
-                    <p className="font-bold text-lg dark:text-white"><Latex>{questions[currentQ]?.question}</Latex></p>
+                    <p className="font-bold text-lg dark:text-white"><Latex>{cleanLatex(questions[currentQ]?.question)}</Latex></p>
                 </div>
                 <div className="space-y-3">
                     {questions[currentQ]?.options.map((opt, i) => (
                         <label key={i} className={`flex items-center p-3 rounded-lg border dark:border-slate-700 cursor-pointer transition-colors ${userAnswers[currentQ] === opt ? 'bg-indigo-100 dark:bg-indigo-900/50 border-indigo-500' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}`}>
                             <input type="radio" name={`q${currentQ}`} value={opt} checked={userAnswers[currentQ] === opt} onChange={() => handleAnswer(currentQ, opt)} className="mr-3 form-radio text-indigo-600 focus:ring-indigo-500"/>
                             {/* 3. Wrap the options in Latex */}
-                            <span className="dark:text-slate-300"><Latex>{opt}</Latex></span>
+                            <span className="dark:text-slate-300"><Latex>{cleanLatex(opt)}</Latex></span>
                         </label>
                     ))}
                 </div>
