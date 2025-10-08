@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import SimpleMarkdownRenderer from '../../components/shared/SimpleMarkdownRenderer';
-import Latex from 'react-latex-next';
+import Latex from '../../components/shared/LatexWrapper';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

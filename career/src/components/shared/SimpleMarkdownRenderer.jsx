@@ -1,5 +1,6 @@
 import React from 'react';
-import Latex from 'react-latex-next';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
 
 /**
  * Splits a string into parts: text vs math ($...$ or $$...$$)
@@ -7,11 +8,14 @@ import Latex from 'react-latex-next';
 const parseMath = (str) => {
   const regex = /(\$\$.*?\$\$|\$.*?\$)/g;
   const parts = str.split(regex).filter(Boolean);
+
   return parts.map((part, i) => {
     if (part.startsWith('$$') && part.endsWith('$$')) {
-      return <Latex key={i}>{part}</Latex>;
+      const content = part.slice(2, -2); // remove $$ delimiters
+      return <BlockMath key={i} math={content} />;
     } else if (part.startsWith('$') && part.endsWith('$')) {
-      return <Latex key={i}>{part}</Latex>;
+      const content = part.slice(1, -1); // remove $ delimiters
+      return <InlineMath key={i} math={content} />;
     } else {
       return part;
     }

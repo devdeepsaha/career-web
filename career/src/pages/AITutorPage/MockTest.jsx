@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import Latex from 'react-latex-next'; // 1. Import Latex
+import Latex from '../../components/shared/LatexWrapper'; // 1. Import Latex
 
 const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoading, handleEndTest }) => {
     const { t } = useTranslation();
