@@ -65,8 +65,8 @@
   scrollbar-color: #22c55e #f0f0f0; /* thumb track for light mode */
 }
 
-.dark .chat-scrollbarr {
-  scrollbar-color: #134faeff #1e293b; /* thumb track for dark mode */
+.dark .chat-scrollbar {
+  scrollbar-color: #22c55e #1e293b; /* thumb track for dark mode */
 }
 
 /* Default scrollbar */
