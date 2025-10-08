@@ -29,3 +29,42 @@
     }
   }
 }
+
+/* styles.css or global.css */
+
+/* Default scrollbar */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0; /* light mode track */
+  border-radius: 4px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #22c55e; /* light mode thumb (green-500) */
+  border-radius: 4px;
+  border: 2px solid #f0f0f0; /* space around thumb */
+}
+
+/* Dark mode scrollbar */
+.dark .chat-scrollbar::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+}
+
+.dark .chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #15803d; /* green-700 */
+  border: 2px solid #1e293b;
+}
+
+/* Optional: Firefox scrollbar support */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #22c55e #f0f0f0; /* thumb track for light mode */
+}
+
+.dark .chat-scrollbar {
+  scrollbar-color: #15803d #1e293b; /* thumb track for dark mode */
+}
