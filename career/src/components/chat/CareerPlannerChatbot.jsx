@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
-import { Maximize, Minimize } from 'lucide-react';
+import { Maximize, Minimize, Copy } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -14,6 +14,7 @@ const CareerPlannerChatbot = () => {
     const [messages, setMessages] = useState([{ sender: 'ai', text: t('chatbot_initialMessage') }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [copiedIndex, setCopiedIndex] = useState(null); // track copied message
     const chatEndRef = useRef(null);
     const chatContainerRef = useRef(null);
 
@@ -73,6 +74,13 @@ const CareerPlannerChatbot = () => {
         };
     }, []);
 
+    // --- Copy text with tooltip ---
+    const handleCopy = (text, index) => {
+        navigator.clipboard.writeText(text);
+        setCopiedIndex(index);
+        setTimeout(() => setCopiedIndex(null), 1500); // tooltip disappears after 1.5s
+    };
+
     return (
         <>
             {/* Floating Button */}
@@ -112,13 +120,31 @@ const CareerPlannerChatbot = () => {
                     <div className="flex-1 p-4 overflow-y-auto min-h-0 chat-scrollbarr bg-gray-50 dark:bg-slate-900">
                         {messages.map((msg, index) => (
                             <div key={index} className={`flex mb-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`py-2 px-4 rounded-2xl break-words
-                                    ${msg.sender === 'user'
-                                        ? 'bg-indigo-500 text-white'
-                                        : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white'
-                                    } ${isFullscreen ? 'max-w-[70vw]' : 'max-w-xs sm:max-w-md'}`}>
-                                    {msg.sender === 'ai' ? <SimpleMarkdownRenderer text={msg.text} /> : msg.text}
-                                </div>
+                                <div className={`relative py-2 px-4 pr-8 rounded-2xl break-words
+    ${msg.sender === 'user'
+        ? 'bg-indigo-500 text-white'
+        : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white'
+    } ${isFullscreen ? 'max-w-[70vw]' : 'max-w-xs sm:max-w-md'}`}
+>
+    {msg.sender === 'ai' ? <SimpleMarkdownRenderer text={msg.text} /> : msg.text}
+
+    {/* Copy Button */}
+    <button
+        onClick={() => handleCopy(msg.text, index)}
+        className="absolute top-1 right-1 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white p-1 rounded transition"
+        aria-label="Copy message"
+    >
+        <Copy size={16} />
+    </button>
+
+    {/* Copied Tooltip */}
+    {copiedIndex === index && (
+        <span className="absolute top-0 right-6 text-xs bg-black text-white dark:bg-white dark:text-black px-1 rounded">
+            Copied!
+        </span>
+    )}
+</div>
+
                             </div>
                         ))}
 
