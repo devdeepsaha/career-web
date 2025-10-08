@@ -5,15 +5,8 @@ import google.generativeai as genai
 import json, os
 from dotenv import load_dotenv
 from collections import deque
-import pkg_resources
 
 
-
-# ------------------- Version Check -------------------
-try:
-    print("Gemini SDK version:", pkg_resources.get_distribution("google-generativeai").version)
-except Exception as e:
-    print("Could not detect google-generativeai version:", e)
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -196,10 +189,13 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 # AI Tutor - Get Question
+# In app.py
+
 @app.route('/get-question', methods=['POST'])
 def get_question():
     data = request.get_json()
-    language = get_language_name(data)
+    language_name = get_language_name(data) # Get language
+    
     exam = data.get('exam', '')
     subject = data.get('subject', '')
     topic = data.get('topic', '')
@@ -207,9 +203,17 @@ def get_question():
     seen = read_history()
 
     prompt = f"""
-    Generate one unique MCQ in JSON: 
-    Exam={exam}, Subject={subject}, Topic={topic}, Difficulty={difficulty}.
-    JSON must have keys: "question", "options" (array of 4 strings), "answer".
+    Act as an AI Tutor for Indian competitive exams.
+    Generate one unique MCQ in JSON format for the following criteria:
+    - Exam: {exam}
+    - Subject: {subject}
+    - Topic: {topic}
+    - Difficulty: {difficulty}
+
+    CRITICAL INSTRUCTION 1: The entire response, including the "question", "options", and "answer", MUST be in the {language_name} language.
+    CRITICAL INSTRUCTION 2: Do NOT generate a question from this list of previously seen questions: {json.dumps(seen)}
+    CRITICAL INSTRUCTION 3: Pay special attention to chemical formulas. They must be written correctly (e.g., NaCl, H₂O, CaCO₃) without any extra prefixes like 'ext'. The response 'extNaCl' is WRONG; the correct response is 'NaCl'. Use LaTeX for formatting where appropriate (e.g., $H_2O$).
+    Return ONLY a single valid JSON object with keys: "question", "options" (an array of 4 strings), and "answer".
     """
 
     try:
@@ -217,18 +221,16 @@ def get_question():
             response = model.generate_content(prompt)
             cleaned = response.text.strip().replace('```json', '').replace('```', '')
             q = json.loads(cleaned)
-            if not all(k in q for k in ["question", "options", "answer"]):
-                continue
-            if not isinstance(q["options"], list) or len(q["options"]) != 4:
-                continue
-            if q['question'] not in seen:
-                write_history(q['question'])
-                return jsonify(q)
-        return jsonify({"error": "Failed to generate a valid question"}), 500
+            if all(k in q for k in ["question", "options", "answer"]) and isinstance(q["options"], list) and len(q["options"]) == 4:
+                if q['question'] not in seen:
+                    write_history(q['question'])
+                    return jsonify(q)
+        # If we still get a duplicate, return it but don't save to history
+        return jsonify(q) 
     except Exception as e:
         print("Question error:", e)
         return jsonify({"error": str(e)}), 500
-
+    
 # Solve Doubt
 @app.route('/solve-doubt', methods=['POST'])
 def solve_doubt():
@@ -253,7 +255,21 @@ def generate_mock_test():
     topic = data.get('topic', '')
     num_q = data.get('num_questions', 5)
 
-    prompt = f"Generate {num_q} MCQs in JSON for {exam}, {subject}, {topic}. Each must have keys: question, options (4), answer."
+    prompt = f"""
+Generate {num_q} MCQs in JSON format for:
+Exam: {exam}
+Subject: {subject}
+Topic: {topic}
+
+Each question must have keys:
+- "question"
+- "options" (exactly 4)
+- "answer"
+
+Pay special attention to chemical formulas: write them correctly (e.g., NaCl, H₂O, CaCO₃), no prefixes like 'ext'.
+Use LaTeX formatting where appropriate (e.g., $H_2O$).
+Respond only with a JSON array.
+"""
 
     try:
         response = model.generate_content(prompt)

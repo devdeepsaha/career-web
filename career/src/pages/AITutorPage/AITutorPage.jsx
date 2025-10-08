@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
+import Latex from 'react-latex-next';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -234,14 +235,14 @@ const AITutorPage = () => {
                         {questionError && <p className="text-red-500 text-sm mt-4 text-center">{questionError}</p>}
                         {question && (
                             <div className="mt-6 p-6 border rounded-lg bg-gray-50 dark:bg-slate-700/50">
-                                <p className="font-semibold mb-4 text-gray-800 dark:text-white">{question.question}</p>
+                                <p className="font-semibold mb-4 text-gray-800 dark:text-white"><Latex>{question.question}</Latex></p>
                                 <div className="space-y-2">
-                                    {question.options.map((opt, i) => <div key={i} className="p-2 border dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300">{opt}</div>)}
+                                    {question.options.map((opt, i) => <div key={i} className="p-2 border dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300"><Latex>{opt}</Latex></div>)}
                                 </div>
                                 <div className="flex justify-between items-center mt-4">
                                     <details>
                                         <summary className="cursor-pointer font-semibold text-green-700 dark:text-green-500">{t('aiTutor_showAnswer')}</summary>
-                                        <p className="mt-2 p-2 bg-green-100 dark:bg-green-900/30 rounded-md text-green-800 dark:text-green-300">{question.answer}</p>
+                                        <p className="mt-2 p-2 bg-green-100 dark:bg-green-900/30 rounded-md text-green-800 dark:text-green-300"><Latex>{question.answer}</Latex></p>
                                     </details>
                                     <button onClick={() => handleSolveItClick(question.question)} className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                                         {t('aiTutor_solveItLink')} &rarr;

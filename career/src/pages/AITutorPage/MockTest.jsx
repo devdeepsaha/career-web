@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next'; // Import the hook
+import { useTranslation } from 'react-i18next';
+import Latex from 'react-latex-next'; // 1. Import Latex
 
 const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoading, handleEndTest }) => {
-    const { t } = useTranslation(); // Initialize the hook
+    const { t } = useTranslation();
     const [currentQ, setCurrentQ] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(questions.length * 90); // 90 seconds per question
+    const [timeLeft, setTimeLeft] = useState(questions.length * 90);
 
     useEffect(() => {
         if (timeLeft <= 0 && questions.length > 0) {
@@ -48,13 +49,15 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
             </div>
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-inner p-6 overflow-y-auto">
                 <div className="mb-4">
-                    <p className="font-bold text-lg dark:text-white">{questions[currentQ]?.question}</p>
+                    {/* 2. Wrap the question in Latex */}
+                    <p className="font-bold text-lg dark:text-white"><Latex>{questions[currentQ]?.question}</Latex></p>
                 </div>
                 <div className="space-y-3">
                     {questions[currentQ]?.options.map((opt, i) => (
                         <label key={i} className={`flex items-center p-3 rounded-lg border dark:border-slate-700 cursor-pointer transition-colors ${userAnswers[currentQ] === opt ? 'bg-indigo-100 dark:bg-indigo-900/50 border-indigo-500' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}`}>
                             <input type="radio" name={`q${currentQ}`} value={opt} checked={userAnswers[currentQ] === opt} onChange={() => handleAnswer(currentQ, opt)} className="mr-3 form-radio text-indigo-600 focus:ring-indigo-500"/>
-                            <span className="dark:text-slate-300">{opt}</span>
+                            {/* 3. Wrap the options in Latex */}
+                            <span className="dark:text-slate-300"><Latex>{opt}</Latex></span>
                         </label>
                     ))}
                 </div>

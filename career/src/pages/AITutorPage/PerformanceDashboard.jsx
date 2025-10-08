@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import SimpleMarkdownRenderer from '../../components/shared/SimpleMarkdownRenderer';
+import Latex from 'react-latex-next';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -77,7 +78,7 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                     
                     {/* Performance Summary */}
                     <div className="prose prose-lg dark:prose-invert max-w-none">
-                        <SimpleMarkdownRenderer text={result.analysis} />
+                       <SimpleMarkdownRenderer text={result.analysis} />
                     </div>
 
                     {/* Strengths */}
@@ -86,7 +87,10 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                             <h4 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">Strengths ✅</h4>
                             <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
                                 {result.strengths.map((item, idx) => (
-                                    <li key={idx}>{item}</li>
+                                    <li key={idx}>
+                                        <SimpleMarkdownRenderer text={item} />
+                                    </li>
+
                                 ))}
                             </ul>
                         </div>
@@ -98,7 +102,10 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                             <h4 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Weaknesses ❌</h4>
                             <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
                                 {result.weaknesses.map((item, idx) => (
-                                    <li key={idx}>{item}</li>
+                                    <li key={idx}>
+                                        <SimpleMarkdownRenderer text={item} />
+                                    </li>
+
                                 ))}
                             </ul>
                         </div>
@@ -110,7 +117,10 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                             <h4 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Recommendations 💡</h4>
                             <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
                                 {result.recommendations.map((item, idx) => (
-                                    <li key={idx}>{item}</li>
+                                    <li key={idx}>
+                                        <SimpleMarkdownRenderer text={item} />
+                                    </li>
+
                                 ))}
                             </ul>
                         </div>
@@ -126,7 +136,7 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                         <div key={index} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
                             <div className="flex justify-between items-start">
                                 <p className="font-bold text-lg text-gray-800 dark:text-white pr-4">
-                                    {index + 1}. {item.question}
+                                    {index + 1}. <Latex>{item.question}</Latex>
                                 </p>
                                 {item.is_correct ? (
                                     <span className="flex-shrink-0 text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 py-1 px-3 rounded-full">{t('perfDash_review_correctTag')} ✅</span>
@@ -145,7 +155,7 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
 
                                     return (
                                         <div key={optIndex} className={`p-3 border-l-4 rounded-md transition-colors ${style}`}>
-                                            {option}
+                                            <Latex>{option}</Latex>
                                             {isUserAnswer && <span className="text-xs font-bold ml-2 text-gray-500 dark:text-slate-400">{t('perfDash_review_yourAnswer')}</span>}
                                             {isCorrectAnswer && !isUserAnswer && <span className="text-xs font-bold ml-2 text-green-600 dark:text-green-400">{t('perfDash_review_correctTag')}</span>}
                                         </div>
