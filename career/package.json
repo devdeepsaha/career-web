@@ -13,6 +13,7 @@
     "@lottiefiles/react-lottie-player": "^3.6.0",
     "chart.js": "^4.5.0",
     "framer-motion": "^12.23.22",
+    "gsap": "^3.13.0",
     "i18next": "^25.4.2",
     "katex": "^0.16.23",
     "lottie-react": "^2.4.1",

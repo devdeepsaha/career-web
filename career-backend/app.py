@@ -1,26 +1,54 @@
 # ------------------- Imports -------------------
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,session
 from flask_cors import CORS
 import google.generativeai as genai
 import json, os
 from dotenv import load_dotenv
 from collections import deque
-
-
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from extensions import db, login_manager
 
 # ------------------- Load Env -------------------
 load_dotenv()
 
 # ------------------- Flask App -------------------
 app = Flask(__name__)
+# --- Add this block right after app = Flask(__name__) ---
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# --- Initialize Extensions ---
+db.init_app(app)
+login_manager.init_app(app)
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "https://your-frontend-url.onrender.com"]) 
+
+
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY missing")
-CORS(app, origins=["http://localhost:5173","https://pothoprodorshok.onrender.com"])  # Frontend port
+# --- Register blueprint AFTER app is created ---
+from auth import auth_bp,google_bp
+app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(google_bp, url_prefix="/auth/google")  # Register Google OAuth blueprint
+
 # 👇 Add this route
+@app.route('/logout-google')
+def logout_google():
+    session.pop("google_oauth_token", None)
+    return "Google token cleared"
 @app.route('/')
 def home():
     return jsonify({"message": "Server is running!"}), 200
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
 # ------------------- History -------------------
 HISTORY_FILE = 'question_history.json'
 HISTORY_LENGTH = 40
@@ -343,8 +371,77 @@ def fetch_real_scholarships(data):
     except Exception as e:
         print("Scholarship generation error:", e)
         return []
+    
+# --- Add this User Model ---
+class User(UserMixin, db.Model):
+    __tablename__ = 'user'
+    __table_args__ = {'extend_existing': True}  # <-- ADD THIS
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.Text)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+# --- Add this block to create tables and load users ---
+with app.app_context():
+    db.create_all()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# --- NEW AUTHENTICATION ENDPOINTS ---
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "Email address already registered"}), 409
+
+    new_user = User(email=email)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    login_user(new_user)
+    return jsonify({"message": "Signup successful", "user": {"id": new_user.id, "email": new_user.email}}), 201
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    user = User.query.filter_by(email=email).first()
+    
+    if user is None or not user.check_password(password):
+        return jsonify({"message": "Invalid email or password"}), 401
+        
+    login_user(user)
+    return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
+
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "Logout successful"}), 200
+
+@app.route('/check_session')
+def check_session():
+    if current_user.is_authenticated:
+        return jsonify({"is_logged_in": True, "user": {"id": current_user.id, "email": current_user.email}}), 200
+    else:
+        return jsonify({"is_logged_in": False}), 200
+    
 
 # ------------------- Run App -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+

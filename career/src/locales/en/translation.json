@@ -8,6 +8,21 @@
   "sidebar_team": "Our Team",
   "sidebar_language": "Change Language",
 
+  "login_button": "Get Started for Free",
+  "signup_button": "Sign Up",
+  "logout_button": "Logout",
+  "sidebar_login": "Login / Sign Up",
+  "sidebar_logout": "Logout",
+  "nav": {
+    "team": "OUR TEAM",
+    "support": "SUPPORT",
+    "policies": "POLICIES"
+  },
+  "auth": {
+    "logout": "Logout",
+    "getStarted": "Login/Sign Up"
+  },
+
   "aiTutor_title": "AI Tutor for Competitive Exams ",
   "aiTutor_subtitle": "Personalized practice and instant doubt clarification for JEE, NEET, UPSC, and more.",
   "aiTutor_tab_practice": "Practice Questions",
@@ -143,7 +158,50 @@
   "teamProfile_frustrations": "Frustrations",
   "teamProfile_skills": "Skills",
   "teamProfile_team": "Our Team",
-  "teamProfile_goals": "Goals"
+  "teamProfile_goals": "Goals",
+
+  
+  "nav_support": "Support",
+  "support_seo_title": "Support & FAQ | Potho-Prodorshok",
+  "support_seo_desc": "Get help, find answers to frequently asked questions, and contact the Potho-Prodorshok team.",
+  "support_about_title": "About Potho-Prodorshok",
+  "support_about_subtitle": "Your Dream, We Plan. Our mission is to provide students with a clear, actionable path to their career goals using the power of AI.",
+  "support_faq_title": "Frequently Asked Questions",
+  "support_faq_q1": "Is Potho-Prodorshok free to use?",
+  "support_faq_a1": "Yes, all core features of our app are completely free. We believe everyone deserves access to quality career guidance.",
+  "support_faq_q2": "How are the AI recommendations generated?",
+  "support_faq_a2": "Our platform uses advanced generative AI models, which are trained on vast amounts of educational and career data to provide personalized and relevant suggestions.",
+  "support_faq_q3": "Is my personal data safe?",
+  "support_faq_a3": "Absolutely. We take your privacy seriously. We only store your email and hashed password for login purposes. We never share your data with third parties.",
+  "support_contact_title": "Get in Touch",
+  "support_form_name": "Your Name",
+  "support_form_email": "Your Email",
+  "support_form_message": "Message",
+  "support_form_button": "Send Message",
+
+
+  "policies_seo_title": "Privacy Policy & Terms | Potho-Prodorshok",
+  "policies_seo_desc": "Read our Privacy Policy and Terms of Service to understand how we handle your data and our commitment to your privacy and security.",
+  "policies_main_title": "Policies",
+  "policies_privacy_title": "Privacy Policy",
+  "policies_privacy_p1": "Your privacy is important to us. This policy explains what data we collect, how we use it, and how we protect it.",
+  "policies_privacy_data_title": "What We Collect",
+  "policies_privacy_data_email_title": "Email Address",
+  "policies_privacy_data_email_desc": "We collect your email address during signup to create and secure your account.",
+  "policies_privacy_data_userInput_title": "User Input",
+  "policies_privacy_data_userInput_desc": "The skills, interests, and goals you provide are sent to our AI model to generate personalized results. This data is not stored permanently with your personal identity.",
+  "policies_privacy_data_analytics_title": "Usage Data",
+  "policies_privacy_data_analytics_desc": "We use Google Analytics to collect anonymous traffic data to help us improve our service.",
+  "policies_privacy_usage_title": "How We Use Your Data",
+  "policies_privacy_usage_desc": "Your data is used solely to provide and improve the services offered by Potho-Prodorshok. We do not sell your personal information to third parties.",
+  "policies_privacy_storage_title": "Data Storage & Security",
+  "policies_privacy_storage_desc": "Your password is encrypted and securely stored in our database. We take all reasonable measures to protect your information.",
+  "policies_terms_title": "Terms of Service",
+  "policies_terms_p1": "By using our website, you agree to the following terms and conditions.",
+  "policies_terms_use_title": "Acceptable Use",
+  "policies_terms_use_desc": "You agree not to misuse the service or help anyone else to do so. The service is for personal, non-commercial use only.",
+  "policies_terms_disclaimer_title": "Disclaimer",
+  "policies_terms_disclaimer_desc": "The AI-generated content is for informational purposes only and is not a substitute for professional advice. We do not guarantee the accuracy of the generated information."
 
 }
 

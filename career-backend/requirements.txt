@@ -4,3 +4,7 @@ python-dotenv
 google-generativeai
 gunicorn
 setuptools
+Flask-SQLAlchemy
+psycopg2-binary
+Flask-Login
+Werkzeug

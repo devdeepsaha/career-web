@@ -4,7 +4,7 @@ import ScholarshipEmptyState from './ScholarshipEmptyState';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
-const ScholarshipFinderPage = () => {
+const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
     const [marks, setMarks] = useState('');
     const [income, setIncome] = useState('');
@@ -18,16 +18,28 @@ const ScholarshipFinderPage = () => {
 
     const findScholarships = async (e) => {
         e.preventDefault();
+
+        if (!currentUser) {
+            // Not logged in → show login modal
+            showAuth('login');
+            return;
+        }
+
         setIsLoading(true);
         setError('');
         setScholarships([]);
         setHasSearched(true);
+
         try {
             const response = await fetch(`${API_URL}/find-scholarships`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    marks, income, region, destination, religion,
+                body: JSON.stringify({
+                    marks,
+                    income,
+                    region,
+                    destination,
+                    religion,
                     language: i18n.language
                 })
             });
@@ -44,60 +56,98 @@ const ScholarshipFinderPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
-        
-                <title>Find Scholarships | Potho-Prodorshok</title>
-                <meta 
-                    name="description" 
-                    content="Discover scholarships that match your profile. Use our Scholarship Finder to explore opportunities based on your marks, income, region, and more." 
-                />
-            
+            <title>Find Scholarships | Potho-Prodorshok</title>
+            <meta
+                name="description"
+                content="Discover scholarships that match your profile. Use our Scholarship Finder to explore opportunities based on your marks, income, region, and more."
+            />
+
             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('scholarship_title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('scholarship_subtitle')}</p>
             </div>
+
             <div className="flex flex-col lg:flex-row gap-8">
+                {/* Form */}
                 <div className="lg:w-1/3">
                     <div className="p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
                         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">{t('scholarship_form_title')}</h2>
-                        <form onSubmit={findScholarships}>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_marksLabel')}</label>
-                                    <input type="text" value={marks} onChange={e => setMarks(e.target.value)} className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white" placeholder={t('scholarship_form_marksPlaceholder')} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_incomeLabel')}</label>
-                                    <input type="text" value={income} onChange={e => setIncome(e.target.value)} className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white" placeholder={t('scholarship_form_incomePlaceholder')} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_regionLabel')}</label>
-                                    <input type="text" value={region} onChange={e => setRegion(e.target.value)} className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white" placeholder={t('scholarship_form_regionPlaceholder')} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_religionLabel')}</label>
-                                    <input type="text" value={religion} onChange={e => setReligion(e.target.value)} className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white" placeholder={t('scholarship_form_religionPlaceholder')} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_destinationLabel')}</label>
-                                    <input type="text" value={destination} onChange={e => setDestination(e.target.value)} className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white" placeholder={t('scholarship_form_destinationPlaceholder')} />
-                                </div>
+                        <form onSubmit={findScholarships} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_marksLabel')}</label>
+                                <input
+                                    type="text"
+                                    value={marks}
+                                    onChange={e => setMarks(e.target.value)}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    placeholder={t('scholarship_form_marksPlaceholder')}
+                                />
                             </div>
-                            <button type="submit" disabled={isLoading} className="w-full mt-8 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_incomeLabel')}</label>
+                                <input
+                                    type="text"
+                                    value={income}
+                                    onChange={e => setIncome(e.target.value)}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    placeholder={t('scholarship_form_incomePlaceholder')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_regionLabel')}</label>
+                                <input
+                                    type="text"
+                                    value={region}
+                                    onChange={e => setRegion(e.target.value)}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    placeholder={t('scholarship_form_regionPlaceholder')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_religionLabel')}</label>
+                                <input
+                                    type="text"
+                                    value={religion}
+                                    onChange={e => setReligion(e.target.value)}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    placeholder={t('scholarship_form_religionPlaceholder')}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_destinationLabel')}</label>
+                                <input
+                                    type="text"
+                                    value={destination}
+                                    onChange={e => setDestination(e.target.value)}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    placeholder={t('scholarship_form_destinationPlaceholder')}
+                                />
+                            </div>
+
+                            {/* Find Button */}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full mt-8 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                            >
                                 {isLoading ? t('scholarship_button_searching') : t('scholarship_button_find')}
                             </button>
                         </form>
                     </div>
                 </div>
+
+                {/* Results */}
                 <div className="lg:w-2/3">
-                    {isLoading && <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md animate-pulse h-32"></div>)}</div>}
+                    {isLoading && (
+                        <div className="space-y-4">
+                            {[...Array(3)].map((_, i) => (
+                                <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md animate-pulse h-32"></div>
+                            ))}
+                        </div>
+                    )}
                     {error && <p className="text-red-500 text-center">{error}</p>}
-                    
-                    {!isLoading && !error && !hasSearched && (
-                        <ScholarshipEmptyState />
-                    )}
-                    {!isLoading && !error && hasSearched && scholarships.length === 0 && (
-                        <ScholarshipEmptyState />
-                    )}
+
+                    {!isLoading && !error && (!hasSearched || scholarships.length === 0) && <ScholarshipEmptyState />}
 
                     {!isLoading && scholarships.length > 0 && (
                         <div className="space-y-4">

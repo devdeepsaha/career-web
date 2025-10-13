@@ -7,13 +7,15 @@ import Latex from '../../components/shared/LatexWrapper';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
+
 const cleanLatex = (str) => 
     str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
 
 
-const AITutorPage = () => {
+const AITutorPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
     const [tutorView, setTutorView] = useState('practice');
+    
 
     // State for Practice Questions
     const [practiceExam, setPracticeExam] = useState('Boards(Class 10th)');
@@ -40,32 +42,42 @@ const AITutorPage = () => {
     const [isChatLoading, setIsChatLoading] = useState(false);
     const [numQuestions, setNumQuestions] = useState(5);
 
-    const fetchQuestion = async () => {
-        setIsLoadingQuestion(true);
-        setQuestion(null);
-        setQuestionError('');
-        try {
-            const response = await fetch(`${API_URL}/get-question`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    exam: practiceExam,
-                    subject: practiceSubject,
-                    topic: practiceTopic,
-                    difficulty: practiceDifficulty,
-                    language: i18n.language
-                })
-            });
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            setQuestion(data);
-        } catch (error) {
-            console.error("Failed to fetch question:", error);
-            setQuestionError(t('aiTutor_error_fetchQuestion'));
-        } finally {
-            setIsLoadingQuestion(false);
-        }
-    };
+
+// --- Updated fetchQuestion ---
+const fetchQuestion = async () => {
+    
+    if (!currentUser) {
+    showAuth('login');
+    return;
+}
+
+
+    setIsLoadingQuestion(true);
+    setQuestion(null);
+    setQuestionError('');
+    try {
+        const response = await fetch(`${API_URL}/get-question`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                exam: practiceExam,
+                subject: practiceSubject,
+                topic: practiceTopic,
+                difficulty: practiceDifficulty,
+                language: i18n.language
+            })
+        });
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setQuestion(data);
+    } catch (error) {
+        console.error("Failed to fetch question:", error);
+        setQuestionError(t('aiTutor_error_fetchQuestion'));
+    } finally {
+        setIsLoadingQuestion(false);
+    }
+};
+
 
     const sendToDoubtSolver = async (messageText) => {
         const userMessage = { sender: 'user', text: messageText };
@@ -98,31 +110,37 @@ const AITutorPage = () => {
     };
 
     const startTest = async () => {
-        setTestState('loading');
-        try {
-            const response = await fetch(`${API_URL}/generate-mock-test`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    exam: mockExam,
-                    subject: mockSubject,
-                    topic: mockTopic,
-                    difficulty: mockDifficulty,
-                    num_questions: numQuestions,
-                    language: i18n.language
-                })
-            });
-            if (!response.ok) throw new Error('Failed to generate test');
-            const data = await response.json();
-            setTestQuestions(data);
-            setTestAnswers({});
-            setTestResult(null);
-            setTestState('in-progress');
-        } catch (err) {
-            console.error(err);
-            setTestState('idle');
-        }
-    };
+    if (!currentUser) {
+    showAuth('login');
+    return;}
+
+
+    setTestState('loading');
+    try {
+        const response = await fetch(`${API_URL}/generate-mock-test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                exam: mockExam,
+                subject: mockSubject,
+                topic: mockTopic,
+                difficulty: mockDifficulty,
+                num_questions: numQuestions,
+                language: i18n.language
+            })
+        });
+        if (!response.ok) throw new Error('Failed to generate test');
+        const data = await response.json();
+        setTestQuestions(data);
+        setTestAnswers({});
+        setTestResult(null);
+        setTestState('in-progress');
+    } catch (err) {
+        console.error(err);
+        setTestState('idle');
+    }
+};
+
 
     const submitTest = useCallback(async () => {
         setTestState('loading');
@@ -328,8 +346,12 @@ const AITutorPage = () => {
                 )}
             </div>
             <DoubtSolverChatbot isOpen={isChatOpen} setIsOpen={setIsChatOpen} messages={chatMessages} isLoading={isChatLoading} handleSend={sendToDoubtSolver} />
+            
+                
+            
         </div>
     );
 };
+
 
 export default AITutorPage;
