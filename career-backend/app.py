@@ -23,7 +23,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # --- Initialize Extensions ---
 db.init_app(app)
 login_manager.init_app(app)
-CORS(app, supports_credentials=True, origins=["http://localhost:5173", "https://your-frontend-url.onrender.com"]) 
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "https://pothoprodorshok.onrender.com"]) 
 
 
 if not app.secret_key:
