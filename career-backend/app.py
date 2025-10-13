@@ -41,13 +41,7 @@ def logout_google():
 @app.route('/')
 def home():
     return jsonify({"message": "Server is running!"}), 200
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
+
 
 # ------------------- History -------------------
 HISTORY_FILE = 'question_history.json'
