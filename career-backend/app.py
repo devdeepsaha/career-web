@@ -23,8 +23,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,  # Checks if a connection is alive before using it
     'pool_recycle': 300,    # Recycles connections every 5 minutes (300 seconds)
-    'pool_size': 2,      
-    'max_overflow': 1
+    
 }
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
