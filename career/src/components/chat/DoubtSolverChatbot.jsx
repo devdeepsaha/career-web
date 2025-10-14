@@ -51,7 +51,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
             {!isFullscreen && (
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="fixed bottom-20 md:bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 z-50"
+                    className="fixed bottom-20 md:bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 z-30"
                     aria-label={t('doubtChat_toggleAriaLabel')}
                 >
                     {isOpen ? <XIcon /> : <MessageSquareIcon />}
@@ -62,7 +62,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
             {isOpen && (
                 <div
                     ref={chatContainerRef}
-                    className={`fixed bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-slate-700 z-30 transition-all duration-300 ease-in-out origin-bottom-right
+                    className={`fixed bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-slate-700 z-20 transition-all duration-300 ease-in-out origin-bottom-right
                     ${isFullscreen
                         ? 'w-[90vw] h-[90vh] bottom-6 right-6'
                         : 'w-80 h-96 bottom-36 md:bottom-24 right-6'

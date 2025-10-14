@@ -594,7 +594,7 @@ const Sidebar = ({
         }
 
         .sidebar-auth-section {
-          margin-top: auto;
+          margin-top: 3rem;
           padding-top: 2rem;
         }
 
