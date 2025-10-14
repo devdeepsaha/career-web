@@ -1,5 +1,5 @@
 # ------------------- Imports -------------------
-from flask import Flask, request, jsonify,session
+from flask import Flask, request, jsonify,session,redirect
 from flask_cors import CORS
 import google.generativeai as genai
 import json, os
@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db, login_manager
+from flask_mail import Mail, Message
+import secrets
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -28,6 +30,15 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
+
+# --- Mail Configuration ---
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
 
 # --- Initialize Extensions ---
 db.init_app(app)
@@ -382,6 +393,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.Text)
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    confirmation_token = db.Column(db.String(100), unique=True, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -409,8 +422,26 @@ def signup():
 
     new_user = User(email=email)
     new_user.set_password(password)
+    new_user.confirmation_token = secrets.token_urlsafe(24)
     db.session.add(new_user)
     db.session.commit()
+    
+    # --- SEND THE CONFIRMATION EMAIL ---
+    try:
+        # NOTE: This URL must point to your BACKEND confirmation route
+        backend_url = os.getenv("https://pothoprodorshok-backend.onrender.com", "http://localhost:5000")
+        confirm_url = f"{backend_url}/confirm/{new_user.confirmation_token}"
+        
+        msg = Message('Confirm Your Email Address',
+                      sender=('Career Coach', os.getenv('MAIL_USERNAME')),
+                      recipients=[new_user.email])
+        msg.body = f'Thank you for signing up! Please click the following link to activate your account: {confirm_url}'
+        mail.send(msg)
+    except Exception as e:
+        print(f"Email sending failed: {e}")
+        # In production, you'd want to handle this more gracefully
+        
+    return jsonify({"message": "Signup successful. Please check your email to activate your account."}), 201
     
     login_user(new_user)
     return jsonify({"message": "Signup successful", "user": {"id": new_user.id, "email": new_user.email}}), 201
@@ -420,11 +451,15 @@ def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
+    user = User.query.filter_by(email=email).first()
     
     user = User.query.filter_by(email=email).first()
     
     if user is None or not user.check_password(password):
         return jsonify({"message": "Invalid email or password"}), 401
+    
+    if not user.confirmed:
+        return jsonify({"message": "Please confirm your email address first."}), 403 # 403 Forbidden
         
     login_user(user)
     return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
@@ -441,6 +476,23 @@ def check_session():
         return jsonify({"is_logged_in": True, "user": {"id": current_user.id, "email": current_user.email}}), 200
     else:
         return jsonify({"is_logged_in": False}), 200
+    
+# --- ADD THE NEW CONFIRMATION ROUTE HERE ---
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    user = User.query.filter_by(confirmation_token=token).first()
+    frontend_url = os.getenv("https://pothoprodorshok.onrender.com", "http://localhost:5173")
+
+    if user:
+        # User found, so confirm them and clear the token
+        user.confirmed = True
+        user.confirmation_token = None
+        db.session.commit()
+        # Redirect to a success page on your frontend
+        return redirect(f"{frontend_url}/login?confirmed=true")
+    else:
+        # Token is invalid or not found, redirect to an error page
+        return redirect(f"{frontend_url}/login?error=invalid_token")
     
 
 # ------------------- Run App -------------------
