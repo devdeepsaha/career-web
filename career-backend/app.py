@@ -487,9 +487,10 @@ def confirm_email(token):
         # User found, so confirm them and clear the token
         user.confirmed = True
         user.confirmation_token = None
+        login_user(user)
         db.session.commit()
         # Redirect to a success page on your frontend
-        return redirect(f"{frontend_url}/login?confirmed=true")
+        return redirect(frontend_url)
     else:
         # Token is invalid or not found, redirect to an error page
         return redirect(f"{frontend_url}/login?error=invalid_token")

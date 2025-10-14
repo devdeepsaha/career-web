@@ -7,6 +7,8 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // ADDED: State to hold the success message after signup
+    const [signupMessage, setSignupMessage] = useState('');
 
     const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -22,8 +24,19 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
                 credentials: 'include',
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Signup failed');
-            onLoginSuccess(data.user);
+            
+            // MODIFIED: Handle different success/error responses from the backend
+            if (response.status === 201) {
+                // This is a successful signup that requires email confirmation.
+                setSignupMessage(data.message);
+                // We DO NOT call onLoginSuccess here anymore.
+            } else if (!response.ok) {
+                // This handles errors like 409 (email already exists).
+                throw new Error(data.message || 'Signup failed');
+            } else {
+                // This would be for an immediate login, which we are not doing now.
+                // onLoginSuccess(data.user);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -34,6 +47,26 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
     const handleGoogleSignUp = () => {
         window.location.href = `${API_URL}/auth/google/login`; // Redirect to backend OAuth
     };
+
+    // ADDED: If signup is successful, show the message instead of the form.
+    if (signupMessage) {
+        return (
+            <div className="w-full max-w-sm bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border dark:border-slate-700 text-center">
+                <h2 className="text-2xl font-bold text-green-500 dark:text-green-400 mb-4">
+                    {t('Success!')}
+                </h2>
+                <p className="text-gray-700 dark:text-slate-300 mb-6">
+                    {signupMessage}
+                </p>
+                <button 
+                    onClick={onClose} 
+                    className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+                >
+                    {t('Close')}
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full max-w-sm bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
@@ -88,7 +121,7 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
                     className="w-full flex items-center justify-center gap-2 py-2 px-4 border rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                 >
                     <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
-                    {t('Sign In with Google')}
+                    {t('Sign Up with Google')}
                 </button>
             </div>
 
@@ -97,7 +130,7 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
                     onClick={showLogin}
                     className="text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
-                    {t('Login')}
+                    {t('Already have an account? Login')}
                 </button>
                 <button
                     onClick={onClose}
