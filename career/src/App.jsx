@@ -188,7 +188,7 @@ export default function App() {
                         {currentUser ? (
                             <button
                                 onClick={handleLogout}
-                                className="px-4 py-2 rounded-md font-semibold text-white bg-red-600 hover:bg-red-700 text-sm md:text-base"
+                                className="hidden sm:block px-4 py-2 rounded-md font-semibold text-white bg-red-600 hover:bg-red-700 text-sm md:text-base"
                             >
                                 {t('logout_button') || 'Logout'}
                             </button>
