@@ -62,7 +62,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages, isLoading, handleSend
             {isOpen && (
                 <div
                     ref={chatContainerRef}
-                    className={`fixed bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-slate-700 z-40 transition-all duration-300 ease-in-out origin-bottom-right
+                    className={`fixed bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-slate-700 z-30 transition-all duration-300 ease-in-out origin-bottom-right
                     ${isFullscreen
                         ? 'w-[90vw] h-[90vh] bottom-6 right-6'
                         : 'w-80 h-96 bottom-36 md:bottom-24 right-6'

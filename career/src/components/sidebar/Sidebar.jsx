@@ -397,7 +397,7 @@ const Sidebar = ({
           overflow: visible;
           transition: color 0.3s ease;
           position: relative;
-          z-index: 50;
+          z-index: 110;
         }
 
         .sidebar-toggle-external:focus-visible {
@@ -459,7 +459,7 @@ const Sidebar = ({
           left: 0;
           width: 100vw;
           height: 100vh;
-          z-index: 40;
+          z-index: 100;
           pointer-events: none;
           overflow: hidden;
         }

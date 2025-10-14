@@ -25,6 +25,9 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,    # Recycles connections every 5 minutes (300 seconds)
 }
 
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+
 # --- Initialize Extensions ---
 db.init_app(app)
 login_manager.init_app(app)
