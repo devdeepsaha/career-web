@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db, login_manager
 from flask_mail import Mail, Message
 import secrets
+import threading
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -31,14 +32,16 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 
-# --- Mail Configuration ---
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
+# --- Mail Configuration (Brevo) ---
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True') == 'True'
+app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'False') == 'True'
+
 mail = Mail(app)
+
 
 # --- Initialize Extensions ---
 db.init_app(app)
@@ -410,6 +413,23 @@ with app.app_context():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def send_confirmation_email(user_email, token):
+    try:
+        backend_url = os.getenv("https://pothoprodorshok-backend.onrender.com", "http://localhost:5000")
+        confirm_url = f"{backend_url}/confirm/{token}"
+
+        msg = Message(
+            'Confirm Your Email Address',
+            sender=('Career Coach', os.getenv('MAIL_USERNAME')),
+            recipients=[user_email]
+        )
+        msg.body = f'Thank you for signing up! Please click the following link to activate your account: {confirm_url}'
+        mail.send(msg)
+        print(f"Confirmation email sent to {user_email}")
+    except Exception as e:
+        print(f"Email sending failed: {e}")
+
+
 # --- NEW AUTHENTICATION ENDPOINTS ---
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -417,34 +437,39 @@ def signup():
     email = data.get('email')
     password = data.get('password')
 
+    # Check if user already exists
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email address already registered"}), 409
 
+    # Create new user
     new_user = User(email=email)
     new_user.set_password(password)
     new_user.confirmation_token = secrets.token_urlsafe(24)
     db.session.add(new_user)
     db.session.commit()
-    
-    # --- SEND THE CONFIRMATION EMAIL ---
-    try:
-        # NOTE: This URL must point to your BACKEND confirmation route
-        backend_url = os.getenv("https://pothoprodorshok-backend.onrender.com", "http://localhost:5000")
-        confirm_url = f"{backend_url}/confirm/{new_user.confirmation_token}"
-        
-        msg = Message('Confirm Your Email Address',
-                      sender=('Career Coach', os.getenv('MAIL_USERNAME')),
-                      recipients=[new_user.email])
-        msg.body = f'Thank you for signing up! Please click the following link to activate your account: {confirm_url}'
-        mail.send(msg)
-    except Exception as e:
-        print(f"Email sending failed: {e}")
-        # In production, you'd want to handle this more gracefully
-        
-    return jsonify({"message": "Signup successful. Please check your email to activate your account."}), 201
-    
-    login_user(new_user)
-    return jsonify({"message": "Signup successful", "user": {"id": new_user.id, "email": new_user.email}}), 201
+
+    # --- Helper function to send email in background ---
+    #def send_confirmation_email(user_email, token):
+     #   try:
+      #      backend_url = os.getenv("https://pothoprodorshok-backend.onrender.com", "http://localhost:5000")
+       #     confirm_url = f"{backend_url}/confirm/{token}"
+#
+ #           msg = Message(
+  #              'Confirm Your Email Address',
+   #             sender=('Career Coach', os.getenv('MAIL_USERNAME')),
+    #            recipients=[user_email]
+     #       )
+      #      msg.body = f'Thank you for signing up! Please click the following link to activate your account: {confirm_url}'
+       #     mail.send(msg)
+        #    print(f"Confirmation email sent to {user_email}")
+        #except Exception as e:
+         #   print(f"Email sending failed: {e}")
+
+    # --- Send email in background thread ---
+   # threading.Thread(target=send_confirmation_email, args=(new_user.email, new_user.confirmation_token)).start()
+
+    # Return immediate response to user
+   # return jsonify({"message": "Signup successful. Please check your email to activate your account."}), 201
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -458,8 +483,8 @@ def login():
     if user is None or not user.check_password(password):
         return jsonify({"message": "Invalid email or password"}), 401
     
-    if not user.confirmed:
-        return jsonify({"message": "Please confirm your email address first."}), 403 # 403 Forbidden
+  #  if not user.confirmed:
+   #     return jsonify({"message": "Please confirm your email address first."}), 403 # 403 Forbidden
         
     login_user(user)
     return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
@@ -478,22 +503,39 @@ def check_session():
         return jsonify({"is_logged_in": False}), 200
     
 # --- ADD THE NEW CONFIRMATION ROUTE HERE ---
-@app.route('/confirm/<token>')
-def confirm_email(token):
-    user = User.query.filter_by(confirmation_token=token).first()
-    frontend_url = os.getenv("https://pothoprodorshok.onrender.com", "http://localhost:5173")
+#@app.route('/confirm/<token>')
+#def confirm_email(token):
+ #   user = User.query.filter_by(confirmation_token=token).first()
+  #  frontend_url = os.getenv("https://pothoprodorshok.onrender.com", "http://localhost:5173")
 
-    if user:
+   # if user:
         # User found, so confirm them and clear the token
-        user.confirmed = True
-        user.confirmation_token = None
-        login_user(user)
-        db.session.commit()
+    #    user.confirmed = True
+     #   user.confirmation_token = None
+      #  login_user(user)
+       # db.session.commit()
         # Redirect to a success page on your frontend
-        return redirect(frontend_url)
-    else:
+     #   return redirect(frontend_url)
+    #else:
         # Token is invalid or not found, redirect to an error page
-        return redirect(f"{frontend_url}/login?error=invalid_token")
+     #   return redirect(f"{frontend_url}/login?error=invalid_token")
+
+@app.route('/test-mail')
+def test_mail():
+    try:
+        msg = Message(
+            'Test Email',
+            sender=('Career Coach', os.getenv('MAIL_USERNAME')),
+            recipients=['devdeep120205@gmail.com']
+        )
+        msg.body = 'Hello! This is a test from Brevo SMTP.'
+        mail.send(msg)
+        return "Email sent successfully!"
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return f"Email failed: {e}"
+
     
 
 # ------------------- Run App -------------------
