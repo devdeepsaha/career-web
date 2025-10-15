@@ -27,6 +27,7 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
             
             // MODIFIED: Handle different success/error responses from the backend
             if (response.status === 201) {
+                 onLoginSuccess(data.user);
                 // This is a successful signup that requires email confirmation.
                 setSignupMessage(data.message);
                 // We DO NOT call onLoginSuccess here anymore.

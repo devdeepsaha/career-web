@@ -392,12 +392,12 @@ def fetch_real_scholarships(data):
 # --- Add this User Model ---
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
-    __table_args__ = {'extend_existing': True}  # <-- ADD THIS
+    __table_args__ = {'extend_existing': True} 
+    
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.Text)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
-    confirmation_token = db.Column(db.String(100), unique=True, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -443,10 +443,16 @@ def signup():
 
     # Create new user
     new_user = User(email=email)
+    new_user.confirmed = False
     new_user.set_password(password)
     new_user.confirmation_token = secrets.token_urlsafe(24)
     db.session.add(new_user)
     db.session.commit()
+    login_user(new_user)
+    return jsonify({
+        "message": "Signup successful",
+        "user": {"id": new_user.id, "email": new_user.email}
+    }), 201
 
     # --- Helper function to send email in background ---
     #def send_confirmation_email(user_email, token):
@@ -542,4 +548,3 @@ def test_mail():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
