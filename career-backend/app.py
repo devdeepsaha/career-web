@@ -56,6 +56,14 @@ CORS(app, supports_credentials=True, origins=[
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY missing")
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({"error": "Authentication required", "is_logged_in": False}), 401
+
+# Also update the login_manager configuration
+login_manager.session_protection = "strong"
+login_manager.login_view = None  # Don't redirect, return JSON instead
+
 # --- Register blueprint AFTER app is created ---
 from auth import auth_bp, google_bp
 app.register_blueprint(auth_bp, url_prefix="/auth")
