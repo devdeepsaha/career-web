@@ -42,7 +42,7 @@ class ChatSession(db.Model):
             'message_count': len(self.messages)
         }
 
-
+# This is a test for automatic deployment
 class ChatMessage(db.Model):
     __tablename__ = "chat_message"
     id = db.Column(db.Integer, primary_key=True)
