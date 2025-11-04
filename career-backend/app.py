@@ -32,6 +32,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_DOMAIN'] = '.pothoprodorshok.mooo.com'  # Set your domain here
 
 # --- Mail Configuration (Brevo) ---
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
