@@ -7,16 +7,13 @@ import Latex from '../../components/shared/LatexWrapper';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
-
 const cleanLatex = (str) => 
     str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
-
 
 const AITutorPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
     const [tutorView, setTutorView] = useState('practice');
     
-
     // State for Practice Questions
     const [practiceExam, setPracticeExam] = useState('Boards(Class 10th)');
     const [practiceSubject, setPracticeSubject] = useState('All');
@@ -38,109 +35,83 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const [testAnswers, setTestAnswers] = useState({});
     const [testResult, setTestResult] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [chatMessages, setChatMessages] = useState([{ sender: 'ai', text: t('aiTutor_chatbot_initialMessage') }]);
-    const [isChatLoading, setIsChatLoading] = useState(false);
     const [numQuestions, setNumQuestions] = useState(5);
 
+    const fetchQuestion = async () => {
+        if (!currentUser) {
+            showAuth('login');
+            return;
+        }
 
-// --- Updated fetchQuestion ---
-const fetchQuestion = async () => {
-    
-    if (!currentUser) {
-    showAuth('login');
-    return;
-}
-
-
-    setIsLoadingQuestion(true);
-    setQuestion(null);
-    setQuestionError('');
-    try {
-        const response = await fetch(`${API_URL}/get-question`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                exam: practiceExam,
-                subject: practiceSubject,
-                topic: practiceTopic,
-                difficulty: practiceDifficulty,
-                language: i18n.language
-            })
-        });
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        setQuestion(data);
-    } catch (error) {
-        console.error("Failed to fetch question:", error);
-        setQuestionError(t('aiTutor_error_fetchQuestion'));
-    } finally {
-        setIsLoadingQuestion(false);
-    }
-};
-
-
-    const sendToDoubtSolver = async (messageText) => {
-        const userMessage = { sender: 'user', text: messageText };
-        setChatMessages(prev => [...prev, userMessage]);
-        setIsChatLoading(true);
+        setIsLoadingQuestion(true);
+        setQuestion(null);
+        setQuestionError('');
         try {
-            const response = await fetch(`${API_URL}/solve-doubt`, {
+            const response = await fetch(`${API_URL}/get-question`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    question: messageText,
-                    history: [...chatMessages, userMessage],
+                    exam: practiceExam,
+                    subject: practiceSubject,
+                    topic: practiceTopic,
+                    difficulty: practiceDifficulty,
                     language: i18n.language
                 })
             });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
-            setChatMessages(prev => [...prev, { sender: 'ai', text: data.explanation }]);
+            setQuestion(data);
         } catch (error) {
-            console.error("Doubt solver error:", error);
-            setChatMessages(prev => [...prev, { sender: 'ai', text: t('aiTutor_error_chatbotConnect') }]);
+            console.error("Failed to fetch question:", error);
+            setQuestionError(t('aiTutor_error_fetchQuestion'));
         } finally {
-            setIsChatLoading(false);
+            setIsLoadingQuestion(false);
         }
     };
 
+    // Open chatbot with a question - let the chatbot handle everything
     const handleSolveItClick = (questionText) => {
         setIsChatOpen(true);
-        sendToDoubtSolver(questionText);
+        // The DoubtSolverChatbot will handle creating session and saving messages
+        // We just need to trigger it to open with this question
+        setTimeout(() => {
+            // Trigger the chatbot's send function by simulating user input
+            const inputEvent = new CustomEvent('doubt-solver-send', { detail: questionText });
+            window.dispatchEvent(inputEvent);
+        }, 100);
     };
 
     const startTest = async () => {
-    if (!currentUser) {
-    showAuth('login');
-    return;}
+        if (!currentUser) {
+            showAuth('login');
+            return;
+        }
 
-
-    setTestState('loading');
-    try {
-        const response = await fetch(`${API_URL}/generate-mock-test`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                exam: mockExam,
-                subject: mockSubject,
-                topic: mockTopic,
-                difficulty: mockDifficulty,
-                num_questions: numQuestions,
-                language: i18n.language
-            })
-        });
-        if (!response.ok) throw new Error('Failed to generate test');
-        const data = await response.json();
-        setTestQuestions(data);
-        setTestAnswers({});
-        setTestResult(null);
-        setTestState('in-progress');
-    } catch (err) {
-        console.error(err);
-        setTestState('idle');
-    }
-};
-
+        setTestState('loading');
+        try {
+            const response = await fetch(`${API_URL}/generate-mock-test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    exam: mockExam,
+                    subject: mockSubject,
+                    topic: mockTopic,
+                    difficulty: mockDifficulty,
+                    num_questions: numQuestions,
+                    language: i18n.language
+                })
+            });
+            if (!response.ok) throw new Error('Failed to generate test');
+            const data = await response.json();
+            setTestQuestions(data);
+            setTestAnswers({});
+            setTestResult(null);
+            setTestState('in-progress');
+        } catch (err) {
+            console.error(err);
+            setTestState('idle');
+        }
+    };
 
     const submitTest = useCallback(async () => {
         setTestState('loading');
@@ -179,14 +150,13 @@ const fetchQuestion = async () => {
 
     return (
         <div className="container mx-auto px-4 py-12 md:py-20">
-
-                <title>Free MCQs practice for JEE, NEET & UPSC | Potho-Prodorshok</title>
-                <meta 
-                    name="description" 
-                    content="Practice for competitive exams with our free AI Tutor. Get unlimited questions, mock tests, and instant doubt-solving for JEE, NEET, UPSC, and more." 
-                />
+            <title>Free MCQs practice for JEE, NEET & UPSC | Potho-Prodorshok</title>
+            <meta 
+                name="description" 
+                content="Practice for competitive exams with our free AI Tutor. Get unlimited questions, mock tests, and instant doubt-solving for JEE, NEET, UPSC, and more." 
+            />
             
-             <div className="text-center mb-12">
+            <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('aiTutor_title')}</h1>
                 <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('aiTutor_subtitle')}</p>
             </div>
@@ -232,7 +202,7 @@ const fetchQuestion = async () => {
                                     <option>Infosys InfyTQ</option>
                                     <option>Wipro Elite NTH</option>
                                     <option>NTSE</option>
-                                    </select>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('aiTutor_form_subject')}</label>
@@ -345,13 +315,14 @@ const fetchQuestion = async () => {
                     </div>
                 )}
             </div>
-            <DoubtSolverChatbot isOpen={isChatOpen} setIsOpen={setIsChatOpen} messages={chatMessages} isLoading={isChatLoading} handleSend={sendToDoubtSolver} />
             
-                
-            
+            {/* Pass isOpen and setIsOpen as props - chatbot will handle its own state */}
+            <DoubtSolverChatbot 
+                isOpen={isChatOpen} 
+                setIsOpen={setIsChatOpen}
+            />
         </div>
     );
 };
-
 
 export default AITutorPage;
