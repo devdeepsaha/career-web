@@ -1,0 +1,37 @@
+# .github/workflows/deploy.yml
+name: Deploy Backend to VM
+
+# This runs on every push to your 'main' branch
+# (in the 'career-backend' folder)
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'career-backend/**' # Only run if backend code changes
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to VM
+      # This is a pre-made "Action" that makes SSH easy
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        # Your VM's public IP
+        host: 34.9.140.66 
+
+        # Your username on the VM
+        username: devdeep120205
+
+        # The private key you saved as a GitHub Secret
+        key: ${{ secrets.VM_SSH_KEY }}
+
+        # The commands to run on the VM
+        script: |
+          cd /home/devdeep120205/career-web/career-backend
+          git pull origin main
+          source venv/bin/activate
+          pip install -r requirements.txt
+          sudo systemctl restart pothoprodorshok
+          echo "Deployment complete!"
