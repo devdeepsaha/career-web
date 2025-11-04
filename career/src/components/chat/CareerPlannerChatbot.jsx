@@ -21,6 +21,7 @@ const CareerPlannerChatbot = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const chatEndRef = useRef(null);
     const chatContainerRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Check login status
     useEffect(() => {
@@ -146,6 +147,43 @@ const CareerPlannerChatbot = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isFullscreen]);
+
+    // Handle mobile viewport changes when keyboard appears
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleResize = () => {
+            // Scroll input into view when keyboard appears on mobile
+            if (inputRef.current && window.innerWidth < 768) {
+                setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        };
+
+        // Handle focus event to ensure input is visible
+        const handleFocus = () => {
+            if (window.innerWidth < 768) {
+                setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
+        };
+
+        const inputElement = inputRef.current?.querySelector('input');
+        if (inputElement) {
+            inputElement.addEventListener('focus', handleFocus);
+        }
+
+        window.addEventListener('resize', handleResize);
+        
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (inputElement) {
+                inputElement.removeEventListener('focus', handleFocus);
+            }
+        };
+    }, [isOpen]);
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -421,7 +459,7 @@ const CareerPlannerChatbot = () => {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 p-3 overflow-y-auto min-h-0 chat-scrollbar bg-gray-50 dark:bg-slate-900">
+                        <div className="flex-1 p-3 overflow-y-auto min-h-0 chat-scrollbarr bg-gray-50 dark:bg-slate-900">
                             {messages.map((msg, index) => (
                                 <div key={index} className={`flex mb-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`relative py-2 px-3 pr-8 rounded-2xl break-words max-w-[85%]
@@ -458,7 +496,7 @@ const CareerPlannerChatbot = () => {
                         </div>
 
                         {/* Input */}
-                        <form onSubmit={handleSend} className="p-2 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+                        <form onSubmit={handleSend} className="p-2 border-t border-gray-200 dark:border-slate-700 flex-shrink-0" ref={inputRef}>
                             <div className="flex items-center space-x-2">
                                 <input
                                     type="text"

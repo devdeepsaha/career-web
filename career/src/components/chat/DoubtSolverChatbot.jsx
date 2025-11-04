@@ -20,6 +20,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     const [localLoading, setLocalLoading] = useState(false);
     const chatEndRef = useRef(null);
     const chatContainerRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Use prop messages or local messages
     const messages = propMessages || localMessages;
@@ -161,6 +162,43 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isFullscreen, setIsOpen]);
+
+    // Handle mobile viewport changes when keyboard appears
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleResize = () => {
+            // Scroll input into view when keyboard appears on mobile
+            if (inputRef.current && window.innerWidth < 768) {
+                setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        };
+
+        // Handle focus event to ensure input is visible
+        const handleFocus = () => {
+            if (window.innerWidth < 768) {
+                setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
+        };
+
+        const inputElement = inputRef.current?.querySelector('input');
+        if (inputElement) {
+            inputElement.addEventListener('focus', handleFocus);
+        }
+
+        window.addEventListener('resize', handleResize);
+        
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (inputElement) {
+                inputElement.removeEventListener('focus', handleFocus);
+            }
+        };
+    }, [isOpen]);
 
     // Separate handler for external sends (from AI Tutor)
     const handleExternalSend = async (question) => {
@@ -513,7 +551,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
                         </div>
 
                         {/* Input Section */}
-                        <form onSubmit={onFormSubmit} className="p-2 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+                        <form onSubmit={onFormSubmit} className="p-2 border-t border-gray-200 dark:border-slate-700 flex-shrink-0" ref={inputRef}>
                             <div className="flex items-center space-x-2">
                                 <input
                                     type="text"
