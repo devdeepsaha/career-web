@@ -248,11 +248,18 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
         if (!input.trim()) return;
 
         const question = input;
+        const inputElement = e.target.querySelector('input');
         setInput('');
 
         // If parent provided handleSend, use that
         if (propHandleSend) {
             propHandleSend(question);
+            // Keep keyboard open on mobile
+            if (inputElement && window.innerWidth < 768) {
+                setTimeout(() => {
+                    inputElement.focus();
+                }, 100);
+            }
             return;
         }
 
@@ -290,6 +297,13 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
             setLocalMessages(prev => [...prev, { sender: 'ai', text: t('doubtChat_errorMessage') || 'Error occurred' }]);
         } finally {
             setLocalLoading(false);
+        }
+        
+        // Keep keyboard open on mobile by refocusing after message sent
+        if (inputElement && window.innerWidth < 768) {
+            setTimeout(() => {
+                inputElement.focus();
+            }, 100);
         }
     };
 

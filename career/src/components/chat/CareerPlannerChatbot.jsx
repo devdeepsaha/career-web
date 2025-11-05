@@ -188,8 +188,17 @@ const CareerPlannerChatbot = () => {
     const handleSend = async (e) => {
         e.preventDefault();
         if (!input.trim()) return;
+        
+        const inputElement = e.target.querySelector('input');
         await sendMessage(input);
         setInput('');
+        
+        // Keep keyboard open on mobile by refocusing
+        if (inputElement && window.innerWidth < 768) {
+            setTimeout(() => {
+                inputElement.focus();
+            }, 100);
+        }
     };
 
     const sendMessage = async (query) => {
