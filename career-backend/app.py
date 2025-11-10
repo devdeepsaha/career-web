@@ -30,8 +30,16 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,    # Recycles connections every 5 minutes (300 seconds)
 }
 
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
+from flask import session as flask_session
+
+@app.before_request
+def make_session_permanent():
+    flask_session.permanent = True
 
 # --- Mail Configuration (Brevo) ---
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')

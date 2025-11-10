@@ -10,6 +10,9 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.Text)
     
+    # NEW: Add Google ID field for OAuth users
+    google_id = db.Column(db.String(100), unique=True, nullable=True)
+    
     # Relationship to chat sessions
     chat_sessions = db.relationship('ChatSession', backref='user', lazy=True, cascade='all, delete-orphan')
 
@@ -17,6 +20,8 @@ class User(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
 
 
@@ -24,12 +29,11 @@ class ChatSession(db.Model):
     __tablename__ = "chat_session"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    chat_type = db.Column(db.String(50), nullable=False)  # 'career_planner' or 'doubt_solver'
-    title = db.Column(db.String(200), nullable=True)  # Auto-generated from first message
+    chat_type = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationship to messages
     messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade='all, delete-orphan', order_by='ChatMessage.created_at')
 
     def to_dict(self):
@@ -42,12 +46,12 @@ class ChatSession(db.Model):
             'message_count': len(self.messages)
         }
 
-# This is a test for automatic deployment
+
 class ChatMessage(db.Model):
     __tablename__ = "chat_message"
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'), nullable=False)
-    sender = db.Column(db.String(10), nullable=False)  # 'user' or 'ai'
+    sender = db.Column(db.String(10), nullable=False)
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
