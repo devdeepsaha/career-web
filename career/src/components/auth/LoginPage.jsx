@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // ✅ Added useEffect import
 import { useTranslation } from 'react-i18next';
 
 const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
@@ -9,6 +9,26 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+
+    // Check for OAuth errors in URL
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthError = urlParams.get('error');
+        
+        if (oauthError) {
+            const errorMessages = {
+                'oauth_failed': 'Google sign-in was not authorized. Please try again.',
+                'fetch_failed': 'Failed to get your information from Google.',
+                'missing_data': 'Google did not provide required information.',
+                'auth_exception': 'An error occurred during sign-in. Please try again.'
+            };
+            
+            setError(errorMessages[oauthError] || 'Google sign-in failed. Please try again.');
+            
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

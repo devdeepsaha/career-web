@@ -10,7 +10,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.Text)
     
-    # NEW: Add Google ID field for OAuth users
+    # Email confirmation field (required by database)
+    confirmed = db.Column(db.Boolean, default=True, nullable=False)
+    confirmed_on = db.Column(db.DateTime, nullable=True)
+    
+    # Google OAuth field
     google_id = db.Column(db.String(100), unique=True, nullable=True)
     
     # Relationship to chat sessions
