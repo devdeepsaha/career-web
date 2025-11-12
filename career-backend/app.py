@@ -22,18 +22,28 @@ load_dotenv()
 app = Flask(__name__)
 # --- Add this block right after app = Flask(__name__) ---
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,  # Checks if a connection is alive before using it
-    'pool_recycle': 300,    # Recycles connections every 5 minutes (300 seconds)
-}
-
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
+# CRITICAL: Set this for OAuth to work across redirects
+app.config['SESSION_COOKIE_DOMAIN'] = '.mooo.com' if os.getenv("FLASK_ENV") == "production" else None
+
+# OAuth-specific settings
+app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
+app.config['OAUTHLIB_INSECURE_TRANSPORT'] = os.getenv("FLASK_ENV") != "production"  # Only for local dev
+
+# Database configuration (keep your existing config)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 
 from flask import session as flask_session
 

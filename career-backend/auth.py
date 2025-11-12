@@ -1,30 +1,18 @@
-from flask import Blueprint, redirect, url_for, jsonify, session
+from flask import Blueprint, redirect, url_for, jsonify, session, request
 from flask_dance.contrib.google import make_google_blueprint, google
-from flask_dance.consumer.storage import MemoryStorage
-from flask_login import login_user, logout_user
+from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from flask_dance.consumer import oauth_authorized
+from flask_login import login_user, logout_user, current_user
 import os
 from datetime import datetime
 from extensions import db
 from models import User
+from sqlalchemy.orm.exc import NoResultFound
 
 # -------------------------------
 # Blueprint setup
 # -------------------------------
 auth_bp = Blueprint("auth", __name__)
-
-# Determine the correct redirect URL based on environment
-def get_redirect_url():
-    """Get the correct OAuth redirect URL based on environment"""
-    # Check if we're on the VM (production)
-    if os.getenv("FLASK_ENV") == "production":
-        base_url = "https://pothoprodorshok.mooo.com"
-    else:
-        # Development: Use localhost
-        base_url = "http://localhost:5000"
-    
-    redirect_url = f"{base_url}/auth/google/callback"
-    print(f"🔵 OAuth redirect URL configured: {redirect_url}")
-    return redirect_url
 
 def get_frontend_url():
     """Get the correct frontend URL based on environment"""
@@ -33,7 +21,7 @@ def get_frontend_url():
     else:
         return "http://localhost:5173"
 
-# Google OAuth blueprint with dynamic redirect URL
+# Google OAuth blueprint - FIXED VERSION
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -42,18 +30,11 @@ google_bp = make_google_blueprint(
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ],
-    redirect_to="auth.google_callback",  # Flask route name instead of URL
-    offline=True,
+    redirect_url="/auth/google/callback",  # This is the Flask route
+    offline=False,  # Changed from True - we don't need offline access
+    reprompt_consent=False,  # Don't force consent every time
 )
 
-# Force fresh consent each time
-google_bp.authorization_url_params["access_type"] = "offline"
-google_bp.authorization_url_params["prompt"] = "consent"
-google_bp.storage = MemoryStorage()
-
-# -------------------------------
-# Trigger Google login
-# -------------------------------
 # -------------------------------
 # Trigger Google login
 # -------------------------------
@@ -61,56 +42,38 @@ google_bp.storage = MemoryStorage()
 def google_login():
     print("🔵 Starting Google login flow...")
     
-    # CRITICAL FIX 1: Clear any existing session before OAuth
+    # Clear any existing session data
     session.clear()
-    logout_user()
-    print("✅ Session cleared and user logged out")
     
-    # CRITICAL FIX 2: Force new authorization
-    try:
-        if google.authorized:
-            # Delete the existing token to force re-auth
-            del google_bp.token
-            print("✅ Existing OAuth token deleted")
-    except:
-        print("ℹ️ No existing token to delete")
-        pass
+    if current_user.is_authenticated:
+        logout_user()
+        print("✅ Logged out existing user")
     
-    print("🔵 Redirecting to Google login...")
+    print("🔵 Redirecting to Google OAuth...")
     return redirect(url_for("google.login"))
 
 # -------------------------------
-# DEBUG: Check OAuth status
-# -------------------------------
-@auth_bp.route("/google/status")
-def google_status():
-    """Debug endpoint to check Google OAuth status"""
-    return jsonify({
-        "authorized": google.authorized,
-        "has_token": hasattr(google_bp, 'token') and google_bp.token is not None,
-        "client_id_set": bool(os.getenv("GOOGLE_CLIENT_ID")),
-        "client_secret_set": bool(os.getenv("GOOGLE_CLIENT_SECRET"))
-    })
-
-# ------------------------------
-# Callback route
+# OAuth callback handler
 # -------------------------------
 @auth_bp.route("/google/callback")
 def google_callback():
-    # Get frontend URL based on environment
-    if os.getenv("FLASK_ENV") == "production":
-        frontend_url = os.getenv("FRONTEND_URL", "https://pothoprodorshok.mooo.com")
-    else:
-        frontend_url = "http://localhost:5173"
-    
+    frontend_url = get_frontend_url()
+    print(f"🔵 OAuth callback triggered")
     print(f"🔵 Frontend URL: {frontend_url}")
-    # CRITICAL FIX 3: Verify OAuth is actually authorized
+    print(f"🔵 Google authorized: {google.authorized}")
+    print(f"🔵 Session keys: {list(session.keys())}")
+    
+    # Check if OAuth was successful
     if not google.authorized:
         print("❌ Google OAuth not authorized")
+        error_msg = request.args.get('error', 'oauth_failed')
+        error_description = request.args.get('error_description', '')
+        print(f"❌ Error: {error_msg}")
+        print(f"❌ Description: {error_description}")
         return redirect(f"{frontend_url}?error=oauth_failed")
 
     try:
-        # CRITICAL FIX 4: Fetch user info fresh from Google
+        # Fetch user info from Google
         print("✅ Fetching user info from Google...")
         resp = google.get("/oauth2/v2/userinfo")
         
@@ -123,7 +86,7 @@ def google_callback():
         print(f"✅ Got user info: {info}")
         
         email = info.get("email")
-        google_id = info.get("id")  # NEW: Get Google's unique user ID
+        google_id = info.get("id")
         name = info.get("name", "")
         
         if not email or not google_id:
@@ -132,52 +95,44 @@ def google_callback():
 
         print(f"✅ Processing user - Email: {email}, Google ID: {google_id}")
 
-        # CRITICAL FIX 5: Use Google ID as primary identifier, not just email
+        # Find or create user
         user = User.query.filter_by(google_id=google_id).first()
         
         if not user:
             print(f"ℹ️ No existing user with Google ID {google_id}")
             
-            # Check if email exists (for users who signed up with email/password)
+            # Check if email exists (user who signed up with email/password)
             existing_user = User.query.filter_by(email=email).first()
             
             if existing_user:
                 print(f"ℹ️ Found existing user with email {email}, linking Google account")
-                # Link Google account to existing email account
                 existing_user.google_id = google_id
                 user = existing_user
                 db.session.commit()
             else:
                 print(f"✅ Creating NEW user for {email}")
-                # Create new user - AUTO SIGNUP!
                 user = User(
                     email=email,
                     google_id=google_id,
-                    confirmed=True,  # Google users are auto-confirmed
+                    confirmed=True,
                     confirmed_on=datetime.utcnow()
                 )
                 user.set_password(os.urandom(16).hex())
                 db.session.add(user)
                 db.session.commit()
-                print(f"✅ New user created successfully! User ID: {user.id}")
+                print(f"✅ New user created! User ID: {user.id}")
         else:
-            print(f"✅ Found existing user with Google ID. User ID: {user.id}")
+            print(f"✅ Found existing user. User ID: {user.id}")
 
-        # CRITICAL FIX 6: Clear session before login
+        # Clear session before login
         session.clear()
         
-        # Log in the correct user
+        # Log in the user
         login_success = login_user(user, remember=True, force=True)
-        print(f"✅ Login user result: {login_success}")
+        print(f"✅ Login result: {login_success}")
+        print(f"✅ Current user authenticated: {current_user.is_authenticated}")
+        print(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
         
-        # CRITICAL FIX 7: Clear OAuth token after successful login
-        try:
-            if google.authorized:
-                del google_bp.token
-                print("✅ OAuth token cleared")
-        except:
-            pass  # Token might not exist, that's okay
-
         print(f"✅ Redirecting to frontend: {frontend_url}")
         return redirect(frontend_url)
 
@@ -186,3 +141,18 @@ def google_callback():
         import traceback
         traceback.print_exc()
         return redirect(f"{frontend_url}?error=auth_exception")
+
+# -------------------------------
+# DEBUG: Check OAuth status
+# -------------------------------
+@auth_bp.route("/google/status")
+def google_status():
+    """Debug endpoint to check Google OAuth status"""
+    return jsonify({
+        "authorized": google.authorized,
+        "has_token": hasattr(google_bp, 'token') and google_bp.token is not None,
+        "client_id_set": bool(os.getenv("GOOGLE_CLIENT_ID")),
+        "client_secret_set": bool(os.getenv("GOOGLE_CLIENT_SECRET")),
+        "current_user_authenticated": current_user.is_authenticated,
+        "session_keys": list(session.keys())
+    })
