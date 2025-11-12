@@ -1,13 +1,14 @@
 from flask import Blueprint, redirect, url_for, jsonify, session, request
 from flask_dance.contrib.google import make_google_blueprint, google
-from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
-from flask_dance.consumer import oauth_authorized
 from flask_login import login_user, logout_user, current_user
 import os
+import logging
 from datetime import datetime
 from extensions import db
 from models import User
-from sqlalchemy.orm.exc import NoResultFound
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # -------------------------------
 # Blueprint setup
@@ -30,9 +31,9 @@ google_bp = make_google_blueprint(
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ],
-    redirect_url="/auth/google/callback",  # This is the Flask route
-    offline=False,  # Changed from True - we don't need offline access
-    reprompt_consent=False,  # Don't force consent every time
+    redirect_url="/auth/google/callback",
+    offline=False,
+    reprompt_consent=False,
 )
 
 # -------------------------------
@@ -40,16 +41,16 @@ google_bp = make_google_blueprint(
 # -------------------------------
 @auth_bp.route("/google/login")
 def google_login():
-    print("🔵 Starting Google login flow...")
+    logger.info("🔵 Starting Google login flow...")
     
     # Clear any existing session data
     session.clear()
     
     if current_user.is_authenticated:
         logout_user()
-        print("✅ Logged out existing user")
+        logger.info("✅ Logged out existing user")
     
-    print("🔵 Redirecting to Google OAuth...")
+    logger.info("🔵 Redirecting to Google OAuth...")
     return redirect(url_for("google.login"))
 
 # -------------------------------
@@ -58,59 +59,59 @@ def google_login():
 @auth_bp.route("/google/callback")
 def google_callback():
     frontend_url = get_frontend_url()
-    print(f"🔵 OAuth callback triggered")
-    print(f"🔵 Frontend URL: {frontend_url}")
-    print(f"🔵 Google authorized: {google.authorized}")
-    print(f"🔵 Session keys: {list(session.keys())}")
+    logger.info(f"🔵 OAuth callback triggered")
+    logger.info(f"🔵 Frontend URL: {frontend_url}")
+    logger.info(f"🔵 Google authorized: {google.authorized}")
+    logger.info(f"🔵 Session keys: {list(session.keys())}")
     
     # Check if OAuth was successful
     if not google.authorized:
-        print("❌ Google OAuth not authorized")
+        logger.error("❌ Google OAuth not authorized")
         error_msg = request.args.get('error', 'oauth_failed')
         error_description = request.args.get('error_description', '')
-        print(f"❌ Error: {error_msg}")
-        print(f"❌ Description: {error_description}")
+        logger.error(f"❌ Error: {error_msg}")
+        logger.error(f"❌ Description: {error_description}")
         return redirect(f"{frontend_url}?error=oauth_failed")
 
     try:
         # Fetch user info from Google
-        print("✅ Fetching user info from Google...")
+        logger.info("✅ Fetching user info from Google...")
         resp = google.get("/oauth2/v2/userinfo")
         
         if not resp.ok:
-            print(f"❌ Failed to fetch user info. Status: {resp.status_code}")
-            print(f"Response: {resp.text}")
+            logger.error(f"❌ Failed to fetch user info. Status: {resp.status_code}")
+            logger.error(f"Response: {resp.text}")
             return redirect(f"{frontend_url}?error=fetch_failed")
 
         info = resp.json()
-        print(f"✅ Got user info: {info}")
+        logger.info(f"✅ Got user info: {info}")
         
         email = info.get("email")
         google_id = info.get("id")
         name = info.get("name", "")
         
         if not email or not google_id:
-            print(f"❌ Missing email or ID. Email: {email}, Google ID: {google_id}")
+            logger.error(f"❌ Missing email or ID. Email: {email}, Google ID: {google_id}")
             return redirect(f"{frontend_url}?error=missing_data")
 
-        print(f"✅ Processing user - Email: {email}, Google ID: {google_id}")
+        logger.info(f"✅ Processing user - Email: {email}, Google ID: {google_id}")
 
         # Find or create user
         user = User.query.filter_by(google_id=google_id).first()
         
         if not user:
-            print(f"ℹ️ No existing user with Google ID {google_id}")
+            logger.info(f"ℹ️ No existing user with Google ID {google_id}")
             
             # Check if email exists (user who signed up with email/password)
             existing_user = User.query.filter_by(email=email).first()
             
             if existing_user:
-                print(f"ℹ️ Found existing user with email {email}, linking Google account")
+                logger.info(f"ℹ️ Found existing user with email {email}, linking Google account")
                 existing_user.google_id = google_id
                 user = existing_user
                 db.session.commit()
             else:
-                print(f"✅ Creating NEW user for {email}")
+                logger.info(f"✅ Creating NEW user for {email}")
                 user = User(
                     email=email,
                     google_id=google_id,
@@ -120,26 +121,24 @@ def google_callback():
                 user.set_password(os.urandom(16).hex())
                 db.session.add(user)
                 db.session.commit()
-                print(f"✅ New user created! User ID: {user.id}")
+                logger.info(f"✅ New user created! User ID: {user.id}")
         else:
-            print(f"✅ Found existing user. User ID: {user.id}")
+            logger.info(f"✅ Found existing user. User ID: {user.id}")
 
         # Clear session before login
         session.clear()
         
         # Log in the user
         login_success = login_user(user, remember=True, force=True)
-        print(f"✅ Login result: {login_success}")
-        print(f"✅ Current user authenticated: {current_user.is_authenticated}")
-        print(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
+        logger.info(f"✅ Login result: {login_success}")
+        logger.info(f"✅ Current user authenticated: {current_user.is_authenticated}")
+        logger.info(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
         
-        print(f"✅ Redirecting to frontend: {frontend_url}")
+        logger.info(f"✅ Redirecting to frontend: {frontend_url}")
         return redirect(frontend_url)
 
     except Exception as e:
-        print(f"❌ OAuth callback error: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"❌ OAuth callback error: {str(e)}", exc_info=True)
         return redirect(f"{frontend_url}?error=auth_exception")
 
 # -------------------------------
