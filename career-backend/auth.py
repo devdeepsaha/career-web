@@ -12,7 +12,28 @@ from models import User
 # -------------------------------
 auth_bp = Blueprint("auth", __name__)
 
-# Google OAuth blueprint
+# Determine the correct redirect URL based on environment
+def get_redirect_url():
+    """Get the correct OAuth redirect URL based on environment"""
+    # Check if we're on the VM (production)
+    if os.getenv("FLASK_ENV") == "production":
+        base_url = "https://pothoprodorshok.mooo.com"
+    else:
+        # Development: Use localhost
+        base_url = "http://localhost:5000"
+    
+    redirect_url = f"{base_url}/auth/google/callback"
+    print(f"🔵 OAuth redirect URL configured: {redirect_url}")
+    return redirect_url
+
+def get_frontend_url():
+    """Get the correct frontend URL based on environment"""
+    if os.getenv("FLASK_ENV") == "production":
+        return "https://pothoprodorshok.mooo.com"
+    else:
+        return "http://localhost:5173"
+
+# Google OAuth blueprint with dynamic redirect URL
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -21,7 +42,7 @@ google_bp = make_google_blueprint(
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ],
-    redirect_url="/auth/google/callback",
+    redirect_to="auth.google_callback",  # Flask route name instead of URL
     offline=True,
 )
 
@@ -76,13 +97,13 @@ def google_status():
 # -------------------------------
 @auth_bp.route("/google/callback")
 def google_callback():
-    # Get frontend URL first for redirects
-    frontend_url = (
-        "https://pothoprodorshok.onrender.com"
-        if os.getenv("FLASK_ENV") == "production"
-        else "http://localhost:5173"
-    )
-
+    # Get frontend URL based on environment
+    if os.getenv("FLASK_ENV") == "production":
+        frontend_url = os.getenv("FRONTEND_URL", "https://pothoprodorshok.mooo.com")
+    else:
+        frontend_url = "http://localhost:5173"
+    
+    print(f"🔵 Frontend URL: {frontend_url}")
     # CRITICAL FIX 3: Verify OAuth is actually authorized
     if not google.authorized:
         print("❌ Google OAuth not authorized")
