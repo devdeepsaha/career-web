@@ -92,7 +92,7 @@ def google_status():
         "client_secret_set": bool(os.getenv("GOOGLE_CLIENT_SECRET"))
     })
 
-# -------------------------------
+# ------------------------------
 # Callback route
 # -------------------------------
 @auth_bp.route("/google/callback")
