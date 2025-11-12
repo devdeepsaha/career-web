@@ -18,7 +18,7 @@ auth_bp = Blueprint("auth", __name__)
 def get_frontend_url():
     """Get the correct frontend URL based on environment"""
     if os.getenv("FLASK_ENV") == "production":
-        return "https://pothoprodorshok.mooo.com"
+        return "https://pothoprodorshok.onrender.com"
     else:
         return "http://localhost:5173"
 
