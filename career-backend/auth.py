@@ -1,5 +1,6 @@
 from flask import Blueprint, redirect, url_for, jsonify, session, request, make_response
 from flask_dance.contrib.google import make_google_blueprint, google
+from flask_dance.consumer.storage import MemoryStorage
 from flask_login import login_user, logout_user, current_user
 import os
 import logging
@@ -22,7 +23,7 @@ def get_frontend_url():
     else:
         return "http://localhost:5173"
 
-# Google OAuth blueprint
+# Google OAuth blueprint - Use session-based storage (works with Redis sessions)
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -34,7 +35,7 @@ google_bp = make_google_blueprint(
     redirect_url="/auth/google/callback",
     offline=False,
     reprompt_consent=False,
-    storage=None  # Let Flask-Session handle storage
+    # CRITICAL: Don't specify storage - let it use Flask sessions (which are in Redis)
 )
 
 # -------------------------------

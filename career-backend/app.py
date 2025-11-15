@@ -110,6 +110,10 @@ from auth import auth_bp, google_bp
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(google_bp, url_prefix="/auth/google")
 
+# CRITICAL: Force Flask-Dance to use Redis-backed session storage
+from flask_dance.consumer.storage.session import SessionStorage
+google_bp.storage = SessionStorage()
+
 # Import models
 from models import User, ChatSession, ChatMessage
 
