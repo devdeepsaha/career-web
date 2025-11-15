@@ -25,13 +25,11 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
-# CRITICAL: Set this for OAuth to work across redirects
-app.config['SESSION_COOKIE_DOMAIN'] = '.mooo.com' if os.getenv("FLASK_ENV") == "production" else None
 
 # OAuth-specific settings
 app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
@@ -68,7 +66,11 @@ CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173", 
     "https://pothoprodorshok.onrender.com",
     "https://pothoprodorshok.mooo.com"
-]) 
+],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Set-Cookie"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    ) 
 
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY missing")

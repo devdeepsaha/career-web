@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, jsonify, session, request
+from flask import Blueprint, redirect, url_for, jsonify, session, request, make_response
 from flask_dance.contrib.google import make_google_blueprint, google
 from flask_login import login_user, logout_user, current_user
 import os
@@ -54,7 +54,7 @@ def google_login():
     return redirect(url_for("google.login"))
 
 # -------------------------------
-# OAuth callback handler
+# OAuth callback handler - FIXED VERSION
 # -------------------------------
 @auth_bp.route("/google/callback")
 def google_callback():
@@ -134,8 +134,21 @@ def google_callback():
         logger.info(f"✅ Current user authenticated: {current_user.is_authenticated}")
         logger.info(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
         
-        logger.info(f"✅ Redirecting to frontend: {frontend_url}?login=success")
-        return redirect(f"{frontend_url}?login=success")
+        # CRITICAL FIX: Create response with explicit cookie settings
+        response = make_response(redirect(f"{frontend_url}?login=success"))
+        
+        # Set session cookie explicitly for cross-domain
+        response.set_cookie(
+            'pothoprodorshok_session',
+            session.sid if hasattr(session, 'sid') else session.get('_id', ''),
+            secure=True,
+            httponly=True,
+            samesite='None',
+            max_age=3600
+        )
+        
+        logger.info(f"✅ Redirecting to frontend with session cookie")
+        return response
 
     except Exception as e:
         logger.error(f"❌ OAuth callback error: {str(e)}", exc_info=True)
