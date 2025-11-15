@@ -1,7 +1,6 @@
 # ------------------- Imports -------------------
 from flask import Flask, request, jsonify, session, redirect
 from flask_cors import CORS
-from flask_session import Session
 import google.generativeai as genai
 import json, os
 from dotenv import load_dotenv
@@ -38,20 +37,43 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # Initialize database FIRST
 db.init_app(app)
 
-# Session Configuration - Redis backend for multi-worker support
-import redis
-app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = redis.from_url('redis://localhost:6379')
-app.config['SESSION_PERMANENT'] = True
-app.config['SESSION_USE_SIGNER'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
-app.config['SESSION_KEY_PREFIX'] = 'session:'
-
-# Cookie settings for cross-domain
-app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
+# Session Configuration - Try Redis, fallback to default if Redis fails
+try:
+    import redis
+    from flask_session import Session
+    
+    # Test Redis connection
+    redis_client = redis.from_url('redis://localhost:6379', socket_connect_timeout=2)
+    redis_client.ping()
+    
+    # Redis is available, use it
+    app.config['SESSION_TYPE'] = 'redis'
+    app.config['SESSION_REDIS'] = redis_client
+    app.config['SESSION_PERMANENT'] = True
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+    app.config['SESSION_KEY_PREFIX'] = 'session:'
+    
+    # Cookie settings
+    app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    
+    # Initialize Flask-Session
+    sess = Session(app)
+    print("✅ Using Redis for sessions")
+    
+except Exception as e:
+    print(f"⚠️ Redis not available ({e}), using default Flask sessions")
+    print("⚠️ WARNING: Run with --workers 1 for OAuth to work properly!")
+    
+    # Fallback to default Flask sessions
+    app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 # OAuth-specific settings
 app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
@@ -70,10 +92,7 @@ mail = Mail(app)
 # Initialize login manager
 login_manager.init_app(app)
 
-# Initialize Flask-Session AFTER db
-sess = Session(app)
-
-# CORS Configuration
+# CORS Configuration - MUST be before blueprint registration
 CORS(app, 
     supports_credentials=True, 
     origins=[
@@ -94,13 +113,27 @@ app.register_blueprint(google_bp, url_prefix="/auth/google")
 # Import models
 from models import User, ChatSession, ChatMessage
 
-# Create all tables including session table
+# Create all tables
 with app.app_context():
     db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# Make sessions permanent
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+# Add error handler for OPTIONS requests
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # ------------------- Routes -------------------
 
