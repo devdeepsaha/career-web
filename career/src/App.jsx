@@ -11,7 +11,6 @@ const SupportPage = React.lazy(() => import('./pages/extra/Support'));
 const PoliciesPage = React.lazy(() => import('./pages/extra/Policies'));
 const ThankYouPage = React.lazy(() => import('./pages/extra/ThankYouPage'));
 
-
 // Import auth and layout components
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
@@ -45,24 +44,60 @@ export default function App() {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Check for active session on initial app load
+    // Check for active session on initial app load - UPDATED VERSION
     useEffect(() => {
         const checkUserSession = async () => {
             try {
-                const response = await fetch(`${API_URL}/check_session`, {credentials: 'include'});
+                console.log('🔍 Checking session...'); // Debug log
+                const response = await fetch(`${API_URL}/check_session`, {
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                console.log('📡 Session response status:', response.status); // Debug log
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('✅ Session check result:', data); // Debug log
+                    
                     if (data.is_logged_in) {
+                        console.log('🎉 User is logged in:', data.user);
                         setCurrentUser(data.user);
+                    } else {
+                        console.log('❌ User is NOT logged in');
                     }
+                } else {
+                    console.error('❌ Session check failed with status:', response.status);
                 }
             } catch (error) {
-                console.error("Could not check session:", error);
+                console.error("❌ Could not check session:", error);
             } finally {
                 setIsLoadingAuth(false);
             }
         };
-        checkUserSession();
+        
+        // Check for OAuth success parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginParam = urlParams.get('login');
+        const errorParam = urlParams.get('error');
+        
+        if (loginParam === 'success') {
+            console.log('🔵 OAuth login success detected! Checking session...');
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+            // Small delay to ensure session is ready
+            setTimeout(() => checkUserSession(), 500);
+        } else if (errorParam) {
+            console.error('❌ OAuth error:', errorParam);
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+            setIsLoadingAuth(false);
+        } else {
+            // Normal page load
+            checkUserSession();
+        }
     }, []);
 
     // Handle URL parameters for navigation (e.g., ?tab=thankyou)

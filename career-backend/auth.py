@@ -134,8 +134,8 @@ def google_callback():
         logger.info(f"✅ Current user authenticated: {current_user.is_authenticated}")
         logger.info(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
         
-        logger.info(f"✅ Redirecting to frontend: {frontend_url}")
-        return redirect(frontend_url)
+        logger.info(f"✅ Redirecting to frontend: {frontend_url}?login=success")
+        return redirect(f"{frontend_url}?login=success")
 
     except Exception as e:
         logger.error(f"❌ OAuth callback error: {str(e)}", exc_info=True)
