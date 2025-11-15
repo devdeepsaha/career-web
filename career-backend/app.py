@@ -38,9 +38,10 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # Initialize database FIRST
 db.init_app(app)
 
-# Session Configuration - SQLAlchemy backend for multi-worker support
-app.config['SESSION_TYPE'] = 'sqlalchemy'
-app.config['SESSION_SQLALCHEMY'] = db
+# Session Configuration - Redis backend for multi-worker support
+import redis
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_REDIS'] = redis.from_url('redis://localhost:6379')
 app.config['SESSION_PERMANENT'] = True
 app.config['SESSION_USE_SIGNER'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
