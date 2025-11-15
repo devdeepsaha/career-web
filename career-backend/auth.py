@@ -22,7 +22,7 @@ def get_frontend_url():
     else:
         return "http://localhost:5173"
 
-# Google OAuth blueprint - FIXED VERSION
+# Google OAuth blueprint
 google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
@@ -34,6 +34,7 @@ google_bp = make_google_blueprint(
     redirect_url="/auth/google/callback",
     offline=False,
     reprompt_consent=False,
+    storage=None  # Let Flask-Session handle storage
 )
 
 # -------------------------------
@@ -43,9 +44,7 @@ google_bp = make_google_blueprint(
 def google_login():
     logger.info("🔵 Starting Google login flow...")
     
-    # Clear any existing session data
-    session.clear()
-    
+    # Don't clear session - Flask-Dance needs it for OAuth state
     if current_user.is_authenticated:
         logout_user()
         logger.info("✅ Logged out existing user")
@@ -54,7 +53,7 @@ def google_login():
     return redirect(url_for("google.login"))
 
 # -------------------------------
-# OAuth callback handler - FIXED VERSION
+# OAuth callback handler
 # -------------------------------
 @auth_bp.route("/google/callback")
 def google_callback():
@@ -125,30 +124,14 @@ def google_callback():
         else:
             logger.info(f"✅ Found existing user. User ID: {user.id}")
 
-        # Clear session before login
-        session.clear()
-        
-        # Log in the user
+        # Log in the user - don't clear session, Flask-Login will handle it
         login_success = login_user(user, remember=True, force=True)
         logger.info(f"✅ Login result: {login_success}")
         logger.info(f"✅ Current user authenticated: {current_user.is_authenticated}")
         logger.info(f"✅ Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
         
-        # CRITICAL FIX: Create response with explicit cookie settings
-        response = make_response(redirect(f"{frontend_url}?login=success"))
-        
-        # Set session cookie explicitly for cross-domain
-        response.set_cookie(
-            'pothoprodorshok_session',
-            session.sid if hasattr(session, 'sid') else session.get('_id', ''),
-            secure=True,
-            httponly=True,
-            samesite='None',
-            max_age=3600
-        )
-        
-        logger.info(f"✅ Redirecting to frontend with session cookie")
-        return response
+        logger.info(f"✅ Redirecting to frontend: {frontend_url}?login=success")
+        return redirect(f"{frontend_url}?login=success")
 
     except Exception as e:
         logger.error(f"❌ OAuth callback error: {str(e)}", exc_info=True)

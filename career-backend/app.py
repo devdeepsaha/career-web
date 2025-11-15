@@ -1,6 +1,7 @@
 # ------------------- Imports -------------------
 from flask import Flask, request, jsonify, session, redirect
 from flask_cors import CORS
+from flask_session import Session
 import google.generativeai as genai
 import json, os
 from dotenv import load_dotenv
@@ -12,7 +13,7 @@ from extensions import db, login_manager
 from flask_mail import Mail, Message
 import secrets
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 # ------------------- Load Env -------------------
@@ -20,22 +21,13 @@ load_dotenv()
 
 # ------------------- Flask App -------------------
 app = Flask(__name__)
-# --- Add this block right after app = Flask(__name__) ---
+
+# CRITICAL: Secret key must be set first
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    raise ValueError("FLASK_SECRET_KEY missing")
 
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
-
-
-# OAuth-specific settings
-app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
-app.config['OAUTHLIB_INSECURE_TRANSPORT'] = os.getenv("FLASK_ENV") != "production"  # Only for local dev
-
-# Database configuration (keep your existing config)
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -43,13 +35,28 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,
 }
 
-from flask import session as flask_session
+# Initialize database FIRST
+db.init_app(app)
 
-@app.before_request
-def make_session_permanent():
-    flask_session.permanent = True
+# Session Configuration - SQLAlchemy backend for multi-worker support
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_USE_SIGNER'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+app.config['SESSION_KEY_PREFIX'] = 'session:'
 
-# --- Mail Configuration (Brevo) ---
+# Cookie settings for cross-domain
+app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+# OAuth-specific settings
+app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
+app.config['OAUTHLIB_INSECURE_TRANSPORT'] = os.getenv("FLASK_ENV") != "production"
+
+# Mail Configuration
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
@@ -59,39 +66,51 @@ app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'False') == 'True'
 
 mail = Mail(app)
 
-# --- Initialize Extensions ---
-db.init_app(app)
+# Initialize login manager
 login_manager.init_app(app)
-CORS(app, supports_credentials=True, origins=[
-    "http://localhost:5173", 
-    "https://pothoprodorshok.onrender.com",
-    "https://pothoprodorshok.mooo.com"
-],
+
+# Initialize Flask-Session AFTER db
+sess = Session(app)
+
+# CORS Configuration
+CORS(app, 
+    supports_credentials=True, 
+    origins=[
+        "http://localhost:5173", 
+        "https://pothoprodorshok.onrender.com",
+        "https://pothoprodorshok.mooo.com"
+    ],
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["Set-Cookie"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    ) 
+)
 
-if not app.secret_key:
-    raise ValueError("FLASK_SECRET_KEY missing")
-
-# --- Register blueprint AFTER app is created ---
+# Register blueprints
 from auth import auth_bp, google_bp
 app.register_blueprint(auth_bp, url_prefix="/auth")
-app.register_blueprint(google_bp, url_prefix="/auth/google")  # Register Google OAuth blueprint
+app.register_blueprint(google_bp, url_prefix="/auth/google")
 
-# Import models AFTER db is initialized
+# Import models
 from models import User, ChatSession, ChatMessage
 
-# 👇 Add this route
-@app.route('/logout-google')
-def logout_google():
-    session.pop("google_oauth_token", None)
-    return "Google token cleared"
+# Create all tables including session table
+with app.app_context():
+    db.create_all()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ------------------- Routes -------------------
 
 @app.route('/')
 def home():
     return jsonify({"message": "Server is running!"}), 200
+
+@app.route('/logout-google')
+def logout_google():
+    session.pop("google_oauth_token", None)
+    return "Google token cleared"
 
 # ------------------- History -------------------
 HISTORY_FILE = 'question_history.json'
@@ -160,9 +179,7 @@ def analyze_performance():
 
     score = int((correct_count / total_questions) * 100)
 
-    # ---------------- AI Analysis ----------------
     try:
-        # Build a prompt for AI to analyze the performance
         analysis_prompt = f"""
         You are an AI tutor. A student just finished a mock test.
         Score: {score}%
@@ -210,13 +227,12 @@ def analyze_performance():
 
 # ------------------- Chat Session Management -------------------
 
-# Create or get a chat session
 @app.route('/chat-sessions', methods=['POST'])
 @login_required
 def create_chat_session():
     """Create a new chat session for the logged-in user"""
     data = request.get_json()
-    chat_type = data.get('chat_type')  # 'career_planner' or 'doubt_solver'
+    chat_type = data.get('chat_type')
     
     if chat_type not in ['career_planner', 'doubt_solver']:
         return jsonify({"error": "Invalid chat type"}), 400
@@ -231,12 +247,11 @@ def create_chat_session():
     
     return jsonify(new_session.to_dict()), 201
 
-# Get all chat sessions for the logged-in user
 @app.route('/chat-sessions', methods=['GET'])
 @login_required
 def get_chat_sessions():
     """Get all chat sessions for the logged-in user"""
-    chat_type = request.args.get('chat_type')  # optional filter
+    chat_type = request.args.get('chat_type')
     
     query = ChatSession.query.filter_by(user_id=current_user.id)
     if chat_type:
@@ -245,44 +260,41 @@ def get_chat_sessions():
     sessions = query.order_by(ChatSession.updated_at.desc()).all()
     return jsonify([s.to_dict() for s in sessions]), 200
 
-# Get a specific chat session with all messages
 @app.route('/chat-sessions/<int:session_id>', methods=['GET'])
 @login_required
 def get_chat_session(session_id):
     """Get a specific chat session with all its messages"""
-    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+    session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
     
-    if not session:
+    if not session_obj:
         return jsonify({"error": "Session not found"}), 404
     
-    session_data = session.to_dict()
-    session_data['messages'] = [m.to_dict() for m in session.messages]
+    session_data = session_obj.to_dict()
+    session_data['messages'] = [m.to_dict() for m in session_obj.messages]
     
     return jsonify(session_data), 200
 
-# Delete a chat session
 @app.route('/chat-sessions/<int:session_id>', methods=['DELETE'])
 @login_required
 def delete_chat_session(session_id):
     """Delete a specific chat session"""
-    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+    session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
     
-    if not session:
+    if not session_obj:
         return jsonify({"error": "Session not found"}), 404
     
-    db.session.delete(session)
+    db.session.delete(session_obj)
     db.session.commit()
     
     return jsonify({"message": "Session deleted successfully"}), 200
 
-# Save a message to a session
 @app.route('/chat-sessions/<int:session_id>/messages', methods=['POST'])
 @login_required
 def save_message(session_id):
     """Save a message to a specific chat session"""
-    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+    session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
     
-    if not session:
+    if not session_obj:
         return jsonify({"error": "Session not found"}), 404
     
     data = request.get_json()
@@ -295,7 +307,6 @@ def save_message(session_id):
     if not text:
         return jsonify({"error": "Message text is required"}), 400
     
-    # Create the message
     message = ChatMessage(
         session_id=session_id,
         sender=sender,
@@ -303,16 +314,12 @@ def save_message(session_id):
     )
     db.session.add(message)
     
-    # Update session timestamp
-    session.updated_at = datetime.utcnow()
+    session_obj.updated_at = datetime.utcnow()
     
-    # Auto-generate title from first user message if title is still "New Chat"
-    if session.title == "New Chat" and sender == 'user':
-        # Extract first 50 chars of the message as title
+    if session_obj.title == "New Chat" and sender == 'user':
         title = text[:50].strip()
-        # Remove markdown and special characters
         title = re.sub(r'[#*_\[\]()]', '', title)
-        session.title = title if title else "Untitled Chat"
+        session_obj.title = title if title else "Untitled Chat"
     
     db.session.commit()
     
@@ -320,7 +327,6 @@ def save_message(session_id):
 
 # ------------------- Other Routes -------------------
 
-# generate-roadmap
 @app.route('/generate-roadmap', methods=['POST'])
 def generate_roadmap():
     data = request.get_json()
@@ -352,32 +358,28 @@ def generate_roadmap():
         print("Roadmap error:", e)
         return jsonify({"error": str(e)}), 500
 
-# Chat - UPDATED VERSION WITH SESSION STORAGE
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     language = get_language_name(data)
     history = data.get('history', [])
-    session_id = data.get('session_id')  # Optional session ID
+    session_id = data.get('session_id')
     
     messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}."]}]
     for msg in history:
         role = 'user' if msg['sender'] == 'user' else 'model'
         messages.append({'role': role, 'parts': [msg['text']]})
     
-    # Get the current user message (last one)
     current_user_message = messages[-1]['parts'][0] if messages else ""
     
     try:
         chat_session = model.start_chat(history=messages[:-1])
         response = chat_session.send_message(messages[-1]['parts'][0])
         
-        # If user is logged in and session_id provided, save BOTH messages
         if current_user.is_authenticated and session_id:
             try:
                 session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
                 if session_obj:
-                    # Save user message first
                     user_message = ChatMessage(
                         session_id=session_id,
                         sender='user',
@@ -385,7 +387,6 @@ def chat():
                     )
                     db.session.add(user_message)
                     
-                    # Save AI response
                     ai_message = ChatMessage(
                         session_id=session_id,
                         sender='ai',
@@ -395,7 +396,6 @@ def chat():
                     
                     session_obj.updated_at = datetime.utcnow()
                     
-                    # Auto-generate title from first user message
                     if session_obj.title == "New Chat":
                         title = current_user_message[:50].strip()
                         title = re.sub(r'[#*_\[\]()]', '', title)
@@ -411,34 +411,29 @@ def chat():
         print("Chat error:", e)
         return jsonify({"error": str(e)}), 500
 
-# Doubt Solver Chat with Session Storage
 @app.route('/solve-doubt-chat', methods=['POST'])
 def solve_doubt_chat():
     """Handle doubt solver chat with history support and session storage"""
     data = request.get_json()
     language = get_language_name(data)
     history = data.get('history', [])
-    session_id = data.get('session_id')  # Optional session ID
+    session_id = data.get('session_id')
     
-    # Build messages for AI
     messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}."]}]
     for msg in history:
         role = 'user' if msg['sender'] == 'user' else 'model'
         messages.append({'role': role, 'parts': [msg['text']]})
     
-    # Get the current user message (last one)
     current_user_message = messages[-1]['parts'][0] if messages else ""
     
     try:
         chat_session = model.start_chat(history=messages[:-1])
         response = chat_session.send_message(messages[-1]['parts'][0])
         
-        # If user is logged in and session_id provided, save BOTH messages
         if current_user.is_authenticated and session_id:
             try:
                 session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
                 if session_obj:
-                    # Save user message first
                     user_message = ChatMessage(
                         session_id=session_id,
                         sender='user',
@@ -446,7 +441,6 @@ def solve_doubt_chat():
                     )
                     db.session.add(user_message)
                     
-                    # Save AI response
                     ai_message = ChatMessage(
                         session_id=session_id,
                         sender='ai',
@@ -456,7 +450,6 @@ def solve_doubt_chat():
                     
                     session_obj.updated_at = datetime.utcnow()
                     
-                    # Auto-generate title from first user message
                     if session_obj.title == "New Chat":
                         title = current_user_message[:50].strip()
                         title = re.sub(r'[#*_\[\]()]', '', title)
@@ -472,11 +465,10 @@ def solve_doubt_chat():
         print("Doubt chat error:", e)
         return jsonify({"error": str(e)}), 500
 
-# AI Tutor - Get Question
 @app.route('/get-question', methods=['POST'])
 def get_question():
     data = request.get_json()
-    language_name = get_language_name(data) # Get language
+    language_name = get_language_name(data)
     
     exam = data.get('exam', '')
     subject = data.get('subject', '')
@@ -507,31 +499,27 @@ def get_question():
                 if q['question'] not in seen:
                     write_history(q['question'])
                     return jsonify(q)
-        # If we still get a duplicate, return it but don't save to history
-        return jsonify(q) 
+        return jsonify(q)
     except Exception as e:
         print("Question error:", e)
         return jsonify({"error": str(e)}), 500
-    
-# Solve Doubt (old endpoint - keep for backward compatibility)
+
 @app.route('/solve-doubt', methods=['POST'])
 def solve_doubt():
     data = request.get_json()
     language = get_language_name(data)
     question = data.get('question', '')
-    session_id = data.get('session_id')  # Optional session ID
+    session_id = data.get('session_id')
     
     prompt = f"Explain clearly in {language}: {question}"
     
     try:
         response = model.generate_content(prompt)
         
-        # If user is logged in and session_id provided, save both messages
         if current_user.is_authenticated and session_id:
             try:
                 session_obj = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
                 if session_obj:
-                    # Save user question
                     user_message = ChatMessage(
                         session_id=session_id,
                         sender='user',
@@ -539,7 +527,6 @@ def solve_doubt():
                     )
                     db.session.add(user_message)
                     
-                    # Save AI response
                     ai_message = ChatMessage(
                         session_id=session_id,
                         sender='ai',
@@ -549,7 +536,6 @@ def solve_doubt():
                     
                     session_obj.updated_at = datetime.utcnow()
                     
-                    # Auto-generate title from first question
                     if session_obj.title == "New Chat":
                         title = question[:50].strip()
                         title = re.sub(r'[#*_\[\]()]', '', title)
@@ -565,7 +551,6 @@ def solve_doubt():
         print("Doubt error:", e)
         return jsonify({"error": str(e)}), 500
 
-# Mock Test Generator
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test():
     data = request.get_json()
@@ -603,7 +588,6 @@ Respond only with a JSON array.
         print("Mock test error:", e)
         return jsonify({"error": str(e)}), 500
 
-# Scholarship Finder
 @app.route('/find-scholarships', methods=['POST'])
 def find_scholarships():
     data = request.get_json()
@@ -616,7 +600,6 @@ def find_scholarships():
         print("Scholarship Finder error:", e)
         return jsonify({"error": str(e)}), 500
 
-# ------------------- Real Scholarship Fetcher -------------------
 def fetch_real_scholarships(data):
     language = get_language_name(data)
     marks = data.get("marks", "")
@@ -650,7 +633,6 @@ def fetch_real_scholarships(data):
             try:
                 scholarships = json.loads(cleaned)
                 if isinstance(scholarships, list) and len(scholarships) > 0:
-                    # Ensure URLs are valid
                     for s in scholarships:
                         if not s.get("direct_url", "").startswith("https://"):
                             s["direct_url"] = "https://example.com"
@@ -664,26 +646,17 @@ def fetch_real_scholarships(data):
         print("Scholarship generation error:", e)
         return []
 
-# --- Add this block to create tables and load users ---
-with app.app_context():
-    db.create_all()
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
 # --- AUTHENTICATION ENDPOINTS ---
+
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
 
-    # Check if user already exists
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email address already registered"}), 409
 
-    # Create new user
     new_user = User(email=email)
     new_user.set_password(password)
     db.session.add(new_user)
