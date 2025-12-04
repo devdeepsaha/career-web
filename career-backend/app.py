@@ -37,43 +37,13 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # Initialize database FIRST
 db.init_app(app)
 
-# Session Configuration - Try Redis, fallback to default if Redis fails
-try:
-    import redis
-    from flask_session import Session
-    
-    # Test Redis connection
-    redis_client = redis.from_url('redis://localhost:6379', socket_connect_timeout=2)
-    redis_client.ping()
-    
-    # Redis is available, use it
-    app.config['SESSION_TYPE'] = 'redis'
-    app.config['SESSION_REDIS'] = redis_client
-    app.config['SESSION_PERMANENT'] = True
-    app.config['SESSION_USE_SIGNER'] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
-    app.config['SESSION_KEY_PREFIX'] = 'session:'
-    
-    # Cookie settings
-    app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    
-    # Initialize Flask-Session
-    sess = Session(app)
-    print("✅ Using Redis for sessions")
-    
-except Exception as e:
-    print(f"⚠️ Redis not available ({e}), using default Flask sessions")
-    print("⚠️ WARNING: Run with --workers 1 for OAuth to work properly!")
-    
-    # Fallback to default Flask sessions
-    app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+# ✅ Session Configuration - Use default Flask sessions (no Redis needed)
+print("✅ Using default Flask sessions")
+app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 # OAuth-specific settings
 app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = True
@@ -110,7 +80,7 @@ from auth import auth_bp, google_bp
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(google_bp, url_prefix="/auth/google")
 
-# CRITICAL: Force Flask-Dance to use Redis-backed session storage
+# CRITICAL: Force Flask-Dance to use session-based storage
 from flask_dance.consumer.storage.session import SessionStorage
 google_bp.storage = SessionStorage()
 
@@ -215,7 +185,7 @@ def analyze_performance():
             "is_correct": is_correct
         })
 
-    score = int((correct_count / total_questions) * 100)
+    score = int((correct_count / total_questions) * 100) if total_questions > 0 else 0
 
     try:
         analysis_prompt = f"""
@@ -734,4 +704,4 @@ def check_session():
 # ------------------- Run App -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True) 
+    app.run(host="0.0.0.0", port=port, debug=True)
