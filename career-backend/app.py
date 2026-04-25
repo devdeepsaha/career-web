@@ -152,7 +152,7 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 generation_config = {"temperature": 0.7, "max_output_tokens": 2048}
-MODEL = "models/gemini-2.5-flash-lite-preview-09-2025"
+MODEL = "models/gemini-3.1-flash-lite-preview"
 model = genai.GenerativeModel(model_name=MODEL, generation_config=generation_config)
 
 # ------------------- Helpers -------------------
