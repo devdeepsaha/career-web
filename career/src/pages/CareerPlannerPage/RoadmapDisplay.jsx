@@ -7,7 +7,6 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
     const { t } = useTranslation();
     const [visibleCards, setVisibleCards] = useState([]);
 
-    // ✅ This function is passed to RoadmapStepCard
     const handleChatTrigger = (query) => {
         if (setChatVisible && sendMessageToChatbot) {
             setChatVisible(true);
@@ -15,7 +14,7 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
                 sendMessageToChatbot(query);
             }, 300);
         } else {
-            console.warn("⚠️ Chatbot functions not provided in props");
+            console.warn("Chatbot functions not provided in props");
         }
     };
 

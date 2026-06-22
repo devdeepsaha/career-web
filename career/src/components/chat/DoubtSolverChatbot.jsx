@@ -318,7 +318,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
             {!isFullscreen && (
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="fixed bottom-16 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-white shadow-lg transition-[background-color,transform] duration-150 hover:bg-slate-800 active:scale-[0.96] focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 md:bottom-6 md:right-6"
+                    className="fixed bottom-20 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-white shadow-lg transition-[background-color,transform] duration-150 hover:bg-slate-800 active:scale-[0.96] focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 md:bottom-6 md:right-6"
                     aria-label={t('doubtChat_toggleAriaLabel')}
                 >
                     {isOpen ? <XIcon /> : <MessageSquareIcon />}
@@ -328,10 +328,10 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
             {isOpen && (
                 <div
                     ref={chatContainerRef}
-                    className={`fixed flex rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 z-20 transition-[width,height,top,bottom,left,right] duration-200 ease-out
+                    className={`fixed z-50 flex rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 transition-[width,height,top,bottom,left,right] duration-200 ease-out
                     ${isFullscreen
-                        ? 'top-20 bottom-4 left-4 right-4 md:w-[90vw] md:h-[90vh] md:bottom-6 md:right-6 md:top-auto md:left-auto'
-                        : 'bottom-[9rem] right-4 w-[calc(100vw-2rem)] md:w-96 h-[500px] md:bottom-24 md:right-6'
+                        ? 'left-2 right-2 top-16 bottom-20 md:left-auto md:right-6 md:top-20 md:bottom-6 md:h-[calc(100dvh-6.5rem)] md:w-[min(980px,90vw)]'
+                        : 'bottom-20 right-3 h-[min(560px,calc(100dvh-8rem))] w-[calc(100vw-1.5rem)] md:bottom-24 md:right-6 md:w-96'
                     }`}
                 >
                     {/* Session Sidebar - Side panel in desktop fullscreen, overlay otherwise */}

@@ -37,8 +37,8 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # Initialize database FIRST
 db.init_app(app)
 
-# ✅ Session Configuration - Use default Flask sessions (no Redis needed)
-print("✅ Using default Flask sessions")
+# Session Configuration - Use default Flask sessions
+print("Using default Flask sessions")
 app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -228,6 +228,142 @@ def recent_activity_for_user(user_id, limit=8):
         })
     return sorted(items, key=lambda item: item.get("created_at") or "", reverse=True)[:limit]
 
+def topic_insights_for_user(user_id):
+    attempts = QuestionAttempt.query.filter_by(user_id=user_id).order_by(QuestionAttempt.created_at.desc()).all()
+    grouped = {}
+    for attempt in attempts:
+        topic = attempt.topic or attempt.subject or attempt.exam or "General practice"
+        if topic not in grouped:
+            grouped[topic] = {
+                "topic": topic,
+                "attempts": 0,
+                "correct": 0,
+                "wrong": 0,
+                "last_seen": None,
+                "questions": [],
+            }
+        grouped[topic]["attempts"] += 1
+        if attempt.is_correct:
+            grouped[topic]["correct"] += 1
+        else:
+            grouped[topic]["wrong"] += 1
+            if len(grouped[topic]["questions"]) < 3:
+                grouped[topic]["questions"].append(attempt.question_text)
+        if attempt.created_at and (not grouped[topic]["last_seen"] or attempt.created_at.isoformat() > grouped[topic]["last_seen"]):
+            grouped[topic]["last_seen"] = attempt.created_at.isoformat()
+
+    insights = []
+    for item in grouped.values():
+        accuracy = round((item["correct"] / item["attempts"]) * 100) if item["attempts"] else 0
+        strength = "strong" if accuracy >= 75 else "improving" if accuracy >= 45 else "weak"
+        insights.append({**item, "accuracy": accuracy, "strength": strength})
+    return sorted(insights, key=lambda item: (item["accuracy"], -item["attempts"]))[:12]
+
+def revision_queue_for_user(user_id):
+    wrong_attempts = QuestionAttempt.query.filter_by(user_id=user_id, is_correct=False).order_by(QuestionAttempt.created_at.desc()).limit(20).all()
+    saved_questions = SavedQuestion.query.filter_by(user_id=user_id).order_by(SavedQuestion.created_at.desc()).limit(20).all()
+    queue = []
+    now = datetime.utcnow()
+
+    for attempt in wrong_attempts:
+        age_days = (now - attempt.created_at).days if attempt.created_at else 0
+        due_state = "overdue" if age_days >= 3 else "due today" if age_days >= 1 else "repeat soon"
+        queue.append({
+            "type": "mistake",
+            "title": attempt.topic or attempt.subject or "Wrong answer review",
+            "question": attempt.question_text,
+            "correct_answer": attempt.correct_answer,
+            "due_state": due_state,
+            "created_at": attempt.created_at.isoformat() if attempt.created_at else None,
+        })
+
+    for question in saved_questions:
+        queue.append({
+            "type": "saved",
+            "title": question.topic or question.subject or "Saved question",
+            "question": question.question_text,
+            "correct_answer": question.correct_answer,
+            "due_state": "saved review",
+            "created_at": question.created_at.isoformat() if question.created_at else None,
+        })
+
+    return sorted(queue, key=lambda item: item.get("created_at") or "", reverse=True)[:12]
+
+def timeline_for_user(user_id):
+    items = []
+    for roadmap in Roadmap.query.filter_by(user_id=user_id).order_by(Roadmap.created_at.desc()).limit(5).all():
+        items.append({
+            "type": "roadmap",
+            "title": roadmap.title,
+            "date": roadmap.created_at.isoformat() if roadmap.created_at else None,
+            "status": roadmap.status,
+        })
+    for test in MockTest.query.filter_by(user_id=user_id).order_by(MockTest.created_at.desc()).limit(5).all():
+        items.append({
+            "type": "mock",
+            "title": test.exam or "Mock test",
+            "date": test.created_at.isoformat() if test.created_at else None,
+            "status": f"{float(test.score or 0):.0f}% score",
+        })
+    for scholarship in SavedScholarship.query.filter_by(user_id=user_id).order_by(SavedScholarship.created_at.desc()).limit(5).all():
+        payload = scholarship.scholarship_json or {}
+        items.append({
+            "type": "application",
+            "title": payload.get("name", "Scholarship application"),
+            "date": scholarship.deadline.isoformat() if scholarship.deadline else (scholarship.created_at.isoformat() if scholarship.created_at else None),
+            "status": scholarship.status,
+        })
+    return sorted(items, key=lambda item: item.get("date") or "", reverse=True)[:10]
+
+def readiness_score(profile, counts, mock_average):
+    profile_score = profile_completeness(profile) * 0.35
+    practice_score = min(counts.get("question_attempts", 0), 40) / 40 * 20
+    roadmap_score = min(counts.get("roadmaps", 0), 3) / 3 * 15
+    mock_score = (mock_average or 0) * 0.2
+    opportunity_score = min(counts.get("saved_scholarships", 0), 5) / 5 * 10
+    return round(profile_score + practice_score + roadmap_score + mock_score + opportunity_score)
+
+def weekly_report_for_user(profile, counts, mock_average, topic_insights):
+    weak_topics = [item["topic"] for item in topic_insights if item["strength"] == "weak"][:3]
+    strong_topics = [item["topic"] for item in topic_insights if item["strength"] == "strong"][:3]
+    return {
+        "summary": "Your workspace is building a useful memory from roadmaps, practice, mock tests, saved questions, and opportunities.",
+        "wins": [
+            f"{counts.get('question_attempts', 0)} practice attempts recorded",
+            f"{counts.get('mock_tests', 0)} mock tests completed",
+            f"{counts.get('roadmaps', 0)} roadmaps saved",
+        ],
+        "weak_areas": weak_topics,
+        "strong_areas": strong_topics,
+        "next_actions": [
+            "Review the due revision queue",
+            "Take one mock test from a weak topic",
+            "Update profile targets before generating the next roadmap" if profile_completeness(profile) < 90 else "Pin the roadmap you want to execute this week",
+        ],
+        "mock_average": mock_average,
+    }
+
+def mentor_context_text(user_id):
+    try:
+        profile = first_profile_for_user(user_id)
+        latest_roadmap = Roadmap.query.filter_by(user_id=user_id).order_by(Roadmap.updated_at.desc()).first()
+        mock_tests = MockTest.query.filter_by(user_id=user_id).all()
+        mock_average = 0
+        if mock_tests:
+            scores = [float(test.score or 0) for test in mock_tests]
+            mock_average = round(sum(scores) / len(scores))
+        weak_topics = [item["topic"] for item in topic_insights_for_user(user_id) if item["strength"] == "weak"][:5]
+        context = {
+            "profile": profile.to_dict() if profile else None,
+            "latest_roadmap": latest_roadmap.title if latest_roadmap else None,
+            "weak_topics": weak_topics,
+            "mock_average": mock_average,
+        }
+        return f"Student memory context: {json.dumps(context, ensure_ascii=False)}"
+    except Exception as e:
+        print("Mentor memory context error:", e)
+        return "Student memory context unavailable."
+
 # ------------------- Workspace Data APIs -------------------
 
 @app.route('/dashboard-summary', methods=['GET'])
@@ -247,29 +383,76 @@ def dashboard_summary():
     if mock_tests:
         scores = [float(test.score or 0) for test in mock_tests]
         mock_average = round(sum(scores) / len(scores))
+    counts = {
+        "roadmaps": roadmaps,
+        "saved_questions": saved_questions,
+        "saved_scholarships": saved_scholarships,
+        "question_attempts": attempts,
+        "mock_tests": len(mock_tests),
+        "wrong_attempts": wrong_attempts,
+    }
+    topic_insights = topic_insights_for_user(current_user.id)
+    readiness = readiness_score(profile, counts, mock_average)
 
     return jsonify({
         "profile": profile.to_dict() if profile else None,
         "profile_completeness": profile_completeness(profile),
-        "counts": {
-            "roadmaps": roadmaps,
-            "saved_questions": saved_questions,
-            "saved_scholarships": saved_scholarships,
-            "question_attempts": attempts,
-            "mock_tests": len(mock_tests),
-            "wrong_attempts": wrong_attempts,
-        },
+        "counts": counts,
         "mock_average": mock_average,
+        "career_readiness_score": readiness,
         "latest_roadmap": latest_roadmap.to_dict(include_json=False) if latest_roadmap else None,
         "latest_chat": latest_chat.to_dict() if latest_chat else None,
         "latest_mock": latest_mock.to_dict(include_payload=False) if latest_mock else None,
         "recent_activity": recent_activity_for_user(current_user.id),
+        "topic_insights": topic_insights,
+        "revision_queue": revision_queue_for_user(current_user.id),
+        "timeline": timeline_for_user(current_user.id),
+        "weekly_report": weekly_report_for_user(profile, counts, mock_average, topic_insights),
+        "mentor_memory": {
+            "profile": profile.to_dict() if profile else None,
+            "latest_roadmap": latest_roadmap.title if latest_roadmap else None,
+            "weak_topics": [item["topic"] for item in topic_insights if item["strength"] == "weak"][:5],
+            "mock_average": mock_average,
+        },
+        "opportunity_matches": [
+            f"Scholarships for {profile.education}" if profile and profile.education else "Scholarships matching your profile",
+            f"Practice plan for {profile.target_exams}" if profile and profile.target_exams else "Exam practice plan from your weak topics",
+            f"Projects for {profile.goals}" if profile and profile.goals else "Portfolio projects for your career goal",
+        ],
+        "notifications": [
+            "Revision queue has overdue mistakes" if wrong_attempts else "No wrong-answer backlog yet",
+            "Add deadlines to saved scholarships" if saved_scholarships else "Save scholarships to start deadline tracking",
+            "Open your latest mock test for detailed review" if latest_mock else "Complete a mock test to unlock analytics",
+        ],
         "recommendations": [
             "Review wrong practice questions" if wrong_attempts else "Generate your first practice question",
             "Update your student profile" if profile_completeness(profile) < 80 else "Generate a focused roadmap from your profile",
             "Check upcoming scholarship deadlines" if saved_scholarships else "Save scholarships you want to apply for",
         ],
     }), 200
+
+@app.route('/global-search', methods=['GET'])
+@login_required
+def global_search():
+    query = (request.args.get('q') or '').strip()
+    if len(query) < 2:
+        return jsonify([]), 200
+
+    pattern = f"%{query}%"
+    results = []
+    for roadmap in Roadmap.query.filter(Roadmap.user_id == current_user.id, Roadmap.title.ilike(pattern)).limit(8).all():
+        results.append({"type": "roadmap", "title": roadmap.title, "detail": roadmap.status, "id": roadmap.id})
+    for question in SavedQuestion.query.filter(SavedQuestion.user_id == current_user.id, SavedQuestion.question_text.ilike(pattern)).limit(8).all():
+        results.append({"type": "question", "title": question.question_text[:120], "detail": question.topic or question.subject, "id": question.id})
+    for session_obj in ChatSession.query.filter(ChatSession.user_id == current_user.id, ChatSession.title.ilike(pattern)).limit(8).all():
+        results.append({"type": "chat", "title": session_obj.title or "Chat", "detail": session_obj.chat_type, "id": session_obj.id})
+    for scholarship in SavedScholarship.query.filter_by(user_id=current_user.id).limit(50).all():
+        payload = scholarship.scholarship_json or {}
+        title = payload.get("name", "Saved scholarship")
+        description = payload.get("description", "")
+        if query.lower() in f"{title} {description}".lower():
+            results.append({"type": "scholarship", "title": title, "detail": scholarship.status, "id": scholarship.id})
+    return jsonify(results[:20]), 200
 
 @app.route('/student-profile', methods=['GET', 'PUT'])
 @login_required
@@ -805,7 +988,8 @@ def chat():
     history = data.get('history', [])
     session_id = data.get('session_id')
     
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}."]}]
+    mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}"]}]
     for msg in history:
         role = 'user' if msg['sender'] == 'user' else 'model'
         messages.append({'role': role, 'parts': [msg['text']]})
@@ -859,7 +1043,8 @@ def solve_doubt_chat():
     history = data.get('history', [])
     session_id = data.get('session_id')
     
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}."]}]
+    mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory for personalization when relevant: {mentor_context}"]}]
     for msg in history:
         role = 'user' if msg['sender'] == 'user' else 'model'
         messages.append({'role': role, 'parts': [msg['text']]})

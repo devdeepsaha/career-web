@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Target } from 'lucide-react';
 import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
@@ -39,8 +40,22 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const [testResult, setTestResult] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [numQuestions, setNumQuestions] = useState(5);
+    const [weakQueue, setWeakQueue] = useState([]);
 
-    const fetchQuestion = async () => {
+    React.useEffect(() => {
+        const loadWeakQueue = async () => {
+            if (!currentUser) return;
+            try {
+                const response = await fetch(`${API_URL}/question-attempts?wrong_only=true`, { credentials: 'include' });
+                if (response.ok) setWeakQueue(await response.json());
+            } catch (err) {
+                console.error('Failed to load weak queue:', err);
+            }
+        };
+        loadWeakQueue();
+    }, [currentUser]);
+
+    const fetchQuestion = async (overrides = {}) => {
         if (!currentUser) {
             showAuth('login');
             return;
@@ -60,6 +75,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     subject: practiceSubject,
                     topic: practiceTopic,
                     difficulty: practiceDifficulty,
+                    ...overrides,
                     language: i18n.language
                 })
             });
@@ -73,6 +89,22 @@ const AITutorPage = ({ currentUser, showAuth }) => {
         } finally {
             setIsLoadingQuestion(false);
         }
+    };
+
+    const fetchAdaptiveQuestion = async () => {
+        const weakItem = weakQueue[0];
+        if (weakItem) {
+            setPracticeExam(weakItem.exam || practiceExam);
+            setPracticeSubject(weakItem.subject || practiceSubject);
+            setPracticeTopic(weakItem.topic || practiceTopic);
+            setPracticeDifficulty(weakItem.difficulty || practiceDifficulty);
+        }
+        await fetchQuestion({
+            exam: weakItem?.exam || practiceExam,
+            subject: weakItem?.subject || practiceSubject,
+            topic: weakItem?.topic || practiceTopic,
+            difficulty: weakItem?.difficulty || practiceDifficulty,
+        });
     };
 
     const answerPracticeQuestion = async (option) => {
@@ -284,9 +316,15 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                 </select>
                             </div>
                         </div>
-                        <button onClick={fetchQuestion} disabled={isLoadingQuestion} className="pp-button mt-2 w-full sm:w-auto">
-                            {isLoadingQuestion ? t('aiTutor_button_generating') : t('aiTutor_button_generateQuestion')}
-                        </button>
+                        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                            <button onClick={fetchQuestion} disabled={isLoadingQuestion} className="pp-button w-full sm:w-auto">
+                                {isLoadingQuestion ? t('aiTutor_button_generating') : t('aiTutor_button_generateQuestion')}
+                            </button>
+                            <button onClick={fetchAdaptiveQuestion} disabled={isLoadingQuestion || weakQueue.length === 0} className="pp-button-secondary flex w-full items-center justify-center gap-2 sm:w-auto">
+                                <Target className="h-4 w-4" />
+                                Adaptive weak-area question
+                            </button>
+                        </div>
                         {questionError && <p className="text-red-500 text-sm mt-4 text-center">{questionError}</p>}
                         {question && (
                             <div className="pp-subpanel mt-4 p-4">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactGA from 'react-ga4';
-import { Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Route, Search, UserRound, Users } from 'lucide-react';
+import { ArrowRight, Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Route, Search, UserRound, Users, X } from 'lucide-react';
 
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage/DashboardPage'));
 const CareerPlannerPage = React.lazy(() => import('./pages/CareerPlannerPage/CareerPlannerPage'));
@@ -29,10 +29,50 @@ export default function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const [authView, setAuthView] = useState(null);
     const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+    const [commandOpen, setCommandOpen] = useState(false);
+    const [commandQuery, setCommandQuery] = useState('');
+    const [commandResults, setCommandResults] = useState([]);
 
     useEffect(() => {
         ReactGA.send({ hitType: 'pageview', page: `/${activeTab}`, title: activeTab });
     }, [activeTab]);
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                if (currentUser) setCommandOpen(true);
+            }
+            if (event.key === 'Escape') setCommandOpen(false);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentUser]);
+
+    useEffect(() => {
+        if (!commandOpen || commandQuery.trim().length < 2) {
+            setCommandResults([]);
+            return undefined;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(async () => {
+            try {
+                const response = await fetch(`${API_URL}/global-search?q=${encodeURIComponent(commandQuery)}`, {
+                    credentials: 'include',
+                    signal: controller.signal,
+                });
+                if (response.ok) setCommandResults(await response.json());
+            } catch (error) {
+                if (error.name !== 'AbortError') console.error('Search failed:', error);
+            }
+        }, 180);
+
+        return () => {
+            controller.abort();
+            window.clearTimeout(timer);
+        };
+    }, [commandOpen, commandQuery]);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -89,6 +129,18 @@ export default function App() {
 
     const navigateTo = (tabName) => {
         setActiveTab(tabName);
+        setCommandOpen(false);
+    };
+
+    const handleCommandResult = (result) => {
+        const routeByType = {
+            roadmap: 'library',
+            question: 'library',
+            mock_test: 'library',
+            scholarship: 'library',
+            chat: 'library',
+        };
+        navigateTo(routeByType[result.type] || 'dashboard');
     };
 
     const handleLoginSuccess = (user) => {
@@ -188,7 +240,7 @@ export default function App() {
                     </button>
 
                     <div className="hidden min-w-0 flex-1 justify-center px-4 lg:flex">
-                        <button className="flex h-9 w-full max-w-xl items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-500 transition-[background-color,border-color] duration-150 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700">
+                        <button onClick={() => setCommandOpen(true)} className="flex h-9 w-full max-w-xl items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-500 transition-[background-color,border-color] duration-150 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700">
                             <span className="flex items-center gap-2">
                                 <Search className="h-4 w-4" />
                                 Search roadmaps, topics, scholarships...
@@ -257,6 +309,43 @@ export default function App() {
 
 
             <BottomNav activeTab={activeTab} onNavigate={navigateTo} />
+
+            {commandOpen && (
+                <div className="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/40 p-3 pt-20 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                        <div className="flex items-center gap-2 border-b border-slate-200 p-3 dark:border-slate-800">
+                            <Search className="h-4 w-4 text-slate-400" />
+                            <input
+                                autoFocus
+                                value={commandQuery}
+                                onChange={(event) => setCommandQuery(event.target.value)}
+                                className="h-9 min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400 dark:text-white"
+                                placeholder="Search roadmaps, saved questions, chats, scholarships..."
+                            />
+                            <button onClick={() => setCommandOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:hover:bg-slate-900">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                        <div className="max-h-[60dvh] overflow-y-auto p-2">
+                            {commandQuery.trim().length < 2 && (
+                                <div className="p-4 text-sm text-slate-500 dark:text-slate-400">Type at least two characters to search your workspace.</div>
+                            )}
+                            {commandQuery.trim().length >= 2 && commandResults.length === 0 && (
+                                <div className="p-4 text-sm text-slate-500 dark:text-slate-400">No results yet.</div>
+                            )}
+                            {commandResults.map((result) => (
+                                <button key={`${result.type}-${result.id}`} onClick={() => handleCommandResult(result)} className="flex w-full items-center justify-between gap-3 rounded-lg p-3 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{result.title}</p>
+                                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{result.type} {result.detail ? `| ${result.detail}` : ''}</p>
+                                    </div>
+                                    <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

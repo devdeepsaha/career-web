@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookMarked, CheckCircle2, Clock3, GraduationCap, Library, LineChart, Map, MessageSquare, Sparkles, Target } from 'lucide-react';
+import { ArrowRight, BookMarked, CalendarDays, CheckCircle2, Clock3, FileText, GraduationCap, Library, LineChart, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -33,6 +33,31 @@ const ContinueCard = ({ title, label, detail, action, icon }) => (
     </button>
 );
 
+const InsightCard = ({ title, children, icon }) => (
+    <div className="saas-card p-4">
+        <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                {React.createElement(icon, { className: 'h-4 w-4' })}
+            </div>
+            <h2 className="saas-section-title">{title}</h2>
+        </div>
+        {children}
+    </div>
+);
+
+const TopicBar = ({ item }) => (
+    <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex items-center justify-between gap-3">
+            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.topic}</p>
+            <span className="text-xs font-semibold tabular-nums text-slate-500 dark:text-slate-400">{item.accuracy}%</span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className={`h-full rounded-full ${item.strength === 'strong' ? 'bg-emerald-500' : item.strength === 'improving' ? 'bg-blue-500' : 'bg-rose-500'}`} style={{ width: `${Math.max(8, item.accuracy)}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.attempts} attempts · {item.strength}</p>
+    </div>
+);
+
 const DashboardPage = ({ currentUser, onNavigate }) => {
     const [summary, setSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +88,27 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
         if ((summary.counts?.wrong_attempts || 0) > 0) return 'Review your weak practice questions';
         return 'Take a focused mock test';
     }, [summary]);
+
+    const exportWeeklyReport = () => {
+        const report = summary?.weekly_report;
+        if (!report) return;
+        const html = `
+            <html>
+                <head><title>Career Weekly Report</title></head>
+                <body style="font-family:Inter,Arial,sans-serif;padding:32px;line-height:1.5;color:#0f172a">
+                    <h1>Career Weekly Report</h1>
+                    <p>${report.summary}</p>
+                    <h2>Wins</h2><ul>${(report.wins || []).map((item) => `<li>${item}</li>`).join('')}</ul>
+                    <h2>Weak Areas</h2><ul>${(report.weak_areas || []).map((item) => `<li>${item}</li>`).join('')}</ul>
+                    <h2>Next Actions</h2><ul>${(report.next_actions || []).map((item) => `<li>${item}</li>`).join('')}</ul>
+                </body>
+            </html>
+        `;
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.print();
+    };
 
     if (isLoading) {
         return (
@@ -112,12 +158,13 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                                 </div>
                             </div>
                             <div className="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60 lg:border-l lg:border-t-0">
-                                <p className="saas-meta">Profile completeness</p>
-                                <p className="mt-2 text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.profile_completeness || 0}%</p>
+                                <p className="saas-meta">Career readiness</p>
+                                <p className="mt-2 text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.career_readiness_score || 0}%</p>
                                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${summary?.profile_completeness || 0}%` }} />
+                                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${summary?.career_readiness_score || 0}%` }} />
                                 </div>
-                                <button onClick={() => onNavigate('profile')} className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400">Update profile</button>
+                                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{summary?.profile_completeness || 0}% profile complete</p>
+                                <button onClick={() => onNavigate('profile')} className="mt-3 text-sm font-semibold text-blue-600 dark:text-blue-400">Update profile</button>
                             </div>
                         </div>
                     </div>
@@ -127,6 +174,58 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         <StatCard label="Questions" value={counts.saved_questions || 0} detail="Saved for review" icon={BookMarked} />
                         <StatCard label="Mock average" value={`${summary?.mock_average || 0}%`} detail={`${counts.mock_tests || 0} tests completed`} icon={LineChart} />
                         <StatCard label="Scholarships" value={counts.saved_scholarships || 0} detail="Tracked opportunities" icon={GraduationCap} />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                        <InsightCard title="Goal timeline" icon={CalendarDays}>
+                            <div className="space-y-2">
+                                {(summary?.timeline || []).slice(0, 5).map((item, index) => (
+                                    <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.status || item.type}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {(!summary?.timeline || summary.timeline.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
+                            </div>
+                        </InsightCard>
+
+                        <InsightCard title="Revision queue" icon={BookMarked}>
+                            <div className="space-y-2">
+                                {(summary?.revision_queue || []).slice(0, 4).map((item, index) => (
+                                    <div key={`${item.type}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                        <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.due_state}</p>
+                                    </div>
+                                ))}
+                                {(!summary?.revision_queue || summary.revision_queue.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Wrong answers and saved questions will appear here for daily review.</p>}
+                            </div>
+                        </InsightCard>
+
+                        <InsightCard title="Study timer" icon={Timer}>
+                            <StudyTimer />
+                        </InsightCard>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+                        <InsightCard title="Personal learning graph" icon={TrendingUp}>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {(summary?.topic_insights || []).slice(0, 6).map((item) => <TopicBar key={item.topic} item={item} />)}
+                                {(!summary?.topic_insights || summary.topic_insights.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Answer practice questions to build a topic strength graph.</p>}
+                            </div>
+                        </InsightCard>
+
+                        <InsightCard title="AI weekly report" icon={FileText}>
+                            <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">{summary?.weekly_report?.summary}</p>
+                            <div className="mt-3 space-y-2">
+                                {(summary?.weekly_report?.next_actions || []).slice(0, 3).map((item) => (
+                                    <div key={item} className="rounded-lg bg-slate-50 p-3 text-sm font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">{item}</div>
+                                ))}
+                            </div>
+                            <button onClick={exportWeeklyReport} className="pp-button-secondary mt-3 w-full">Export report</button>
+                        </InsightCard>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -175,6 +274,25 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         </div>
                     </div>
                     <div className="saas-card p-4">
+                        <h2 className="saas-section-title">Opportunity matches</h2>
+                        <div className="mt-3 space-y-2">
+                            {(summary?.opportunity_matches || []).map((item) => (
+                                <div key={item} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">{item}</div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="saas-card p-4">
+                        <h2 className="saas-section-title">Notifications</h2>
+                        <div className="mt-3 space-y-2">
+                            {(summary?.notifications || []).map((item) => (
+                                <div key={item} className="flex gap-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                                    <p className="text-sm leading-5 text-slate-700 dark:text-slate-300">{item}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="saas-card p-4">
                         <h2 className="saas-section-title">Quick actions</h2>
                         <div className="mt-3 grid gap-2">
                             <button onClick={() => onNavigate('library')} className="pp-button-secondary flex items-center justify-center gap-2"><Library className="h-4 w-4" /> Saved library</button>
@@ -182,6 +300,37 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         </div>
                     </div>
                 </aside>
+            </div>
+        </div>
+    );
+};
+
+const StudyTimer = () => {
+    const [seconds, setSeconds] = useState(() => Number(localStorage.getItem('study_timer_seconds') || 25 * 60));
+    const [running, setRunning] = useState(false);
+
+    useEffect(() => {
+        if (!running) return undefined;
+        const id = window.setInterval(() => {
+            setSeconds((prev) => {
+                const next = Math.max(0, prev - 1);
+                localStorage.setItem('study_timer_seconds', String(next));
+                return next;
+            });
+        }, 1000);
+        return () => window.clearInterval(id);
+    }, [running]);
+
+    const minutes = Math.floor(seconds / 60);
+    const rest = String(seconds % 60).padStart(2, '0');
+
+    return (
+        <div>
+            <p className="text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{minutes}:{rest}</p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Focus block for a topic or roadmap step.</p>
+            <div className="mt-4 flex gap-2">
+                <button onClick={() => setRunning((value) => !value)} className="pp-button">{running ? 'Pause' : 'Start'}</button>
+                <button onClick={() => { setRunning(false); setSeconds(25 * 60); localStorage.setItem('study_timer_seconds', String(25 * 60)); }} className="pp-button-secondary">Reset</button>
             </div>
         </div>
     );
