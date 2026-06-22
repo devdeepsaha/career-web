@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react'; // ✅ Added useEffect import
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Compass, LogIn } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
     const { t } = useTranslation();
@@ -8,24 +11,19 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
-
-    // Check for OAuth errors in URL
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const oauthError = urlParams.get('error');
-        
+
         if (oauthError) {
             const errorMessages = {
-                'oauth_failed': 'Google sign-in was not authorized. Please try again.',
-                'fetch_failed': 'Failed to get your information from Google.',
-                'missing_data': 'Google did not provide required information.',
-                'auth_exception': 'An error occurred during sign-in. Please try again.'
+                oauth_failed: 'Google sign-in was not authorized. Please try again.',
+                fetch_failed: 'Failed to get your information from Google.',
+                missing_data: 'Google did not provide required information.',
+                auth_exception: 'An error occurred during sign-in. Please try again.'
             };
-            
+
             setError(errorMessages[oauthError] || 'Google sign-in failed. Please try again.');
-            
-            // Clean up URL
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
@@ -34,14 +32,16 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+
         try {
             const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
-                credentials: 'include',
+                credentials: 'include'
             });
             const data = await response.json();
+
             if (!response.ok) throw new Error(data.message || 'Login failed');
             onLoginSuccess(data.user);
         } catch (err) {
@@ -51,83 +51,121 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
         }
     };
 
-    // Redirect user to backend Google OAuth
     const handleGoogleSignIn = () => {
         window.location.href = `${API_URL}/auth/google/login`;
     };
 
     return (
-        <div className="w-full max-w-sm bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
-            <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-4">
-                {t('Login')}
-            </h2>
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">
+            <div className="grid w-full max-w-5xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-[0.9fr_1fr]">
+                <aside className="hidden flex-col justify-between border-r border-slate-200 bg-slate-950 p-8 text-white dark:border-slate-800 lg:flex">
+                    <div>
+                        <button onClick={onClose} className="mb-12 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-white/70 transition-[color,transform] duration-200 hover:text-white active:scale-[0.96]">
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to landing
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <img src="/logo-light.png" alt="Potho Prodorshok" className="h-10 w-auto" />
+                            <span className="text-2xl font-extrabold">Potho Prodorshok</span>
+                        </div>
+                        <h1 className="mt-8 max-w-md text-3xl font-semibold leading-tight tracking-[-0.01em]">
+                            Continue your AI-guided career path.
+                        </h1>
+                    </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Email Address
-                    </label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        autoComplete="email"
-                        className="w-full mt-1 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Password
-                    </label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoComplete="current-password"
-                        className="w-full mt-1 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
+                    <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+                        <Compass className="mb-3 h-5 w-5 text-blue-200" />
+                        <p className="text-sm font-medium leading-6 text-white/75">
+                            Return to saved roadmaps, tutor chats, mock tests, and scholarship matches.
+                        </p>
+                    </div>
+                </aside>
 
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                <section className="flex w-full flex-col justify-center p-6 sm:p-8">
+                    <button onClick={onClose} className="mb-8 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-slate-500 transition-[color,transform] duration-200 hover:text-slate-950 active:scale-[0.96] dark:text-slate-400 dark:hover:text-white lg:hidden">
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </button>
 
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-2 px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400"
-                >
-                    {isLoading ? 'Logging in...' : 'Login'}
-                </button>
-            </form>
+                    <div className="mb-8">
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Welcome back</p>
+                        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.01em] text-slate-950 dark:text-white">
+                            {t('Login') || 'Log in'}
+                        </h2>
+                        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                            Access your dashboard and keep moving toward the next milestone.
+                        </p>
+                    </div>
 
-            {/* --- Google Sign-In --- */}
-            <div className="mt-4">
-                <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 border rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                >
-                    <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
-                    {t('Sign In with Google')}
-                </button>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="pp-label">
+                                Email Address
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                autoComplete="email"
+                                className="pp-input"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="pp-label">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                autoComplete="current-password"
+                                className="pp-input"
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="pp-button flex w-full items-center justify-center gap-2"
+                        >
+                            <LogIn className="h-4 w-4" />
+                            {isLoading ? 'Logging in...' : 'Log in'}
+                        </button>
+                    </form>
+
+                    <div className="my-7 flex items-center gap-3">
+                        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">or</span>
+                        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleSignIn}
+                        className="pp-button-secondary flex w-full items-center justify-center gap-3"
+                    >
+                        <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
+                        Sign in with Google
+                    </button>
+
+                    <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-300">
+                        New here?
+                        <button onClick={showSignup} className="ml-2 font-extrabold text-slate-950 underline underline-offset-4 dark:text-cyan-300">
+                            Create an account
+                        </button>
+                    </p>
+                </section>
             </div>
-
-            <div className="flex justify-between mt-4 text-sm">
-                <button
-                    onClick={showSignup}
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                    {t('Sign up')}
-                </button>
-                <button
-                    onClick={onClose}
-                    className="text-gray-500 dark:text-slate-400 hover:underline"
-                >
-                    {t('Maybe later')}
-                </button>
-            </div>
-        </div>
+        </main>
     );
 };
 

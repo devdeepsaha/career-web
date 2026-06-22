@@ -72,7 +72,7 @@ CORS(app,
     ],
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["Set-Cookie"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 )
 
 # Register blueprints
@@ -85,7 +85,17 @@ from flask_dance.consumer.storage.session import SessionStorage
 google_bp.storage = SessionStorage()
 
 # Import models
-from models import User, ChatSession, ChatMessage
+from models import (
+    User,
+    ChatSession,
+    ChatMessage,
+    StudentProfile,
+    Roadmap,
+    SavedQuestion,
+    QuestionAttempt,
+    MockTest,
+    SavedScholarship,
+)
 
 # Create all tables
 with app.app_context():
@@ -105,7 +115,7 @@ def make_session_permanent():
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
@@ -158,6 +168,360 @@ model = genai.GenerativeModel(model_name=MODEL, generation_config=generation_con
 # ------------------- Helpers -------------------
 def get_language_name(data):
     return {'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali'}.get(data.get('language', 'en'), 'English')
+
+def parse_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+def first_profile_for_user(user_id):
+    return StudentProfile.query.filter_by(user_id=user_id).order_by(StudentProfile.updated_at.desc()).first()
+
+def profile_completeness(profile):
+    if not profile:
+        return 0
+    fields = [
+        profile.status,
+        profile.education,
+        profile.skills,
+        profile.interests,
+        profile.goals,
+        profile.target_companies,
+        profile.target_exams,
+    ]
+    filled = len([field for field in fields if field and str(field).strip()])
+    return int((filled / len(fields)) * 100)
+
+def recent_activity_for_user(user_id, limit=8):
+    items = []
+    for roadmap in Roadmap.query.filter_by(user_id=user_id).order_by(Roadmap.created_at.desc()).limit(4).all():
+        items.append({
+            "type": "roadmap",
+            "title": roadmap.title,
+            "detail": f"{roadmap.status or 'active'} roadmap",
+            "created_at": roadmap.created_at.isoformat() if roadmap.created_at else None,
+        })
+    for attempt in QuestionAttempt.query.filter_by(user_id=user_id).order_by(QuestionAttempt.created_at.desc()).limit(4).all():
+        items.append({
+            "type": "question",
+            "title": "Practice question",
+            "detail": "Correct" if attempt.is_correct else "Needs review",
+            "created_at": attempt.created_at.isoformat() if attempt.created_at else None,
+        })
+    for test in MockTest.query.filter_by(user_id=user_id).order_by(MockTest.created_at.desc()).limit(4).all():
+        items.append({
+            "type": "mock_test",
+            "title": f"{test.exam or 'Mock test'}",
+            "detail": f"{float(test.score or 0):.0f}% score",
+            "created_at": test.created_at.isoformat() if test.created_at else None,
+        })
+    for scholarship in SavedScholarship.query.filter_by(user_id=user_id).order_by(SavedScholarship.created_at.desc()).limit(4).all():
+        payload = scholarship.scholarship_json or {}
+        items.append({
+            "type": "scholarship",
+            "title": payload.get("name", "Saved scholarship"),
+            "detail": scholarship.status or "saved",
+            "created_at": scholarship.created_at.isoformat() if scholarship.created_at else None,
+        })
+    return sorted(items, key=lambda item: item.get("created_at") or "", reverse=True)[:limit]
+
+# ------------------- Workspace Data APIs -------------------
+
+@app.route('/dashboard-summary', methods=['GET'])
+@login_required
+def dashboard_summary():
+    profile = first_profile_for_user(current_user.id)
+    latest_roadmap = Roadmap.query.filter_by(user_id=current_user.id).order_by(Roadmap.updated_at.desc()).first()
+    latest_chat = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.updated_at.desc()).first()
+    latest_mock = MockTest.query.filter_by(user_id=current_user.id).order_by(MockTest.created_at.desc()).first()
+    mock_tests = MockTest.query.filter_by(user_id=current_user.id).all()
+    wrong_attempts = QuestionAttempt.query.filter_by(user_id=current_user.id, is_correct=False).count()
+    saved_scholarships = SavedScholarship.query.filter_by(user_id=current_user.id).count()
+    saved_questions = SavedQuestion.query.filter_by(user_id=current_user.id).count()
+    roadmaps = Roadmap.query.filter_by(user_id=current_user.id).count()
+    attempts = QuestionAttempt.query.filter_by(user_id=current_user.id).count()
+    mock_average = 0
+    if mock_tests:
+        scores = [float(test.score or 0) for test in mock_tests]
+        mock_average = round(sum(scores) / len(scores))
+
+    return jsonify({
+        "profile": profile.to_dict() if profile else None,
+        "profile_completeness": profile_completeness(profile),
+        "counts": {
+            "roadmaps": roadmaps,
+            "saved_questions": saved_questions,
+            "saved_scholarships": saved_scholarships,
+            "question_attempts": attempts,
+            "mock_tests": len(mock_tests),
+            "wrong_attempts": wrong_attempts,
+        },
+        "mock_average": mock_average,
+        "latest_roadmap": latest_roadmap.to_dict(include_json=False) if latest_roadmap else None,
+        "latest_chat": latest_chat.to_dict() if latest_chat else None,
+        "latest_mock": latest_mock.to_dict(include_payload=False) if latest_mock else None,
+        "recent_activity": recent_activity_for_user(current_user.id),
+        "recommendations": [
+            "Review wrong practice questions" if wrong_attempts else "Generate your first practice question",
+            "Update your student profile" if profile_completeness(profile) < 80 else "Generate a focused roadmap from your profile",
+            "Check upcoming scholarship deadlines" if saved_scholarships else "Save scholarships you want to apply for",
+        ],
+    }), 200
+
+@app.route('/student-profile', methods=['GET', 'PUT'])
+@login_required
+def student_profile():
+    profile = first_profile_for_user(current_user.id)
+
+    if request.method == 'GET':
+        return jsonify(profile.to_dict() if profile else None), 200
+
+    data = request.get_json() or {}
+    if not profile:
+        profile = StudentProfile(user_id=current_user.id)
+        db.session.add(profile)
+
+    for field in ['status', 'education', 'skills', 'interests', 'goals', 'preferred_language']:
+        if field in data:
+            setattr(profile, field, data.get(field))
+    if 'target_companies' in data:
+        profile.target_companies = data.get('target_companies')
+    if 'targetCompanies' in data:
+        profile.target_companies = data.get('targetCompanies')
+    if 'target_exams' in data:
+        profile.target_exams = data.get('target_exams')
+
+    profile.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(profile.to_dict()), 200
+
+@app.route('/roadmaps', methods=['GET', 'POST'])
+@login_required
+def roadmaps():
+    if request.method == 'GET':
+        status = request.args.get('status')
+        query = Roadmap.query.filter_by(user_id=current_user.id)
+        if status:
+            query = query.filter_by(status=status)
+        items = query.order_by(Roadmap.updated_at.desc()).all()
+        return jsonify([item.to_dict(include_json=False) for item in items]), 200
+
+    data = request.get_json() or {}
+    roadmap_json = data.get('roadmap_json') or data.get('roadmap')
+    if not roadmap_json:
+        return jsonify({"error": "roadmap_json is required"}), 400
+
+    item = Roadmap(
+        user_id=current_user.id,
+        title=data.get('title') or 'Career roadmap',
+        input_profile=data.get('input_profile') or {},
+        roadmap_json=roadmap_json,
+        status=data.get('status') or 'active',
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@app.route('/roadmaps/<int:roadmap_id>', methods=['GET', 'PATCH', 'DELETE'])
+@login_required
+def roadmap_detail(roadmap_id):
+    item = Roadmap.query.filter_by(id=roadmap_id, user_id=current_user.id).first()
+    if not item:
+        return jsonify({"error": "Roadmap not found"}), 404
+
+    if request.method == 'GET':
+        return jsonify(item.to_dict()), 200
+
+    if request.method == 'DELETE':
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({"message": "Roadmap deleted"}), 200
+
+    data = request.get_json() or {}
+    if 'title' in data:
+        item.title = data.get('title') or item.title
+    if 'status' in data:
+        item.status = data.get('status') or item.status
+    if 'roadmap_json' in data:
+        item.roadmap_json = data.get('roadmap_json')
+    item.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(item.to_dict()), 200
+
+@app.route('/saved-questions', methods=['GET', 'POST'])
+@login_required
+def saved_questions():
+    if request.method == 'GET':
+        query = SavedQuestion.query.filter_by(user_id=current_user.id)
+        for key, column in {
+            'exam': SavedQuestion.exam,
+            'subject': SavedQuestion.subject,
+            'topic': SavedQuestion.topic,
+            'difficulty': SavedQuestion.difficulty,
+        }.items():
+            value = request.args.get(key)
+            if value:
+                query = query.filter(column.ilike(f"%{value}%"))
+        items = query.order_by(SavedQuestion.created_at.desc()).all()
+        return jsonify([item.to_dict() for item in items]), 200
+
+    data = request.get_json() or {}
+    question_text = data.get('question_text') or data.get('question')
+    if not question_text:
+        return jsonify({"error": "question_text is required"}), 400
+
+    existing = SavedQuestion.query.filter_by(user_id=current_user.id, question_text=question_text).first()
+    if existing:
+        return jsonify(existing.to_dict()), 200
+
+    item = SavedQuestion(
+        user_id=current_user.id,
+        question_text=question_text,
+        options_json=data.get('options_json') or data.get('options'),
+        correct_answer=data.get('correct_answer') or data.get('answer'),
+        explanation=data.get('explanation'),
+        exam=data.get('exam'),
+        subject=data.get('subject'),
+        topic=data.get('topic'),
+        difficulty=data.get('difficulty'),
+        source=data.get('source') or 'practice',
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@app.route('/saved-questions/<int:question_id>', methods=['DELETE'])
+@login_required
+def delete_saved_question(question_id):
+    item = SavedQuestion.query.filter_by(id=question_id, user_id=current_user.id).first()
+    if not item:
+        return jsonify({"error": "Saved question not found"}), 404
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": "Saved question deleted"}), 200
+
+@app.route('/question-attempts', methods=['GET', 'POST'])
+@login_required
+def question_attempts():
+    if request.method == 'GET':
+        query = QuestionAttempt.query.filter_by(user_id=current_user.id)
+        if request.args.get('wrong_only') == 'true':
+            query = query.filter_by(is_correct=False)
+        items = query.order_by(QuestionAttempt.created_at.desc()).limit(200).all()
+        return jsonify([item.to_dict() for item in items]), 200
+
+    data = request.get_json() or {}
+    question_text = data.get('question_text') or data.get('question')
+    if not question_text:
+        return jsonify({"error": "question_text is required"}), 400
+    selected = data.get('selected_answer')
+    correct = data.get('correct_answer') or data.get('answer')
+    is_correct = data.get('is_correct')
+    if is_correct is None and selected is not None and correct is not None:
+        is_correct = selected == correct
+
+    item = QuestionAttempt(
+        user_id=current_user.id,
+        saved_question_id=data.get('saved_question_id'),
+        question_text=question_text,
+        selected_answer=selected,
+        correct_answer=correct,
+        is_correct=is_correct,
+        time_taken_seconds=data.get('time_taken_seconds'),
+        exam=data.get('exam'),
+        subject=data.get('subject'),
+        topic=data.get('topic'),
+        difficulty=data.get('difficulty'),
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@app.route('/mock-tests', methods=['GET', 'POST'])
+@login_required
+def mock_tests():
+    if request.method == 'GET':
+        items = MockTest.query.filter_by(user_id=current_user.id).order_by(MockTest.created_at.desc()).all()
+        return jsonify([item.to_dict(include_payload=False) for item in items]), 200
+
+    data = request.get_json() or {}
+    item = MockTest(
+        user_id=current_user.id,
+        exam=data.get('exam'),
+        subject=data.get('subject'),
+        topic=data.get('topic'),
+        difficulty=data.get('difficulty'),
+        total_questions=data.get('total_questions'),
+        correct_answers=data.get('correct_answers'),
+        incorrect_answers=data.get('incorrect_answers'),
+        score=data.get('score'),
+        questions_json=data.get('questions_json') or data.get('questions'),
+        answers_json=data.get('answers_json') or data.get('answers'),
+        analysis_json=data.get('analysis_json') or data.get('analysis'),
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@app.route('/mock-tests/<int:test_id>', methods=['GET'])
+@login_required
+def mock_test_detail(test_id):
+    item = MockTest.query.filter_by(id=test_id, user_id=current_user.id).first()
+    if not item:
+        return jsonify({"error": "Mock test not found"}), 404
+    return jsonify(item.to_dict()), 200
+
+@app.route('/saved-scholarships', methods=['GET', 'POST'])
+@login_required
+def saved_scholarships():
+    if request.method == 'GET':
+        status = request.args.get('status')
+        query = SavedScholarship.query.filter_by(user_id=current_user.id)
+        if status:
+            query = query.filter_by(status=status)
+        items = query.order_by(SavedScholarship.created_at.desc()).all()
+        return jsonify([item.to_dict() for item in items]), 200
+
+    data = request.get_json() or {}
+    payload = data.get('scholarship_json') or data.get('scholarship')
+    if not payload:
+        return jsonify({"error": "scholarship_json is required"}), 400
+
+    item = SavedScholarship(
+        user_id=current_user.id,
+        scholarship_json=payload,
+        deadline=parse_date(data.get('deadline') or payload.get('deadline')),
+        status=data.get('status') or 'saved',
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify(item.to_dict()), 201
+
+@app.route('/saved-scholarships/<int:scholarship_id>', methods=['PATCH', 'DELETE'])
+@login_required
+def saved_scholarship_detail(scholarship_id):
+    item = SavedScholarship.query.filter_by(id=scholarship_id, user_id=current_user.id).first()
+    if not item:
+        return jsonify({"error": "Saved scholarship not found"}), 404
+
+    if request.method == 'DELETE':
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({"message": "Saved scholarship deleted"}), 200
+
+    data = request.get_json() or {}
+    if 'status' in data:
+        item.status = data.get('status') or item.status
+    if 'deadline' in data:
+        item.deadline = parse_date(data.get('deadline'))
+    if 'scholarship_json' in data:
+        item.scholarship_json = data.get('scholarship_json') or item.scholarship_json
+    item.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(item.to_dict()), 200
 
 # ------------------- Performance Analysis -------------------
 @app.route('/analyze-performance', methods=['POST', 'OPTIONS'])
@@ -221,7 +585,7 @@ def analyze_performance():
         weaknesses = []
         recommendations = []
 
-    return jsonify({
+    result_payload = {
         "score": score,
         "total_questions": total_questions,
         "correct_answers": correct_count,
@@ -231,7 +595,32 @@ def analyze_performance():
         "weaknesses": weaknesses,
         "recommendations": recommendations,
         "detailed_results": detailed_results
-    })
+    }
+
+    if current_user.is_authenticated and data.get('save'):
+        try:
+            saved_test = MockTest(
+                user_id=current_user.id,
+                exam=data.get('exam'),
+                subject=data.get('subject'),
+                topic=data.get('topic'),
+                difficulty=data.get('difficulty'),
+                total_questions=total_questions,
+                correct_answers=correct_count,
+                incorrect_answers=total_questions - correct_count,
+                score=score,
+                questions_json=questions,
+                answers_json=user_answers,
+                analysis_json=result_payload,
+            )
+            db.session.add(saved_test)
+            db.session.commit()
+            result_payload["saved_mock_test"] = saved_test.to_dict(include_payload=False)
+        except Exception as e:
+            print("Mock test save error:", e)
+            db.session.rollback()
+
+    return jsonify(result_payload)
 
 # ------------------- Chat Session Management -------------------
 
@@ -358,6 +747,49 @@ def generate_roadmap():
             cleaned = response.text.strip().replace('```json', '').replace('```', '')
             try:
                 roadmap = json.loads(cleaned)
+                if current_user.is_authenticated and data.get('save'):
+                    try:
+                        title = data.get('title') or goals or "Career roadmap"
+                        input_profile = {
+                            "skills": skills,
+                            "interests": interests,
+                            "goals": goals,
+                            "status": status,
+                            "education": education,
+                            "targetCompanies": target,
+                            "language": data.get('language', 'en'),
+                        }
+                        saved_roadmap = Roadmap(
+                            user_id=current_user.id,
+                            title=str(title)[:180],
+                            input_profile=input_profile,
+                            roadmap_json=roadmap,
+                            status='active',
+                        )
+                        db.session.add(saved_roadmap)
+
+                        if data.get('update_profile'):
+                            profile = first_profile_for_user(current_user.id)
+                            if not profile:
+                                profile = StudentProfile(user_id=current_user.id)
+                                db.session.add(profile)
+                            profile.skills = skills
+                            profile.interests = interests
+                            profile.goals = goals
+                            profile.status = status
+                            profile.education = education
+                            profile.target_companies = target
+                            profile.preferred_language = data.get('language', 'en')
+                            profile.updated_at = datetime.utcnow()
+
+                        db.session.commit()
+                        return jsonify({
+                            "roadmap": roadmap,
+                            "saved_roadmap": saved_roadmap.to_dict(include_json=False)
+                        })
+                    except Exception as e:
+                        print("Roadmap save error:", e)
+                        db.session.rollback()
                 return jsonify(roadmap)
             except json.JSONDecodeError:
                 continue

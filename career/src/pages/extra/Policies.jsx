@@ -1,27 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import ThemeToggle from '../../components/shared/ThemeToggle'; // Adjust path if needed
 
 const Policies = () => {
     const { t } = useTranslation();
-    
-    // Local state to manage the theme on this page, syncing with the global theme
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-
-    useEffect(() => {
-        const root = window.document.documentElement;
-        const currentTheme = root.classList.contains('dark') ? 'dark' : 'light';
-        setTheme(currentTheme);
-    }, []);
-
-    const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        const root = window.document.documentElement;
-        root.classList.remove(theme);
-        root.classList.add(newTheme);
-        localStorage.setItem('theme', newTheme);
-        setTheme(newTheme);
-    };
 
     return (
         <>

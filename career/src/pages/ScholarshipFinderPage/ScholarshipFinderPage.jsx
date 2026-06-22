@@ -15,6 +15,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [hasSearched, setHasSearched] = useState(false);
+    const [savedScholarshipKeys, setSavedScholarshipKeys] = useState({});
 
     const findScholarships = async (e) => {
         e.preventDefault();
@@ -54,72 +55,93 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
         }
     };
 
+    const saveScholarship = async (scholarship, index) => {
+        try {
+            const response = await fetch(`${API_URL}/saved-scholarships`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scholarship_json: scholarship,
+                    deadline: scholarship.deadline,
+                    status: 'saved',
+                }),
+            });
+            if (response.ok) {
+                setSavedScholarshipKeys((prev) => ({ ...prev, [`${scholarship.name}-${index}`]: true }));
+            }
+        } catch (err) {
+            console.error('Failed to save scholarship:', err);
+        }
+    };
+
     return (
-        <div className="container mx-auto px-4 py-12 md:py-20">
+        <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             <title>Find Scholarships | Potho-Prodorshok</title>
             <meta
                 name="description"
                 content="Discover scholarships that match your profile. Use our Scholarship Finder to explore opportunities based on your marks, income, region, and more."
             />
 
-            <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('scholarship_title')}</h1>
-                <p className="mt-4 text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">{t('scholarship_subtitle')}</p>
+            <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Funding Finder</p>
+                <h1 className="pp-page-title">{t('scholarship_title')}</h1>
+                <p className="pp-page-copy mt-1 max-w-3xl">{t('scholarship_subtitle')}</p>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
                 {/* Form */}
-                <div className="lg:w-1/3">
-                    <div className="p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">{t('scholarship_form_title')}</h2>
-                        <form onSubmit={findScholarships} className="space-y-4">
+                <div>
+                    <div className="saas-card p-4 xl:sticky xl:top-16">
+                        <h2 className="mb-4 saas-section-title">{t('scholarship_form_title')}</h2>
+                        <form onSubmit={findScholarships} className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_marksLabel')}</label>
+                                <label className="pp-label">{t('scholarship_form_marksLabel')}</label>
                                 <input
                                     type="text"
                                     value={marks}
                                     onChange={e => setMarks(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    className="pp-input"
                                     placeholder={t('scholarship_form_marksPlaceholder')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_incomeLabel')}</label>
+                                <label className="pp-label">{t('scholarship_form_incomeLabel')}</label>
                                 <input
                                     type="text"
                                     value={income}
                                     onChange={e => setIncome(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    className="pp-input"
                                     placeholder={t('scholarship_form_incomePlaceholder')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_regionLabel')}</label>
+                                <label className="pp-label">{t('scholarship_form_regionLabel')}</label>
                                 <input
                                     type="text"
                                     value={region}
                                     onChange={e => setRegion(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    className="pp-input"
                                     placeholder={t('scholarship_form_regionPlaceholder')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_religionLabel')}</label>
+                                <label className="pp-label">{t('scholarship_form_religionLabel')}</label>
                                 <input
                                     type="text"
                                     value={religion}
                                     onChange={e => setReligion(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    className="pp-input"
                                     placeholder={t('scholarship_form_religionPlaceholder')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('scholarship_form_destinationLabel')}</label>
+                                <label className="pp-label">{t('scholarship_form_destinationLabel')}</label>
                                 <input
                                     type="text"
                                     value={destination}
                                     onChange={e => setDestination(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-800 dark:text-white"
+                                    className="pp-input"
                                     placeholder={t('scholarship_form_destinationPlaceholder')}
                                 />
                             </div>
@@ -128,7 +150,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full mt-8 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                                className="pp-button mt-4 w-full"
                             >
                                 {isLoading ? t('scholarship_button_searching') : t('scholarship_button_find')}
                             </button>
@@ -137,32 +159,35 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                 </div>
 
                 {/* Results */}
-                <div className="lg:w-2/3">
+                <div>
                     {isLoading && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {[...Array(3)].map((_, i) => (
-                                <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-md animate-pulse h-32"></div>
+                                <div key={i} className="h-24 animate-pulse rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"></div>
                             ))}
                         </div>
                     )}
-                    {error && <p className="text-red-500 text-center">{error}</p>}
+                    {error && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-center text-sm font-medium text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
 
                     {!isLoading && !error && (!hasSearched || scholarships.length === 0) && <ScholarshipEmptyState />}
 
                     {!isLoading && scholarships.length > 0 && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {scholarships.map((s, i) => (
-                                <div key={i} className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700">
-                                    <h3 className="font-bold text-xl text-blue-800 dark:text-blue-400">{s.name}</h3>
-                                    <p className="text-gray-600 dark:text-slate-300 mt-2">{s.description}</p>
-                                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-2"><strong>{t('scholarship_results_eligibility')}:</strong> {s.eligibility}</p>
-                                    <div className="mt-4 flex items-center gap-4">
-                                        <a href={s.direct_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">
-                                            {t('scholarship_results_officialLink')} &rarr;
+                                <div key={i} className="saas-card p-4 transition-[border-color] duration-150 hover:border-slate-300 dark:hover:border-slate-700">
+                                    <h3 className="text-sm font-semibold text-slate-950 dark:text-white">{s.name}</h3>
+                                    <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-400">{s.description}</p>
+                                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400"><strong>{t('scholarship_results_eligibility')}:</strong> {s.eligibility}</p>
+                                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <a href={s.direct_url} target="_blank" rel="noopener noreferrer" className="pp-button inline-block">
+                                            {t('scholarship_results_officialLink')}
                                         </a>
-                                        <a href={s.search_url} target="_blank" rel="noopener noreferrer" className="inline-block bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 text-sm">
+                                        <a href={s.search_url} target="_blank" rel="noopener noreferrer" className="pp-button-secondary inline-block">
                                             {t('scholarship_results_searchGoogle')}
                                         </a>
+                                        <button onClick={() => saveScholarship(s, i)} className="pp-button-secondary">
+                                            {savedScholarshipKeys[`${s.name}-${i}`] ? 'Saved' : 'Save'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}

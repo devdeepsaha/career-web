@@ -19,6 +19,12 @@ class User(UserMixin, db.Model):
     
     # Relationship to chat sessions
     chat_sessions = db.relationship('ChatSession', backref='user', lazy=True, cascade='all, delete-orphan')
+    student_profiles = db.relationship('StudentProfile', backref='user', lazy=True, cascade='all, delete-orphan')
+    roadmaps = db.relationship('Roadmap', backref='user', lazy=True, cascade='all, delete-orphan')
+    saved_questions = db.relationship('SavedQuestion', backref='user', lazy=True, cascade='all, delete-orphan')
+    question_attempts = db.relationship('QuestionAttempt', backref='user', lazy=True, cascade='all, delete-orphan')
+    mock_tests = db.relationship('MockTest', backref='user', lazy=True, cascade='all, delete-orphan')
+    saved_scholarships = db.relationship('SavedScholarship', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -65,4 +71,191 @@ class ChatMessage(db.Model):
             'sender': self.sender,
             'text': self.text,
             'created_at': self.created_at.isoformat()
+        }
+
+
+class StudentProfile(db.Model):
+    __tablename__ = "student_profile"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(100), nullable=True)
+    education = db.Column(db.String(200), nullable=True)
+    skills = db.Column(db.Text, nullable=True)
+    interests = db.Column(db.Text, nullable=True)
+    goals = db.Column(db.Text, nullable=True)
+    target_companies = db.Column(db.Text, nullable=True)
+    target_exams = db.Column(db.Text, nullable=True)
+    preferred_language = db.Column(db.String(20), default='en')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'status': self.status,
+            'education': self.education,
+            'skills': self.skills,
+            'interests': self.interests,
+            'goals': self.goals,
+            'target_companies': self.target_companies,
+            'target_exams': self.target_exams,
+            'preferred_language': self.preferred_language,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Roadmap(db.Model):
+    __tablename__ = "roadmap"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    input_profile = db.Column(db.JSON, nullable=True)
+    roadmap_json = db.Column(db.JSON, nullable=False)
+    status = db.Column(db.String(40), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self, include_json=True):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'status': self.status,
+            'input_profile': self.input_profile,
+            'step_count': len(self.roadmap_json or []),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_json:
+            data['roadmap_json'] = self.roadmap_json
+        return data
+
+
+class SavedQuestion(db.Model):
+    __tablename__ = "saved_question"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    options_json = db.Column(db.JSON, nullable=True)
+    correct_answer = db.Column(db.Text, nullable=True)
+    explanation = db.Column(db.Text, nullable=True)
+    exam = db.Column(db.String(120), nullable=True)
+    subject = db.Column(db.String(120), nullable=True)
+    topic = db.Column(db.String(120), nullable=True)
+    difficulty = db.Column(db.String(60), nullable=True)
+    source = db.Column(db.String(80), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'question_text': self.question_text,
+            'options_json': self.options_json,
+            'correct_answer': self.correct_answer,
+            'explanation': self.explanation,
+            'exam': self.exam,
+            'subject': self.subject,
+            'topic': self.topic,
+            'difficulty': self.difficulty,
+            'source': self.source,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class QuestionAttempt(db.Model):
+    __tablename__ = "question_attempt"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    saved_question_id = db.Column(db.Integer, db.ForeignKey('saved_question.id'), nullable=True)
+    question_text = db.Column(db.Text, nullable=False)
+    selected_answer = db.Column(db.Text, nullable=True)
+    correct_answer = db.Column(db.Text, nullable=True)
+    is_correct = db.Column(db.Boolean, nullable=True)
+    time_taken_seconds = db.Column(db.Integer, nullable=True)
+    exam = db.Column(db.String(120), nullable=True)
+    subject = db.Column(db.String(120), nullable=True)
+    topic = db.Column(db.String(120), nullable=True)
+    difficulty = db.Column(db.String(60), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'saved_question_id': self.saved_question_id,
+            'question_text': self.question_text,
+            'selected_answer': self.selected_answer,
+            'correct_answer': self.correct_answer,
+            'is_correct': self.is_correct,
+            'time_taken_seconds': self.time_taken_seconds,
+            'exam': self.exam,
+            'subject': self.subject,
+            'topic': self.topic,
+            'difficulty': self.difficulty,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class MockTest(db.Model):
+    __tablename__ = "mock_test"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    exam = db.Column(db.String(120), nullable=True)
+    subject = db.Column(db.String(120), nullable=True)
+    topic = db.Column(db.String(120), nullable=True)
+    difficulty = db.Column(db.String(60), nullable=True)
+    total_questions = db.Column(db.Integer, nullable=True)
+    correct_answers = db.Column(db.Integer, nullable=True)
+    incorrect_answers = db.Column(db.Integer, nullable=True)
+    score = db.Column(db.Numeric, nullable=True)
+    questions_json = db.Column(db.JSON, nullable=True)
+    answers_json = db.Column(db.JSON, nullable=True)
+    analysis_json = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self, include_payload=True):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'exam': self.exam,
+            'subject': self.subject,
+            'topic': self.topic,
+            'difficulty': self.difficulty,
+            'total_questions': self.total_questions,
+            'correct_answers': self.correct_answers,
+            'incorrect_answers': self.incorrect_answers,
+            'score': float(self.score) if self.score is not None else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+        if include_payload:
+            data.update({
+                'questions_json': self.questions_json,
+                'answers_json': self.answers_json,
+                'analysis_json': self.analysis_json,
+            })
+        return data
+
+
+class SavedScholarship(db.Model):
+    __tablename__ = "saved_scholarship"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    scholarship_json = db.Column(db.JSON, nullable=False)
+    deadline = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(40), default='saved')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'scholarship_json': self.scholarship_json,
+            'deadline': self.deadline.isoformat() if self.deadline else None,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const ThankYouPage = () => {
-    const { t } = useTranslation();
     const [submittedMessage, setSubmittedMessage] = useState('');
 
     useEffect(() => {

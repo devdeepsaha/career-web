@@ -10,7 +10,7 @@ const ScholarshipEmptyState = () => {
     const { t } = useTranslation();
 
     return (
-        <div className="lg:w-2/3 mt-12 lg:mt-0 max-w-sm mx-auto">
+        <div className="pp-panel mx-auto max-w-md p-8">
             <LottieDisplay 
                 lightAnimation={scholarshipLight}
                 darkAnimation={scholarshipDark}

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { ArrowLeft, Compass, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
     const { t } = useTranslation();
@@ -7,36 +10,27 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    // ADDED: State to hold the success message after signup
     const [signupMessage, setSignupMessage] = useState('');
-
-    const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+
         try {
             const response = await fetch(`${API_URL}/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
-                credentials: 'include',
+                credentials: 'include'
             });
             const data = await response.json();
-            
-            // MODIFIED: Handle different success/error responses from the backend
+
             if (response.status === 201) {
-                 onLoginSuccess(data.user);
-                // This is a successful signup that requires email confirmation.
+                onLoginSuccess(data.user);
                 setSignupMessage(data.message);
-                // We DO NOT call onLoginSuccess here anymore.
             } else if (!response.ok) {
-                // This handles errors like 409 (email already exists).
                 throw new Error(data.message || 'Signup failed');
-            } else {
-                // This would be for an immediate login, which we are not doing now.
-                // onLoginSuccess(data.user);
             }
         } catch (err) {
             setError(err.message);
@@ -46,101 +40,134 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
     };
 
     const handleGoogleSignUp = () => {
-        window.location.href = `${API_URL}/auth/google/login`; // Redirect to backend OAuth
+        window.location.href = `${API_URL}/auth/google/login`;
     };
 
-    // ADDED: If signup is successful, show the message instead of the form.
     if (signupMessage) {
         return (
-            <div className="w-full max-w-sm bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border dark:border-slate-700 text-center">
-                <h2 className="text-2xl font-bold text-green-500 dark:text-green-400 mb-4">
-                    {t('Success!')}
-                </h2>
-                <p className="text-gray-700 dark:text-slate-300 mb-6">
-                    {signupMessage}
-                </p>
-                <button 
-                    onClick={onClose} 
-                    className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
-                >
-                    {t('Close')}
-                </button>
-            </div>
+            <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-950 dark:bg-slate-950 dark:text-white">
+                <div className="saas-card w-full max-w-md p-8 text-center">
+                    <h2 className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-300">{t('Success!') || 'Success!'}</h2>
+                    <p className="mt-4 text-slate-600 dark:text-slate-300">{signupMessage}</p>
+                    <button onClick={onClose} className="pp-button mt-8 w-full">
+                        {t('Close') || 'Close'}
+                    </button>
+                </div>
+            </main>
         );
     }
 
     return (
-        <div className="w-full max-w-sm bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
-            <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-4">
-                {t('Create Account')}
-            </h2>
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white">
+            <div className="grid w-full max-w-5xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-[0.9fr_1fr]">
+                <aside className="hidden flex-col justify-between border-r border-slate-200 bg-slate-950 p-8 text-white dark:border-slate-800 lg:flex">
+                    <div>
+                        <button onClick={onClose} className="mb-12 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-white/70 transition-[color,transform] duration-200 hover:text-white active:scale-[0.96]">
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to landing
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <img src="/logo-light.png" alt="Potho Prodorshok" className="h-10 w-auto" />
+                            <span className="text-2xl font-extrabold">Potho Prodorshok</span>
+                        </div>
+                        <h1 className="mt-8 max-w-md text-3xl font-semibold leading-tight tracking-[-0.01em]">
+                            Your journey to a future-proof career.
+                        </h1>
+                    </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Email Address
-                    </label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        autoComplete="email"
-                        className="w-full mt-1 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Password
-                    </label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoComplete="new-password"
-                        className="w-full mt-1 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg border focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
+                    <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+                        <Compass className="mb-3 h-5 w-5 text-blue-200" />
+                        <p className="text-sm font-medium leading-6 text-white/75">
+                            Join learners using AI roadmaps, tutoring, and scholarship discovery to plan with clarity.
+                        </p>
+                    </div>
+                </aside>
 
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                <section className="flex w-full flex-col justify-center p-6 sm:p-8">
+                    <button onClick={onClose} className="mb-8 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-slate-500 transition-[color,transform] duration-200 hover:text-slate-950 active:scale-[0.96] dark:text-slate-400 dark:hover:text-white lg:hidden">
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </button>
 
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-2 px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400"
-                >
-                    {isLoading ? 'Creating account...' : 'Sign Up'}
-                </button>
-            </form>
+                    <div className="mb-8">
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Start planning</p>
+                        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.01em] text-slate-950 dark:text-white">
+                            {t('Create Account') || 'Create Account'}
+                        </h2>
+                        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                            Create your account to unlock the dashboard, saved sessions, and AI-generated guidance.
+                        </p>
+                    </div>
 
-            {/* --- Google Sign-Up Button --- */}
-            <div className="mt-4">
-                <button
-                    type="button"
-                    onClick={handleGoogleSignUp}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 border rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                >
-                    <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
-                    {t('Sign Up with Google')}
-                </button>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="pp-label">
+                                Email Address
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                autoComplete="email"
+                                className="pp-input"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="pp-label">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                autoComplete="new-password"
+                                className="pp-input"
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="pp-button flex w-full items-center justify-center gap-2"
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            {isLoading ? 'Creating account...' : 'Create account'}
+                        </button>
+                    </form>
+
+                    <div className="my-7 flex items-center gap-3">
+                        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">or</span>
+                        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleSignUp}
+                        className="pp-button-secondary flex w-full items-center justify-center gap-3"
+                    >
+                        <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
+                        Sign up with Google
+                    </button>
+
+                    <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-300">
+                        Already have an account?
+                        <button onClick={showLogin} className="ml-2 font-extrabold text-slate-950 underline underline-offset-4 dark:text-cyan-300">
+                            Log in
+                        </button>
+                    </p>
+                </section>
             </div>
-
-            <div className="flex justify-between mt-4 text-sm">
-                <button
-                    onClick={showLogin}
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                    {t('Already have an account? Login')}
-                </button>
-                <button
-                    onClick={onClose}
-                    className="text-gray-500 dark:text-slate-400 hover:underline"
-                >
-                    {t('Maybe later')}
-                </button>
-            </div>
-        </div>
+        </main>
     );
 };
 

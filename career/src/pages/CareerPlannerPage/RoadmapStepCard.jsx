@@ -37,22 +37,22 @@ const RoadmapStepCard = ({ step, openChatWithQuery }) => {
     };
 
     return (
-        <div
-            className={`p-6 rounded-xl shadow-lg border-l-4 ${config.borderColor} ${config.bgColor} transform transition-transform hover:scale-[1.02] hover:shadow-xl`}
-        >
-            <div className="flex items-start sm:items-center space-x-4">
-                <div className="flex-shrink-0">{config.icon}</div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 transition-[border-color,background-color] duration-150 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+            <div className="flex items-start gap-3">
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 ${config.borderColor}`}>
+                    {config.icon}
+                </div>
                 <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-500 dark:text-slate-400">{config.title}</p>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mt-1">{step.title}</h3>
-                    <p className="text-gray-600 dark:text-slate-300 mt-2">{step.description}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">{config.title}</p>
+                    <h3 className="mt-0.5 text-sm font-semibold text-slate-950 dark:text-white">{step.title}</h3>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-400">{step.description}</p>
 
                     {/* 🔹 Single unified button/link logic */}
                     <button
                         onClick={handleLearnMore}
-                        className="inline-block mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+                        className="ios-pill mt-3 inline-flex"
                     >
-                        {t('roadmapCard_learnMore', { source: step.source })} &rarr;
+                        {t('roadmapCard_learnMore', { source: step.source })}
                     </button>
                 </div>
             </div>

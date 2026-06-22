@@ -10,7 +10,7 @@ const EmptyStateGraphic = () => {
     const { t } = useTranslation();
 
     return (
-        <div className="lg:w-2/3 mt-12 lg:mt-0 max-w-lg mx-auto">
+        <div className="mx-auto max-w-sm py-8">
             <LottieDisplay 
                 lightAnimation={lightAnimation}
                 darkAnimation={darkAnimation}

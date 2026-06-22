@@ -4,6 +4,72 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .ios-surface {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950;
+  }
+
+  .ios-surface-soft {
+    @apply rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900;
+  }
+
+  .ios-pill {
+    @apply rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-[background-color,border-color,color] duration-150 hover:border-slate-300 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:text-white;
+  }
+
+  .pp-panel {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950;
+  }
+
+  .pp-subpanel {
+    @apply rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900;
+  }
+
+  .pp-label {
+    @apply mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400;
+  }
+
+  .pp-input {
+    @apply w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-950 outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/15;
+  }
+
+  .pp-button {
+    @apply rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-slate-800 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200;
+  }
+
+  .pp-button-secondary {
+    @apply rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white;
+  }
+
+  .pp-page-title {
+    @apply text-balance text-2xl font-semibold tracking-[-0.01em] text-slate-950 antialiased dark:text-white md:text-3xl;
+  }
+
+  .pp-page-copy {
+    @apply text-pretty text-sm leading-6 text-slate-600 dark:text-slate-400;
+  }
+
+  .saas-shell {
+    @apply min-h-screen bg-slate-50 font-sans text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-200;
+  }
+
+  .saas-topbar {
+    @apply sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95;
+  }
+
+  .saas-card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950;
+  }
+
+  .saas-section-title {
+    @apply text-sm font-semibold text-slate-950 dark:text-white;
+  }
+
+  .saas-meta {
+    @apply text-xs font-medium text-slate-500 dark:text-slate-400;
+  }
+}
+
 @layer utilities {
   .animate-blob {
     animation: blob 7s infinite;
@@ -105,4 +171,3 @@
 .dark .chat-scrollbarr {
   scrollbar-color: #134faeff #1e293b; /* thumb track for dark mode */
 }
-

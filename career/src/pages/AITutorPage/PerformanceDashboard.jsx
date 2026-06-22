@@ -30,15 +30,15 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                 position: 'top',
                 labels: {
                     color: document.body.classList.contains('dark') ? '#cbd5e1' : '#475569',
-                    font: { size: 14 }
-                }
+                    font: { size: 12 },
+                },
             },
         },
         cutout: '70%',
     };
 
-    const cleanLatex = (str) => 
-    str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
+    const cleanLatex = (str) =>
+        str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
 
     const colorByScore = (score) => {
         if (score >= 70) return 'text-green-500';
@@ -47,83 +47,65 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-12 md:py-16">
-            {/* --- Header --- */}
-            <div className="text-center mb-10">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white">{t('perfDash_title')}</h1>
-                <p className="mt-3 text-lg text-gray-500 dark:text-slate-400">{t('perfDash_subtitle')}</p>
+        <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
+            <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Test Analytics</p>
+                <h1 className="pp-page-title">{t('perfDash_title')}</h1>
+                <p className="pp-page-copy mt-1 max-w-3xl">{t('perfDash_subtitle')}</p>
             </div>
 
-            {/* --- Score & Chart --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-                <div className="lg:col-span-1 space-y-8">
-                    {/* Score Card */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700 text-center">
-                        <p className="text-lg font-medium text-gray-500 dark:text-slate-400">{t('perfDash_score_title')}</p>
-                        <p className={`text-6xl font-bold mt-2 ${colorByScore(result.score)}`}>{result.score}%</p>
-                        <p className="text-md text-gray-600 dark:text-slate-300 mt-3">
+            <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+                <div className="space-y-4">
+                    <div className="saas-card p-4 text-center">
+                        <p className="saas-meta">{t('perfDash_score_title')}</p>
+                        <p className={`mt-1 text-4xl font-semibold tabular-nums ${colorByScore(result.score)}`}>{result.score}%</p>
+                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                             {t('perfDash_score_details', { correct: result.correct_answers, total: result.total_questions })}
                         </p>
                     </div>
 
-                    {/* Doughnut Chart */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
-                        <h3 className="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">{t('perfDash_chart_title')}</h3>
-                        <div className="h-64 relative">
+                    <div className="saas-card p-4">
+                        <h3 className="saas-section-title mb-3 text-center">{t('perfDash_chart_title')}</h3>
+                        <div className="relative h-56">
                             <Doughnut data={chartData} options={chartOptions} />
                         </div>
                     </div>
                 </div>
 
-                {/* --- AI Analysis --- */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border dark:border-slate-700 space-y-6">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{t('perfDash_analysis_title')}</h3>
-                    
-                    {/* Performance Summary */}
-                    <div className="prose prose-lg dark:prose-invert max-w-none">
-                       <SimpleMarkdownRenderer text={result.analysis} />
+                <div className="saas-card space-y-4 p-4">
+                    <h3 className="saas-section-title">{t('perfDash_analysis_title')}</h3>
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <SimpleMarkdownRenderer text={result.analysis} />
                     </div>
 
-                    {/* Strengths */}
                     {result.strengths?.length > 0 && (
                         <div>
-                            <h4 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">Strengths ✅</h4>
-                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                            <h4 className="mb-2 text-sm font-semibold text-green-600 dark:text-green-400">Strengths</h4>
+                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
                                 {result.strengths.map((item, idx) => (
-                                    <li key={idx}>
-                                        <SimpleMarkdownRenderer text={item} />
-                                    </li>
-
+                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {/* Weaknesses */}
                     {result.weaknesses?.length > 0 && (
                         <div>
-                            <h4 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Weaknesses ❌</h4>
-                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                            <h4 className="mb-2 text-sm font-semibold text-red-600 dark:text-red-400">Weaknesses</h4>
+                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
                                 {result.weaknesses.map((item, idx) => (
-                                    <li key={idx}>
-                                        <SimpleMarkdownRenderer text={item} />
-                                    </li>
-
+                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {/* Recommendations */}
                     {result.recommendations?.length > 0 && (
                         <div>
-                            <h4 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Recommendations 💡</h4>
-                            <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-slate-300">
+                            <h4 className="mb-2 text-sm font-semibold text-blue-600 dark:text-blue-400">Recommendations</h4>
+                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
                                 {result.recommendations.map((item, idx) => (
-                                    <li key={idx}>
-                                        <SimpleMarkdownRenderer text={item} />
-                                    </li>
-
+                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
                                 ))}
                             </ul>
                         </div>
@@ -131,36 +113,39 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                 </div>
             </div>
 
-            {/* --- Detailed Q&A Review --- */}
-            <div className="mt-12">
-                <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-8">{t('perfDash_review_title')}</h2>
-                <div className="space-y-6">
+            <div className="mt-6">
+                <h2 className="saas-section-title mb-3">{t('perfDash_review_title')}</h2>
+                <div className="space-y-3">
                     {result.detailed_results.map((item, index) => (
-                        <div key={index} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border dark:border-slate-700">
-                            <div className="flex justify-between items-start">
-                                <p className="font-bold text-lg text-gray-800 dark:text-white pr-4">
+                        <div key={index} className="saas-card p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="pr-4 text-sm font-semibold leading-6 text-slate-800 dark:text-white">
                                     {index + 1}. <Latex>{cleanLatex(item.question)}</Latex>
                                 </p>
                                 {item.is_correct ? (
-                                    <span className="flex-shrink-0 text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 py-1 px-3 rounded-full">{t('perfDash_review_correctTag')} ✅</span>
+                                    <span className="flex-shrink-0 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-400">
+                                        {t('perfDash_review_correctTag')}
+                                    </span>
                                 ) : (
-                                    <span className="flex-shrink-0 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 py-1 px-3 rounded-full">{t('perfDash_review_incorrectTag')} ❌</span>
+                                    <span className="flex-shrink-0 rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900/50 dark:text-red-400">
+                                        {t('perfDash_review_incorrectTag')}
+                                    </span>
                                 )}
                             </div>
-                            <div className="mt-4 space-y-2 text-gray-700 dark:text-slate-300">
+                            <div className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-300">
                                 {item.options.map((option, optIndex) => {
                                     const isCorrectAnswer = option === item.correct_answer;
                                     const isUserAnswer = option === item.user_answer;
 
-                                    let style = "border-gray-300 dark:border-slate-600";
-                                    if (isCorrectAnswer) style = "bg-green-100 dark:bg-green-900/30 border-green-500 font-semibold";
-                                    if (isUserAnswer && !item.is_correct) style = "bg-red-100 dark:bg-red-900/30 border-red-500";
+                                    let style = 'border-slate-200 dark:border-slate-700';
+                                    if (isCorrectAnswer) style = 'border-green-500 bg-green-50 font-semibold dark:bg-green-900/30';
+                                    if (isUserAnswer && !item.is_correct) style = 'border-red-500 bg-red-50 dark:bg-red-900/30';
 
                                     return (
-                                        <div key={optIndex} className={`p-3 border-l-4 rounded-md transition-colors ${style}`}>
+                                        <div key={optIndex} className={`rounded-md border-l-4 p-3 transition-colors ${style}`}>
                                             <Latex>{cleanLatex(option)}</Latex>
-                                            {isUserAnswer && <span className="text-xs font-bold ml-2 text-gray-500 dark:text-slate-400">{t('perfDash_review_yourAnswer')}</span>}
-                                            {isCorrectAnswer && !isUserAnswer && <span className="text-xs font-bold ml-2 text-green-600 dark:text-green-400">{t('perfDash_review_correctTag')}</span>}
+                                            {isUserAnswer && <span className="ml-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t('perfDash_review_yourAnswer')}</span>}
+                                            {isCorrectAnswer && !isUserAnswer && <span className="ml-2 text-xs font-medium text-green-600 dark:text-green-400">{t('perfDash_review_correctTag')}</span>}
                                         </div>
                                     );
                                 })}
@@ -170,12 +155,8 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                 </div>
             </div>
 
-            {/* --- Retake Button --- */}
-            <div className="text-center mt-12">
-                <button
-                    onClick={retakeTest}
-                    className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-transform transform hover:scale-105"
-                >
+            <div className="mt-6 text-center">
+                <button onClick={retakeTest} className="pp-button">
                     {t('perfDash_retakeButton')}
                 </button>
             </div>
