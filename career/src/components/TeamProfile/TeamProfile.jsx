@@ -57,14 +57,13 @@ const ProfileCard = ({ member }) => {
     const accent = accentMap[member.accentColor] || accentMap.blue;
 
     return (
-        <article className="saas-card overflow-hidden">
-            <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="border-b border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60 xl:border-b-0 xl:border-r">
-                    <div className="flex items-start gap-4 xl:block">
+        <article className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                <aside className="saas-card p-5 xl:sticky xl:top-16 xl:self-start">
+                    <div className="flex items-start gap-4 xl:block xl:text-left">
                         <img
                             src={member.image}
                             alt={member.name}
-                            className={`h-20 w-20 shrink-0 rounded-xl object-cover outline outline-1 outline-black/10 ring-4 ${accent.ring} dark:outline-white/10 xl:h-28 xl:w-28`}
+                            className={`h-20 w-20 shrink-0 rounded-full object-cover outline outline-1 outline-black/10 ring-4 ${accent.ring} dark:outline-white/10 xl:h-32 xl:w-32`}
                         />
                         <div className="min-w-0 xl:mt-4">
                             <p className="truncate text-xl font-semibold tracking-[-0.01em] text-slate-950 dark:text-white">{member.name}</p>
@@ -85,7 +84,7 @@ const ProfileCard = ({ member }) => {
                     </div>
                 </aside>
 
-                <div className="min-w-0 p-5">
+                <div className="saas-card min-w-0 p-5">
                     <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
                         <Section title="Bio" icon={BriefcaseBusiness}>
                             <p className="text-pretty text-sm leading-6 text-slate-700 dark:text-slate-300">{member.bio}</p>
@@ -129,7 +128,6 @@ const ProfileCard = ({ member }) => {
                         </div>
                     </Section>
                 </div>
-            </div>
         </article>
     );
 };
@@ -166,7 +164,7 @@ const TeamProfile = () => {
                                         isActive ? 'bg-slate-100 dark:bg-slate-900' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'
                                     }`}
                                 >
-                                    <img src={member.image} alt="" className={`h-10 w-10 rounded-md object-cover ring-2 ${isActive ? accent.ring : 'ring-transparent'}`} />
+                                    <img src={member.image} alt="" className={`h-10 w-10 rounded-full object-cover ring-2 ${isActive ? accent.ring : 'ring-transparent'}`} />
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{member.name}</p>
                                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{member.role}</p>
