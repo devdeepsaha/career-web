@@ -204,12 +204,9 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     const handleExternalSend = async (question) => {
         if (!question.trim()) return;
 
-        console.log('External question received:', question);
-
         // Auto-create session if logged in but no session exists
         let sessionId = currentSessionId;
         if (isLoggedIn && !sessionId) {
-            console.log('Creating new session for external question...');
             const newSessionId = await createNewSession();
             sessionId = newSessionId;
         }

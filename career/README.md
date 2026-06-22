@@ -1,12 +1,81 @@
-# React + Vite
+# Potho-Prodorshok Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the Potho-Prodorshok Career OS.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19
+- Vite
+- Tailwind CSS
+- i18next
+- lucide-react
+- Chart.js
+- KaTeX
+- Lottie
+- Three.js
 
-## Expanding the ESLint configuration
+## Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+Local URL:
+
+```text
+http://localhost:5173
+```
+
+## Environment
+
+Create `career/.env` locally:
+
+```env
+VITE_APP_API_URL=http://localhost:5000
+```
+
+For production, set this to the deployed Flask backend URL.
+
+## Scripts
+
+```bash
+npm run dev      # Start Vite dev server
+npm run lint     # Run ESLint
+npm run build    # Build production bundle
+npm run preview  # Preview production build
+```
+
+## Main Areas
+
+- `src/App.jsx` handles auth gating, shell navigation, command menu, theme, and route-like tab rendering.
+- `src/pages/LandingPage` contains the public landing page.
+- `src/pages/DashboardPage` contains the logged-in dashboard.
+- `src/pages/CareerPlannerPage` handles roadmap generation, saved roadmaps, and roadmap step progress.
+- `src/pages/AITutorPage` handles MCQ practice, adaptive questions, mock tests, and performance review.
+- `src/pages/ScholarshipFinderPage` handles scholarship discovery and saving.
+- `src/pages/LibraryPage` contains saved roadmaps, questions, mocks, scholarships, resources, revision cards, and chats.
+- `src/pages/ProfilePage` manages student profile data.
+- `src/components/chat` contains the floating career and doubt chat widgets.
+
+## UI Notes
+
+- The app supports light and dark mode through the root `light`/`dark` class.
+- Keep interactive controls at least 40px in hit area.
+- Use lucide icons for product controls.
+- Avoid emoji in the interface.
+- Preserve mobile, tablet, desktop, and wide-screen responsiveness.
+
+## Verification
+
+```bash
+npm run lint
+npm run build
+```
+
+Current expected warnings:
+
+- Existing hook dependency warnings in chat/sidebar components
+- Vite chunk-size warnings
+- Browser data freshness warnings
+- Lottie `eval` warning from the dependency

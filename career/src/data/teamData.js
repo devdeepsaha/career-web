@@ -65,7 +65,7 @@ const teamData = [
     accentColor: 'red',
     role: 'QA & Bug Fixes',
     image: '/deba.webp', // Replace with actual image URL
-    bio: 'Debasish is the guardian of quality for Potho Prodroshok. He has an unparalleled talent for identifying elusive bugs and ensuring the application is stable and reliable for all users. His methodical approach to testing and debugging is crucial to the platform\'s success.',
+    bio: 'Debasish is the guardian of quality for Potho-Prodorshok. He has an unparalleled talent for identifying elusive bugs and ensuring the application is stable and reliable for all users. His methodical approach to testing and debugging is crucial to the platform\'s success.',
     tagline: "Striving for perfection, one bug at a time.",
     motivations: [
       { label: "Stability", value: 95 },
@@ -95,7 +95,7 @@ const teamData = [
     accentColor: 'blue',
     role: 'Creative Idea Giver',
     image: '/rishi.webp', // Replace with actual image URL
-    bio: 'Ritobhas is the creative force behind the innovative features of Potho Prodroshok. He excels at brainstorming new ideas and envisioning how the platform can better serve students. His out-of-the-box thinking helps to constantly push the boundaries of what the app can do.',
+    bio: 'Ritobhas is the creative force behind the innovative features of Potho-Prodorshok. He excels at brainstorming new ideas and envisioning how the platform can better serve students. His out-of-the-box thinking helps to constantly push the boundaries of what the app can do.',
     tagline: "Imagining a better future for student guidance.",
     motivations: [
       { label: "Innovation", value: 92 },

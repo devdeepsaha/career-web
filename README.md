@@ -1,142 +1,144 @@
+# Potho-Prodorshok Career OS
 
-# Career App
+Potho-Prodorshok is a full-stack career guidance and exam-preparation workspace for students. It combines AI-generated career roadmaps, tutor chat, MCQ practice, mock-test analytics, scholarship discovery, saved libraries, profile memory, and dashboard insights.
 
-A full-stack project with a **React frontend** and a **Python backend**, built for career counselling and AI-driven exam preparation.
+## Project Structure
 
----
-
-## 📂 Project Structure
-```
-
+```text
 .
-├── career/           # Frontend (React + Vite/Next.js)
-├── career-backend/   # Backend (Python/Flask or FastAPI)
-├── .gitignore
-└── README.md
-
-````
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
-````
-
-### 2. Choose a Branch
-
-* Stable version:
-
-```bash
-git checkout main
+|-- career/           # React + Vite frontend
+|-- career-backend/   # Flask + SQLAlchemy backend
+|-- .github/          # Deployment workflow configuration
+|-- .gitignore
+`-- README.md
 ```
 
-* Development version:
+## Main Features
 
-```bash
-git checkout dev
-```
+- Landing page with login and signup flow
+- Session-based authentication with email/password and Google OAuth
+- Student profile storage for education, skills, interests, goals, exams, and target institutions
+- AI career roadmap generation with saved roadmap history
+- AI tutor chat and doubt-solver chat with persisted chat sessions
+- Tap-to-answer MCQ practice with saved attempts and saved questions
+- Mock test generation, score analysis, and full review history
+- Scholarship finder with saved application tracker
+- Dashboard with readiness score, revision queue, timeline, weekly report, learning graph, nudges, and notifications
+- Library for roadmaps, questions, mock tests, scholarships, resources, revision cards, and chats
+- Dark and light mode responsive UI for mobile, tablet, desktop, and wide screens
 
----
-
-## 🖥️ Frontend Setup (React)
-
-1. Navigate to the frontend folder:
+## Frontend Setup
 
 ```bash
 cd career
-```
-
-2. Install dependencies:
-
-```bash
 npm install
-```
-
-3. Start the dev server:
-
-```bash
 npm run dev
 ```
 
-4. Open in browser:
+The frontend runs locally at:
 
+```text
+http://localhost:5173
 ```
-http://localhost:5173/
+
+Required frontend environment variable:
+
+```env
+VITE_APP_API_URL=http://localhost:5000
 ```
 
----
+For production, point `VITE_APP_API_URL` to the deployed backend URL.
 
-## ⚙️ Backend Setup (Python)
-
-1. Navigate to the backend folder:
+## Backend Setup
 
 ```bash
-cd ../career-backend
-```
-
-2. Create & activate a virtual environment:
-
-```bash
+cd career-backend
 python -m venv venv
-# On Linux/Mac
-source venv/bin/activate
-# On Windows
 venv\Scripts\activate
-```
-
-3. Install dependencies:
-
-```bash
 pip install -r requirements.txt
-```
-
-4. Run the server:
-
-```bash
 python app.py
 ```
 
-5. API runs at:
+The backend runs locally at:
 
+```text
+http://localhost:5000
 ```
-http://localhost:5000/
+
+Required backend environment variables:
+
+```env
+DATABASE_URL=
+FLASK_SECRET_KEY=
+GOOGLE_API_KEY=
+FRONTEND_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+MAIL_SERVER=
+MAIL_PORT=
+MAIL_USERNAME=
+MAIL_PASSWORD=
 ```
 
----
+## Database
 
-## 🤝 Contributing
+The backend expects PostgreSQL/Supabase tables for:
 
-1. Fork this repo.
-2. Create a new branch:
+- `user`
+- `google_verified_emails`
+- `chat_session`
+- `chat_message`
+- `sessions`
+- `student_profile`
+- `roadmap`
+- `saved_question`
+- `question_attempt`
+- `mock_test`
+- `saved_scholarship`
+
+Some UI-only features currently use browser `localStorage`:
+
+- Resource Vault
+- Roadmap step progress and notes
+- Study timer state
+
+## Verification
+
+Frontend:
 
 ```bash
-git checkout -b feature-xyz
+cd career
+npm run lint
+npm run build
 ```
 
-3. Commit your changes:
+Backend:
 
 ```bash
-git commit -m "Add new feature xyz"
+cd career-backend
+python -m py_compile app.py models.py auth.py
 ```
 
-4. Push to your fork:
+Known current warnings:
 
-```bash
-git push origin feature-xyz
-```
+- Existing React hook dependency warnings in chat/sidebar components
+- Vite chunk-size warnings due to large UI/animation/math dependencies
+- Browser data freshness warning from Browserslist/Baseline packages
+- Lottie dependency warning about `eval` inside `lottie-web`
 
-5. Open a Pull Request → target `dev` branch.
+## Deployment Notes
 
----
+- Deploy the frontend and backend separately.
+- Keep environment variables in the deployment provider, not in Git.
+- Ensure the deployed backend CORS origin list includes the deployed frontend domain.
+- Ensure the frontend `VITE_APP_API_URL` points to the deployed backend.
+- Set `FRONTEND_URL` to the deployed frontend URL so Google OAuth redirects back to the right app.
+- For Google OAuth, keep backend callback URLs and frontend redirect URLs aligned with Google Cloud Console.
 
+## Privacy Summary
 
-## 📜 License
+The app stores user account data and student workspace data so users can return to saved roadmaps, chats, questions, attempts, mock results, scholarships, and profile context. AI features may send user-provided prompts and generated context to the configured AI provider. See the in-app Policies page for the current privacy and terms text.
 
-This project is licensed under the MIT License – feel free to use and modify.
+## License
 
-
-
+MIT License.
