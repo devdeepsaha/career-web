@@ -48,7 +48,7 @@ const LandingPage = ({ onLogin, onSignup, theme, setTheme }) => {
             <section className="relative min-h-[92vh] overflow-hidden bg-black text-white">
                 <Hyperspeed effectOptions={hyperspeedOptions} />
                 <div className="absolute inset-0 bg-black/45" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.3),rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.84))]" />
+                <div className="absolute inset-0 " />
 
                 <header className="relative z-10 mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 md:px-8">
                     <button className="flex items-center gap-3" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
