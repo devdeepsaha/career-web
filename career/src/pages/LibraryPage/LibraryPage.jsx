@@ -22,6 +22,20 @@ const Empty = ({ label }) => (
     </div>
 );
 
+const QuickAccessCard = ({ icon, title, detail, onClick }) => {
+    const IconComponent = icon;
+    return (
+        <button onClick={onClick} className="group saas-card min-w-0 p-3 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+                <IconComponent className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                <ArrowRight className="hidden h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5 sm:block" />
+            </div>
+            <p className="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-950 dark:text-white sm:min-h-0 sm:line-clamp-1">{title}</p>
+            <p className="mt-1 hidden text-xs leading-5 text-slate-500 dark:text-slate-400 sm:block">{detail}</p>
+        </button>
+    );
+};
+
 const getInitialView = () => {
     const view = new URLSearchParams(window.location.search).get('view');
     return tabs.some((tab) => tab.id === view) ? view : 'roadmaps';
@@ -170,8 +184,8 @@ const LibraryPage = () => {
             return filtered.map((item) => (
                 <div key={item.id} className="saas-card p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                        <div className="min-w-0">
+                            <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.step_count} steps, {item.status}</p>
                         </div>
                         <button onClick={() => archiveRoadmap(item.id)} className="ios-pill w-fit">Archive</button>
@@ -185,10 +199,10 @@ const LibraryPage = () => {
             return filtered.map((item) => (
                 <div key={item.id} className="saas-card p-4">
                     <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <p className="text-sm font-semibold leading-6 text-slate-950 dark:text-white">{item.question_text}</p>
+                        <div className="min-w-0 flex-1">
+                            <p className="break-words text-sm font-semibold leading-6 text-slate-950 dark:text-white">{item.question_text}</p>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.exam, item.subject, item.topic, item.difficulty].filter(Boolean).join(' | ')}</p>
-                            <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">Answer: {item.correct_answer}</p>
+                            <p className="mt-2 break-words text-sm text-emerald-700 dark:text-emerald-300">Answer: {item.correct_answer}</p>
                         </div>
                         <button onClick={() => deleteQuestion(item.id)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-[background-color,color,transform] duration-150 hover:bg-red-50 hover:text-red-600 active:scale-[0.96] dark:border-slate-800 dark:hover:bg-red-950/30">
                             <Trash2 className="h-4 w-4" />
@@ -203,8 +217,8 @@ const LibraryPage = () => {
             return filtered.map((item) => (
                 <button key={item.id} onClick={() => openMock(item.id)} className="saas-card w-full p-4 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:hover:border-slate-700 dark:hover:bg-slate-900">
                     <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-950 dark:text-white">{item.exam || 'Mock test'}</p>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.exam || 'Mock test'}</p>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.subject, item.topic, item.difficulty].filter(Boolean).join(' | ') || 'General practice'}</p>
                             <p className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400">Open full review</p>
                         </div>
@@ -221,8 +235,8 @@ const LibraryPage = () => {
                 return (
                     <div key={item.id} className="saas-card p-4">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-950 dark:text-white">{scholarship.name || 'Saved scholarship'}</p>
+                            <div className="min-w-0">
+                                <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{scholarship.name || 'Saved scholarship'}</p>
                                 <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{scholarship.description}</p>
                                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Status: {item.status}</p>
                             </div>
@@ -301,11 +315,11 @@ const LibraryPage = () => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <div className="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="mb-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="saas-card p-4">
                     <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Saved Library</p>
                     <h1 className="pp-page-title">Everything you have built</h1>
-                    <p className="pp-page-copy mt-1 max-w-3xl">Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.</p>
+                    <p className="pp-page-copy mt-1 hidden max-w-3xl sm:block">Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.</p>
                 </div>
                 <div className="saas-card grid grid-cols-3 gap-2 p-3">
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
@@ -325,42 +339,14 @@ const LibraryPage = () => {
 
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
-            <div className="mb-4 grid gap-3 lg:grid-cols-4">
-                <button onClick={() => switchTab('revision')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
-                    <div className="flex items-center justify-between gap-3">
-                        <BookMarked className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">{mistakeCount || counts.questions} review cards</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Jump straight into mistakes and saved questions.</p>
-                </button>
-                <button onClick={() => switchTab('roadmaps')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
-                    <div className="flex items-center justify-between gap-3">
-                        <Map className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-3 line-clamp-1 text-sm font-semibold text-slate-950 dark:text-white">{latestRoadmap?.title || 'No roadmap saved yet'}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Latest career plan and saved stages.</p>
-                </button>
-                <button onClick={() => switchTab('mocks')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
-                    <div className="flex items-center justify-between gap-3">
-                        <Trophy className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{latestMock ? `${latestMock.score || 0}% latest mock` : 'No mock yet'}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Open full score review without hunting.</p>
-                </button>
-                <button onClick={() => switchTab('scholarships')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
-                    <div className="flex items-center justify-between gap-3">
-                        <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-3 line-clamp-1 text-sm font-semibold text-slate-950 dark:text-white">{latestScholarship?.scholarship_json?.name || 'No scholarship saved yet'}</p>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Applications and opportunity tracking.</p>
-                </button>
+            <div className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <QuickAccessCard icon={BookMarked} title={`${mistakeCount || counts.questions} review cards`} detail="Jump straight into mistakes and saved questions." onClick={() => switchTab('revision')} />
+                <QuickAccessCard icon={Map} title={latestRoadmap?.title || 'No roadmap saved yet'} detail="Latest career plan and saved stages." onClick={() => switchTab('roadmaps')} />
+                <QuickAccessCard icon={Trophy} title={latestMock ? `${latestMock.score || 0}% latest mock` : 'No mock yet'} detail="Open full score review without hunting." onClick={() => switchTab('mocks')} />
+                <QuickAccessCard icon={GraduationCap} title={latestScholarship?.scholarship_json?.name || 'No scholarship saved yet'} detail="Applications and opportunity tracking." onClick={() => switchTab('scholarships')} />
             </div>
 
-            <div className="mb-4 saas-card p-3">
+            <div className="mb-3 saas-card p-3">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                         <p className="saas-meta">Current view</p>
