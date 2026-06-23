@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, UserRound } from 'lucide-react';
+import { Check, Save, UserRound } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -70,6 +70,7 @@ const ProfilePage = ({ currentUser }) => {
     const [profile, setProfile] = useState(emptyProfile);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveState, setSaveState] = useState('idle');
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -92,11 +93,13 @@ const ProfilePage = ({ currentUser }) => {
 
     const updateField = (field, value) => {
         setProfile((prev) => ({ ...prev, [field]: value }));
+        setSaveState('idle');
     };
 
     const saveProfile = async (event) => {
         event.preventDefault();
         setIsSaving(true);
+        setSaveState('saving');
         setMessage('');
         try {
             const response = await fetch(`${API_URL}/student-profile`, {
@@ -108,9 +111,11 @@ const ProfilePage = ({ currentUser }) => {
             if (!response.ok) throw new Error('Save failed');
             const data = await response.json();
             setProfile(normalizeProfile(data));
+            setSaveState('saved');
             setMessage('Profile saved.');
         } catch (error) {
             console.error(error);
+            setSaveState('idle');
             setMessage('Profile could not be saved.');
         } finally {
             setIsSaving(false);
@@ -193,9 +198,9 @@ const ProfilePage = ({ currentUser }) => {
                     </div>
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <button disabled={isSaving} className="pp-button flex items-center justify-center gap-2">
-                            <Save className="h-4 w-4" />
-                            {isSaving ? 'Saving...' : 'Save profile'}
+                        <button disabled={isSaving} className={`flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-[background-color,transform] duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 ${saveState === 'saved' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200'}`}>
+                            {saveState === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                            {isSaving ? 'Saving...' : saveState === 'saved' ? 'Saved' : 'Save profile'}
                         </button>
                         {message && <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{message}</p>}
                     </div>

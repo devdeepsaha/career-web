@@ -58,6 +58,83 @@ const TopicBar = ({ item }) => (
     </div>
 );
 
+const CompactTimeline = ({ items = [] }) => (
+    <div>
+        <div className="flex gap-3 overflow-x-auto pb-1">
+            {items.slice(0, 5).map((item, index) => (
+                <div key={`${item.type}-${index}`} className="min-w-[180px] rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold capitalize text-slate-500 dark:bg-slate-950 dark:text-slate-400">{item.type}</span>
+                    </div>
+                    <p className="line-clamp-2 min-h-10 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.status || 'active'} {item.date ? `· ${new Date(item.date).toLocaleDateString()}` : ''}</p>
+                </div>
+            ))}
+        </div>
+        {items.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
+    </div>
+);
+
+const RevisionSummary = ({ items = [], onNavigate }) => {
+    const dueToday = items.filter((item) => String(item.due_state || '').toLowerCase().includes('today')).length;
+    const overdue = items.filter((item) => String(item.due_state || '').toLowerCase().includes('overdue')).length;
+
+    return (
+        <div>
+            <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{items.length}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">queued</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{dueToday}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">today</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{overdue}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">overdue</p>
+                </div>
+            </div>
+            <div className="mt-3 space-y-2">
+                {items.slice(0, 2).map((item, index) => (
+                    <div key={`${item.type}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="line-clamp-1 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.due_state}</p>
+                    </div>
+                ))}
+            </div>
+            <button onClick={() => onNavigate('library')} className="pp-button-secondary mt-3 w-full">Start review</button>
+        </div>
+    );
+};
+
+const MockSnapshot = ({ summary, counts, onNavigate }) => (
+    <div className="saas-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <Target className="h-4 w-4" />
+                </div>
+                <h2 className="saas-section-title">Mock snapshot</h2>
+            </div>
+            <span className="text-xs font-semibold tabular-nums text-slate-500 dark:text-slate-400">{counts.mock_tests || 0} tests</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                <p className="saas-meta">Average</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.mock_average || 0}%</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                <p className="saas-meta">Latest</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.latest_mock?.score ?? 0}%</p>
+            </div>
+        </div>
+        <p className="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{summary?.latest_mock?.exam || 'Start one focused mock to unlock weakness analysis.'}</p>
+        <button onClick={() => onNavigate('tutor')} className="pp-button mt-3 w-full">Open mock tests</button>
+    </div>
+);
+
 const DashboardPage = ({ currentUser, onNavigate }) => {
     const [summary, setSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -176,6 +253,21 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         <StatCard label="Scholarships" value={counts.saved_scholarships || 0} detail="Tracked opportunities" icon={GraduationCap} />
                     </div>
 
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+                        <div className="saas-card p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="saas-section-title">Continue where you left off</h2>
+                                <button onClick={() => onNavigate('library')} className="text-xs font-semibold text-blue-600 dark:text-blue-400">View library</button>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-1 2xl:grid-cols-3">
+                                <ContinueCard title={summary?.latest_roadmap?.title || 'Create your first roadmap'} label={summary?.latest_roadmap ? `${summary.latest_roadmap.step_count} steps` : 'Planner'} action={() => onNavigate('planner')} icon={Map} />
+                                <ContinueCard title={summary?.latest_mock?.exam || 'Start a mock test'} label={summary?.latest_mock ? `${summary.latest_mock.score}% latest score` : 'AI Tutor'} action={() => onNavigate('tutor')} icon={Target} />
+                                <ContinueCard title={summary?.latest_chat?.title || 'Ask your AI tutor'} label={summary?.latest_chat ? `${summary.latest_chat.message_count} messages` : 'Chat history'} action={() => onNavigate('tutor')} icon={MessageSquare} />
+                            </div>
+                        </div>
+                        <MockSnapshot summary={summary} counts={counts} onNavigate={onNavigate} />
+                    </div>
+
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
                         <InsightCard title="Personal learning graph" icon={TrendingUp}>
                             <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
@@ -195,36 +287,13 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         </InsightCard>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)_minmax(260px,0.75fr)]">
                         <InsightCard title="Goal timeline" icon={CalendarDays}>
-                            <div className="space-y-2">
-                                {(summary?.timeline || []).slice(0, 5).map((item, index) => (
-                                    <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                                                <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold capitalize text-slate-500 dark:bg-slate-950 dark:text-slate-400">{item.type}</span>
-                                            </div>
-                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.status || 'active'} {item.date ? `· ${new Date(item.date).toLocaleDateString()}` : ''}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                {(!summary?.timeline || summary.timeline.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
-                            </div>
+                            <CompactTimeline items={summary?.timeline || []} />
                         </InsightCard>
 
                         <InsightCard title="Revision queue" icon={BookMarked}>
-                            <p className="mb-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Due review cards from saved questions and wrong answers.</p>
-                            <div className="space-y-2">
-                                {(summary?.revision_queue || []).slice(0, 4).map((item, index) => (
-                                    <div key={`${item.type}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                        <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.due_state}</p>
-                                    </div>
-                                ))}
-                                {(!summary?.revision_queue || summary.revision_queue.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Wrong answers and saved questions will appear here for daily review.</p>}
-                            </div>
+                            <RevisionSummary items={summary?.revision_queue || []} onNavigate={onNavigate} />
                         </InsightCard>
 
                         <InsightCard title="Study timer" icon={Timer}>
@@ -232,19 +301,7 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         </InsightCard>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                        <div className="saas-card p-4">
-                            <div className="mb-3 flex items-center justify-between">
-                                <h2 className="saas-section-title">Continue</h2>
-                                <button onClick={() => onNavigate('library')} className="text-xs font-semibold text-blue-600 dark:text-blue-400">View library</button>
-                            </div>
-                            <div className="space-y-2">
-                                <ContinueCard title={summary?.latest_roadmap?.title || 'Create your first roadmap'} label={summary?.latest_roadmap ? `${summary.latest_roadmap.step_count} steps` : 'Planner'} action={() => onNavigate('planner')} icon={Map} />
-                                <ContinueCard title={summary?.latest_mock?.exam || 'Start a mock test'} label={summary?.latest_mock ? `${summary.latest_mock.score}% latest score` : 'AI Tutor'} action={() => onNavigate('tutor')} icon={Target} />
-                                <ContinueCard title={summary?.latest_chat?.title || 'Ask your AI tutor'} label={summary?.latest_chat ? `${summary.latest_chat.message_count} messages` : 'Chat history'} action={() => onNavigate('tutor')} icon={MessageSquare} />
-                            </div>
-                        </div>
-
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="saas-card p-4">
                             <h2 className="saas-section-title">Recent activity</h2>
                             <div className="mt-3 space-y-2">
@@ -364,11 +421,11 @@ const StudyTimer = () => {
         <div>
             <p className="text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{minutes}:{rest}</p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Today studied: <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-200">{studiedToday} min</span></p>
-            <div className="mt-3 grid grid-cols-[1fr_96px] gap-2">
+            <div className="mt-3 grid grid-cols-1 gap-2">
                 <input value={topic} onChange={(event) => setTopic(event.target.value)} className="pp-input" placeholder="Topic or roadmap step" />
                 <input type="number" min="5" max="180" value={durationMinutes} onChange={(event) => updateDuration(event.target.value)} className="pp-input tabular-nums" aria-label="Timer minutes" />
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1 2xl:grid-cols-3">
                 <button onClick={() => setRunning((value) => !value)} className="pp-button">{running ? 'Pause' : 'Start'}</button>
                 <button onClick={saveSession} className="pp-button-secondary">Save time</button>
                 <button onClick={() => { setRunning(false); setSeconds(durationMinutes * 60); localStorage.setItem('study_timer_seconds', String(durationMinutes * 60)); }} className="pp-button-secondary">Reset</button>
