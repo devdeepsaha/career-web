@@ -154,26 +154,32 @@ const CareerPath = ({ path, onNavigate }) => {
             {steps.length > 0 ? (
                 <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                     {steps.slice(0, 6).map((step) => (
-                        <div key={`${step.stage}-${step.title}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <button
+                            key={`${step.stage}-${step.title}`}
+                            onClick={() => onNavigate('stage', { query: `roadmap=${path.id}&stage=${step.stage}` })}
+                            className="group rounded-lg bg-slate-50 p-3 text-left transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:hover:bg-slate-800"
+                        >
                             <div className="mb-2 flex items-center justify-between gap-2">
                                 <span className="rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold text-slate-500 dark:bg-slate-950 dark:text-slate-400">Stage {step.stage}</span>
-                                <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                <span className={`h-2 w-2 rounded-full ${step.has_guide ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                             </div>
                             <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{step.title}</p>
                             {step.detail && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{step.detail}</p>}
                             {step.resources?.length > 0 && (
                                 <div className="mt-3 grid gap-1.5">
-                                    {step.resources.slice(0, 2).map((resource) => resource.url ? (
-                                        <a key={`${step.stage}-${resource.title}`} href={resource.url} target="_blank" rel="noreferrer" className="inline-flex min-h-8 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800">
+                                    {step.resources.slice(0, 2).map((resource) => (
+                                        <div key={`${step.stage}-${resource.title}`} className="inline-flex min-h-8 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-950 dark:text-slate-300">
                                             <span className="line-clamp-1">{resource.title}</span>
-                                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                                        </a>
-                                    ) : (
-                                        <div key={`${step.stage}-${resource.title}`} className="rounded-md bg-white px-2 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-950 dark:text-slate-400">{resource.title}</div>
+                                            {resource.url && <ExternalLink className="h-3.5 w-3.5 shrink-0" />}
+                                        </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
+                            <div className="mt-3 flex items-center justify-between text-xs font-semibold text-blue-600 opacity-0 transition-opacity duration-150 group-hover:opacity-100 dark:text-blue-400">
+                                <span>{step.has_guide ? 'Open AI guide' : 'Generate AI guide'}</span>
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </div>
+                        </button>
                     ))}
                 </div>
             ) : (
@@ -217,7 +223,7 @@ const RevisionSummary = ({ items = [], counts = {}, onNavigate }) => {
                     </div>
                 ))}
             </div>
-            <button onClick={() => onNavigate('library')} className="pp-button-secondary mt-3 w-full">Start review</button>
+            <button onClick={() => onNavigate('library', { query: 'view=revision' })} className="pp-button-secondary mt-3 w-full">Start review</button>
         </div>
     );
 };
@@ -321,7 +327,7 @@ const DashboardPage = ({ onNavigate }) => {
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                         <ContinueCard title={summary?.latest_roadmap?.title || 'Create your first roadmap'} label={summary?.latest_roadmap ? `${summary.latest_roadmap.step_count} steps` : 'Continue latest roadmap'} action={() => onNavigate('planner')} icon={Map} />
                         <ContinueCard title={summary?.latest_mock?.exam || 'Start a mock test'} label={summary?.latest_mock ? `${summary.latest_mock.score}% latest score` : 'Resume latest mock review'} action={() => onNavigate('tutor')} icon={Target} />
-                        <ContinueCard title={counts.wrong_attempts ? `${counts.wrong_attempts} wrong questions` : 'No mistake queue yet'} label="Revisit saved wrong questions" action={() => onNavigate('library')} icon={BookMarked} />
+                        <ContinueCard title={counts.wrong_attempts ? `${counts.wrong_attempts} wrong questions` : 'No mistake queue yet'} label="Revisit saved wrong questions" action={() => onNavigate('library', { query: 'view=revision' })} icon={BookMarked} />
                         <ContinueCard title={summary?.latest_chat?.title || 'Ask your AI tutor'} label={summary?.latest_chat ? `${summary.latest_chat.message_count} messages` : 'Continue last AI chat'} action={() => onNavigate('tutor')} icon={MessageSquare} />
                     </div>
                 </div>

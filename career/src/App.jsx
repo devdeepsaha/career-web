@@ -8,6 +8,7 @@ const CareerPlannerPage = React.lazy(() => import('./pages/CareerPlannerPage/Car
 const AITutorPage = React.lazy(() => import('./pages/AITutorPage/AITutorPage'));
 const ScholarshipFinderPage = React.lazy(() => import('./pages/ScholarshipFinderPage/ScholarshipFinderPage'));
 const LibraryPage = React.lazy(() => import('./pages/LibraryPage/LibraryPage'));
+const RoadmapStagePage = React.lazy(() => import('./pages/RoadmapStagePage/RoadmapStagePage'));
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage/ProfilePage'));
 const TeamProfile = React.lazy(() => import('./components/TeamProfile/TeamProfile'));
 const SupportPage = React.lazy(() => import('./pages/extra/Support'));
@@ -27,6 +28,7 @@ const tabToPath = {
     tutor: '/tutor',
     scholarship: '/scholarships',
     library: '/library',
+    stage: '/roadmap-stage',
     profile: '/profile',
     team: '/team',
     support: '/support',
@@ -172,8 +174,10 @@ export default function App() {
     const navigateTo = (tabName, options = {}) => {
         setActiveTab(tabName);
         setCommandOpen(false);
-        const path = tabToPath[tabName] || '/dashboard';
-        if (!options.replace && window.location.pathname !== path) {
+        const basePath = tabToPath[tabName] || '/dashboard';
+        const path = `${basePath}${options.query ? `?${options.query}` : ''}`;
+        const currentPath = `${window.location.pathname}${window.location.search}`;
+        if (!options.replace && currentPath !== path) {
             window.history.pushState({ tab: tabName }, '', path);
         } else if (options.replace) {
             window.history.replaceState({ tab: tabName }, '', path);
@@ -237,7 +241,8 @@ export default function App() {
             case 'dashboard': return <DashboardPage {...pageProps} onNavigate={navigateTo} />;
             case 'tutor': return <AITutorPage {...pageProps} />;
             case 'scholarship': return <ScholarshipFinderPage {...pageProps} />;
-            case 'library': return <LibraryPage {...pageProps} />;
+            case 'library': return <LibraryPage {...pageProps} onNavigate={navigateTo} />;
+            case 'stage': return <RoadmapStagePage {...pageProps} onNavigate={navigateTo} />;
             case 'profile': return <ProfilePage {...pageProps} />;
             case 'team': return <TeamProfile {...pageProps} />;
             case 'support': return <SupportPage {...pageProps} />;

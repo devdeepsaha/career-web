@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Target } from 'lucide-react';
+import { BookOpenCheck, GraduationCap, SlidersHorizontal, Target } from 'lucide-react';
 import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
@@ -204,6 +204,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const answerPracticeQuestion = async (option) => {
         if (!question || selectedPracticeAnswer) return;
         setSelectedPracticeAnswer(option);
+        const isCorrect = option === question.answer;
         try {
             await fetch(`${API_URL}/question-attempts`, {
                 method: 'POST',
@@ -213,7 +214,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     question_text: question.question,
                     selected_answer: option,
                     correct_answer: question.answer,
-                    is_correct: option === question.answer,
+                    is_correct: isCorrect,
                     time_taken_seconds: questionStartedAt ? Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)) : null,
                     exam: practiceExam,
                     subject: practiceSubject,
@@ -221,6 +222,36 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     difficulty: practiceDifficulty,
                 }),
             });
+            if (!isCorrect) {
+                const saveResponse = await fetch(`${API_URL}/saved-questions`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question_text: question.question,
+                        options_json: question.options,
+                        correct_answer: question.answer,
+                        explanation: question.explanation,
+                        exam: practiceExam,
+                        subject: practiceSubject,
+                        topic: practiceTopic,
+                        difficulty: practiceDifficulty,
+                        source: 'mistake',
+                    }),
+                });
+                if (saveResponse.ok) setIsQuestionSaved(true);
+                setWeakQueue((items) => [{
+                    question_text: question.question,
+                    correct_answer: question.answer,
+                    selected_answer: option,
+                    is_correct: false,
+                    exam: practiceExam,
+                    subject: practiceSubject,
+                    topic: practiceTopic,
+                    difficulty: practiceDifficulty,
+                    created_at: new Date().toISOString(),
+                }, ...items]);
+            }
         } catch (err) {
             console.error('Failed to save attempt:', err);
         }
@@ -345,24 +376,39 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                 content={t('aiTutor_seo_desc')}
             />
             
-            <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('aiTutor_eyebrow')}</p>
-                <h1 className="pp-page-title">{t('aiTutor_title')}</h1>
-                <p className="pp-page-copy mt-1 max-w-3xl">{t('aiTutor_subtitle')}</p>
-            </div>
-            
-            <div className="saas-card mx-auto max-w-6xl p-4">
-                <div className="mb-4 flex w-full justify-center">
-                    <div className="grid w-full max-w-md grid-cols-2 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
-                        <button onClick={() => setTutorView('practice')} className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'practice' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_practice')}</button>
-                        <button onClick={() => setTutorView('test')} className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'test' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_mockTests')}</button>
+            <div className="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+                <div className="saas-card p-4">
+                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('aiTutor_eyebrow')}</p>
+                    <h1 className="pp-page-title">{t('aiTutor_title')}</h1>
+                    <p className="pp-page-copy mt-1 max-w-3xl">{t('aiTutor_subtitle')}</p>
+                </div>
+                <div className="saas-card grid grid-cols-2 gap-2 p-3">
+                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="saas-meta">{t('aiTutor_panel_mode')}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{tutorView === 'practice' ? t('aiTutor_tab_practice') : t('aiTutor_tab_mockTests')}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="saas-meta">{t('aiTutor_panel_weakQueue')}</p>
+                        <p className="mt-1 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{weakQueue.length}</p>
                     </div>
                 </div>
+            </div>
+            
+            <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                <aside className="saas-card h-fit p-4 xl:sticky xl:top-20">
+                    <div className="mb-4 flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </div>
+                        <h2 className="saas-section-title">{t('aiTutor_sessionSetup')}</h2>
+                    </div>
+                    <div className="mb-4 grid grid-cols-2 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                        <button onClick={() => setTutorView('practice')} className={`min-h-10 rounded-md px-3 py-2 text-sm font-semibold transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'practice' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_practice')}</button>
+                        <button onClick={() => setTutorView('test')} className={`min-h-10 rounded-md px-3 py-2 text-sm font-semibold transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'test' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_mockTests')}</button>
+                    </div>
 
-                {tutorView === 'practice' && (
-                    <div>
-                        <h2 className="mb-4 saas-section-title">{t('aiTutor_practice_title')}</h2>
-                        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {tutorView === 'practice' ? (
+                        <div className="grid gap-3">
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_exam')}</label>
                                 <select value={practiceExam} onChange={e => setPracticeExam(e.target.value)} className="pp-input">
@@ -385,15 +431,69 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                     <option>{t('aiTutor_difficulty_hard')}</option>
                                 </select>
                             </div>
-                        </div>
-                        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                            <button onClick={() => fetchQuestion()} disabled={isLoadingQuestion} className="pp-button w-full sm:w-auto">
+                            <button onClick={() => fetchQuestion()} disabled={isLoadingQuestion} className="pp-button w-full">
                                 {isLoadingQuestion ? t('aiTutor_button_generating') : t('aiTutor_button_generateQuestion')}
                             </button>
-                            <button onClick={fetchAdaptiveQuestion} disabled={isLoadingQuestion || weakQueue.length === 0} className="pp-button-secondary flex w-full items-center justify-center gap-2 sm:w-auto">
+                            <button onClick={fetchAdaptiveQuestion} disabled={isLoadingQuestion || weakQueue.length === 0} className="pp-button-secondary flex w-full items-center justify-center gap-2">
                                 <Target className="h-4 w-4" />
                                 {t('aiTutor_button_adaptiveQuestion')}
                             </button>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            <div>
+                                <label className="pp-label">{t('aiTutor_form_exam')}</label>
+                                <select value={mockExam} onChange={e => setMockExam(e.target.value)} className="pp-input">
+                                    {EXAM_OPTIONS.map((exam) => <option key={exam}>{exam}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="pp-label">{t('aiTutor_form_subject')}</label>
+                                <input type="text" value={mockSubject} onChange={e => setMockSubject(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_subject_placeholder')} />
+                            </div>
+                            <div>
+                                <label className="pp-label">{t('aiTutor_form_topic')}</label>
+                                <input type="text" value={mockTopic} onChange={e => setMockTopic(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_topic_placeholder')} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="pp-label">{t('aiTutor_form_difficulty')}</label>
+                                    <select value={mockDifficulty} onChange={e => setMockDifficulty(e.target.value)} className="pp-input">
+                                        <option>{t('aiTutor_difficulty_all')}</option>
+                                        <option>{t('aiTutor_difficulty_easy')}</option>
+                                        <option>{t('aiTutor_difficulty_medium')}</option>
+                                        <option>{t('aiTutor_difficulty_hard')}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="pp-label">{t('aiTutor_mockTest_numQuestions')}</label>
+                                    <select value={numQuestions} onChange={e => setNumQuestions(Number(e.target.value))} className="pp-input">
+                                        <option value={5}>{t('aiTutor_mockTest_numQuestions_5')}</option>
+                                        <option value={10}>{t('aiTutor_mockTest_numQuestions_10')}</option>
+                                        <option value={15}>{t('aiTutor_mockTest_numQuestions_15')}</option>
+                                        <option value={20}>{t('aiTutor_mockTest_numQuestions_20')}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button onClick={startTest} disabled={testState === 'loading'} className="pp-button w-full">
+                                {testState === 'loading' ? t('aiTutor_button_generatingTest') : t('aiTutor_button_startTest')}
+                            </button>
+                        </div>
+                    )}
+                </aside>
+
+                <main className="saas-card min-h-[480px] p-4">
+                    {tutorView === 'practice' && (
+                        <div>
+                        <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <BookOpenCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    <h2 className="saas-section-title">{t('aiTutor_practice_title')}</h2>
+                                </div>
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{[practiceExam, practiceSubject, practiceTopic, practiceDifficulty].filter(Boolean).join(' / ')}</p>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-900 dark:text-slate-400">{question ? t('aiTutor_status_questionReady') : t('aiTutor_status_awaitingGeneration')}</span>
                         </div>
                         {questionError && <p className="text-red-500 text-sm mt-4 text-center">{questionError}</p>}
                         {question && (
@@ -433,51 +533,48 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                 </div>
                             </div>
                         )}
-                    </div>
-                )}
+                        {!question && !questionError && (
+                            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-900">
+                                <BookOpenCheck className="h-8 w-8 text-slate-400" />
+                                <p className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">{t('aiTutor_empty_title')}</p>
+                                <p className="mt-1 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">{t('aiTutor_empty_text')}</p>
+                            </div>
+                        )}
+                        </div>
+                    )}
 
-                {tutorView === 'test' && (
-                    <div>
-                        <h2 className="mb-4 saas-section-title">{t('aiTutor_mockTest_title')}</h2>
-                        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                            <div>
-                                <label className="pp-label">{t('aiTutor_form_exam')}</label>
-                                <select value={mockExam} onChange={e => setMockExam(e.target.value)} className="pp-input">
-                                    {EXAM_OPTIONS.map((exam) => <option key={exam}>{exam}</option>)}
-                                </select>
+                    {tutorView === 'test' && (
+                        <div>
+                            <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <GraduationCap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <h2 className="saas-section-title">{t('aiTutor_mockTest_title')}</h2>
+                                    </div>
+                                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{[mockExam, mockSubject, mockTopic, mockDifficulty, t('aiTutor_mock_questionCount', { count: numQuestions })].filter(Boolean).join(' / ')}</p>
+                                </div>
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-900 dark:text-slate-400">{t('aiTutor_status_mockSetup')}</span>
                             </div>
-                            <div>
-                                <label className="pp-label">{t('aiTutor_form_subject')}</label>
-                                <input type="text" value={mockSubject} onChange={e => setMockSubject(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_subject_placeholder')} />
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
+                                    <p className="saas-meta">{t('aiTutor_form_exam')}</p>
+                                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{mockExam}</p>
+                                </div>
+                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
+                                    <p className="saas-meta">{t('aiTutor_form_topic')}</p>
+                                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{mockTopic}</p>
+                                </div>
+                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
+                                    <p className="saas-meta">{t('aiTutor_mock_length')}</p>
+                                    <p className="mt-2 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{t('aiTutor_mock_questionCount', { count: numQuestions })}</p>
+                                </div>
                             </div>
-                            <div>
-                                <label className="pp-label">{t('aiTutor_form_topic')}</label>
-                                <input type="text" value={mockTopic} onChange={e => setMockTopic(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_topic_placeholder')} />
-                            </div>
-                            <div>
-                                <label className="pp-label">{t('aiTutor_form_difficulty')}</label>
-                                <select value={mockDifficulty} onChange={e => setMockDifficulty(e.target.value)} className="pp-input">
-                                    <option>{t('aiTutor_difficulty_all')}</option>
-                                    <option>{t('aiTutor_difficulty_easy')}</option>
-                                    <option>{t('aiTutor_difficulty_medium')}</option>
-                                    <option>{t('aiTutor_difficulty_hard')}</option>
-                                </select>
+                            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                                {t('aiTutor_mock_empty_text')}
                             </div>
                         </div>
-                        <div className="mt-4">
-                            <label className="pp-label">{t('aiTutor_mockTest_numQuestions')}</label>
-                            <select value={numQuestions} onChange={e => setNumQuestions(Number(e.target.value))} className="pp-input">
-                                <option value={5}>{t('aiTutor_mockTest_numQuestions_5')}</option>
-                                <option value={10}>{t('aiTutor_mockTest_numQuestions_10')}</option>
-                                <option value={15}>{t('aiTutor_mockTest_numQuestions_15')}</option>
-                                <option value={20}>{t('aiTutor_mockTest_numQuestions_20')}</option>
-                            </select>
-                        </div>
-                        <button onClick={startTest} disabled={testState === 'loading'} className="pp-button mt-4 w-full sm:w-auto">
-                            {testState === 'loading' ? t('aiTutor_button_generatingTest') : t('aiTutor_button_startTest')}
-                        </button>
-                    </div>
-                )}
+                    )}
+                </main>
             </div>
             
             {/* Pass isOpen and setIsOpen as props - chatbot will handle its own state */}

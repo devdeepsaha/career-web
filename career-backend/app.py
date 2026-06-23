@@ -340,10 +340,12 @@ def career_path_for_roadmap(roadmap):
             resources = []
 
         career_steps.append({
+            "roadmap_id": roadmap.id,
             "stage": index + 1,
             "title": title,
             "detail": detail,
             "resources": resources,
+            "has_guide": bool(isinstance(step, dict) and step.get("ai_guide")),
         })
 
     return {
@@ -574,6 +576,71 @@ def roadmap_detail(roadmap_id):
     item.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify(item.to_dict()), 200
+
+@app.route('/roadmaps/<int:roadmap_id>/stages/<int:stage_number>/guide', methods=['POST'])
+@login_required
+def roadmap_stage_guide(roadmap_id, stage_number):
+    item = Roadmap.query.filter_by(id=roadmap_id, user_id=current_user.id).first()
+    if not item:
+        return jsonify({"error": "Roadmap not found"}), 404
+
+    steps = list(item.roadmap_json or [])
+    index = stage_number - 1
+    if index < 0 or index >= len(steps):
+        return jsonify({"error": "Stage not found"}), 404
+
+    data = request.get_json() or {}
+    language = get_language_name(data)
+    step = steps[index]
+    if isinstance(step, str):
+        step_data = {"title": step, "description": ""}
+    elif isinstance(step, dict):
+        step_data = dict(step)
+    else:
+        step_data = {"title": f"Stage {stage_number}", "description": ""}
+
+    if step_data.get("ai_guide") and not data.get("regenerate"):
+        return jsonify({"guide": step_data["ai_guide"], "roadmap": item.to_dict()}), 200
+
+    profile = first_profile_for_user(current_user.id)
+    profile_context = profile.to_dict() if profile else {}
+    prompt = f"""
+    You are an expert career mentor. Create a practical, structured action document in {language}
+    for this saved roadmap stage.
+
+    Roadmap title: {item.title}
+    Stage number: {stage_number}
+    Stage title: {step_data.get('title') or step_data.get('step') or 'Career stage'}
+    Stage description: {step_data.get('description') or step_data.get('details') or step_data.get('action') or ''}
+    Student profile: {json.dumps(profile_context, ensure_ascii=False)}
+
+    Return ONLY valid JSON with this shape:
+    {{
+      "title": "short guide title",
+      "summary": "2-3 sentence overview",
+      "outcome": "what the student should be able to do after this stage",
+      "steps": ["5-7 concrete actions"],
+      "resources": [{{"title": "resource/search term", "reason": "why it helps"}}],
+      "deliverable": "one thing the student should create or finish",
+      "checklist": ["3-5 completion checks"],
+      "ai_prompt": "a useful prompt the student can ask the AI tutor next"
+    }}
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        cleaned = response.text.strip().replace('```json', '').replace('```', '')
+        guide = json.loads(cleaned)
+        step_data["ai_guide"] = guide
+        steps[index] = step_data
+        item.roadmap_json = steps
+        item.updated_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({"guide": guide, "roadmap": item.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        print("Stage guide error:", e)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/saved-questions', methods=['GET', 'POST'])
 @login_required

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Search, Trash2, Trophy, X } from 'lucide-react';
+import { ArrowRight, BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Search, Trash2, Trophy, X } from 'lucide-react';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from '../AITutorPage/mathText';
 
@@ -22,8 +22,13 @@ const Empty = ({ label }) => (
     </div>
 );
 
+const getInitialView = () => {
+    const view = new URLSearchParams(window.location.search).get('view');
+    return tabs.some((tab) => tab.id === view) ? view : 'roadmaps';
+};
+
 const LibraryPage = () => {
-    const [activeTab, setActiveTab] = useState('roadmaps');
+    const [activeTab, setActiveTab] = useState(getInitialView);
     const [data, setData] = useState({ roadmaps: [], questions: [], mocks: [], scholarships: [], chats: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -96,6 +101,19 @@ const LibraryPage = () => {
     useEffect(() => {
         loadAll();
     }, [loadAll]);
+
+    useEffect(() => {
+        const syncView = () => setActiveTab(getInitialView());
+        window.addEventListener('popstate', syncView);
+        return () => window.removeEventListener('popstate', syncView);
+    }, []);
+
+    const switchTab = (tabId) => {
+        setActiveTab(tabId);
+        setQuery('');
+        const nextPath = tabId === 'roadmaps' ? '/library' : `/library?view=${tabId}`;
+        window.history.replaceState({ tab: 'library' }, '', nextPath);
+    };
 
     const archiveRoadmap = async (id) => {
         await fetch(`${API_URL}/roadmaps/${id}`, {
@@ -276,6 +294,11 @@ const LibraryPage = () => {
         ));
     };
 
+    const latestRoadmap = data.roadmaps[0];
+    const latestMock = data.mocks[0];
+    const latestScholarship = data.scholarships[0];
+    const mistakeCount = data.questions.filter((item) => item.source === 'mistake').length;
+
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             <div className="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -302,6 +325,41 @@ const LibraryPage = () => {
 
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
+            <div className="mb-4 grid gap-3 lg:grid-cols-4">
+                <button onClick={() => switchTab('revision')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                        <BookMarked className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">{mistakeCount || counts.questions} review cards</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Jump straight into mistakes and saved questions.</p>
+                </button>
+                <button onClick={() => switchTab('roadmaps')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                        <Map className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-3 line-clamp-1 text-sm font-semibold text-slate-950 dark:text-white">{latestRoadmap?.title || 'No roadmap saved yet'}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Latest career plan and saved stages.</p>
+                </button>
+                <button onClick={() => switchTab('mocks')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                        <Trophy className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{latestMock ? `${latestMock.score || 0}% latest mock` : 'No mock yet'}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Open full score review without hunting.</p>
+                </button>
+                <button onClick={() => switchTab('scholarships')} className="group saas-card p-4 text-left transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:hover:bg-slate-900">
+                    <div className="flex items-center justify-between gap-3">
+                        <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <ArrowRight className="h-4 w-4 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-3 line-clamp-1 text-sm font-semibold text-slate-950 dark:text-white">{latestScholarship?.scholarship_json?.name || 'No scholarship saved yet'}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Applications and opportunity tracking.</p>
+                </button>
+            </div>
+
             <div className="mb-4 saas-card p-3">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div>
@@ -321,7 +379,7 @@ const LibraryPage = () => {
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         return (
-                            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setQuery(''); }} className={`flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
+                            <button key={tab.id} onClick={() => switchTab(tab.id)} className={`flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
                                 <Icon className="h-4 w-4" />
                                 {tab.label}
                                 <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.68rem] tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">{counts[tab.id] || 0}</span>
