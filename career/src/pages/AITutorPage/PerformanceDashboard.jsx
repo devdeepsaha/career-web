@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import SimpleMarkdownRenderer from '../../components/shared/SimpleMarkdownRenderer';
 import Latex from '../../components/shared/LatexWrapper';
+import { formatMathText } from './mathText';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -37,13 +38,46 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
         cutout: '70%',
     };
 
-    const cleanLatex = (str) =>
-        str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
-
     const colorByScore = (score) => {
         if (score >= 70) return 'text-green-500';
         if (score >= 40) return 'text-yellow-500';
         return 'text-red-500';
+    };
+
+    const missedItems = result.detailed_results?.filter((item) => !item.is_correct) || [];
+    const correctItems = result.detailed_results?.filter((item) => item.is_correct) || [];
+    const strengths = result.strengths?.length
+        ? result.strengths
+        : correctItems.slice(0, 3).map((item) => item.question);
+    const weaknesses = result.weaknesses?.length
+        ? result.weaknesses
+        : missedItems.slice(0, 3).map((item) => item.question);
+    const recommendations = result.recommendations?.length
+        ? result.recommendations
+        : missedItems.length
+            ? missedItems.slice(0, 3).map((item) => `${t('perfDash_recommendation_review')} ${formatMathText(item.question)}`)
+            : [t('perfDash_recommendation_maintain')];
+
+    const InsightCard = ({ title, tone, items }) => {
+        const toneClass = {
+            good: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200',
+            risk: 'border-red-200 bg-red-50 text-red-900 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200',
+            action: 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200',
+        }[tone];
+
+        return (
+            <section className={`rounded-xl border p-4 ${toneClass}`}>
+                <h4 className="text-sm font-semibold">{title}</h4>
+                <ul className="mt-3 space-y-2 text-sm leading-6">
+                    {items.slice(0, 4).map((item, idx) => (
+                        <li key={idx} className="flex gap-2">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />
+                            <div className="max-h-24 overflow-hidden"><SimpleMarkdownRenderer text={formatMathText(item)} /></div>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        );
     };
 
     return (
@@ -74,41 +108,19 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
 
                 <div className="saas-card space-y-4 p-4">
                     <h3 className="saas-section-title">{t('perfDash_analysis_title')}</h3>
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <SimpleMarkdownRenderer text={result.analysis} />
+                    <div className="grid gap-3 xl:grid-cols-3">
+                        <InsightCard title={t('perfDash_strengths_title')} tone="good" items={strengths.length ? strengths : [t('perfDash_no_strengths')]} />
+                        <InsightCard title={t('perfDash_weaknesses_title')} tone="risk" items={weaknesses.length ? weaknesses : [t('perfDash_no_weaknesses')]} />
+                        <InsightCard title={t('perfDash_nextActions_title')} tone="action" items={recommendations} />
                     </div>
 
-                    {result.strengths?.length > 0 && (
-                        <div>
-                            <h4 className="mb-2 text-sm font-semibold text-green-600 dark:text-green-400">Strengths</h4>
-                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                                {result.strengths.map((item, idx) => (
-                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {result.weaknesses?.length > 0 && (
-                        <div>
-                            <h4 className="mb-2 text-sm font-semibold text-red-600 dark:text-red-400">Weaknesses</h4>
-                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                                {result.weaknesses.map((item, idx) => (
-                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {result.recommendations?.length > 0 && (
-                        <div>
-                            <h4 className="mb-2 text-sm font-semibold text-blue-600 dark:text-blue-400">Recommendations</h4>
-                            <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                                {result.recommendations.map((item, idx) => (
-                                    <li key={idx}><SimpleMarkdownRenderer text={item} /></li>
-                                ))}
-                            </ul>
-                        </div>
+                    {result.analysis && (
+                        <details className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+                            <summary className="cursor-pointer text-sm font-semibold text-slate-700 dark:text-slate-300">{t('perfDash_fullAnalysis')}</summary>
+                            <div className="prose prose-sm mt-3 max-w-none dark:prose-invert">
+                                <SimpleMarkdownRenderer text={result.analysis} />
+                            </div>
+                        </details>
                     )}
                 </div>
             </div>
@@ -120,7 +132,7 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
                         <div key={index} className="saas-card p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <p className="pr-4 text-sm font-semibold leading-6 text-slate-800 dark:text-white">
-                                    {index + 1}. <Latex>{cleanLatex(item.question)}</Latex>
+                                    {index + 1}. <Latex>{formatMathText(item.question)}</Latex>
                                 </p>
                                 {item.is_correct ? (
                                     <span className="flex-shrink-0 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-400">
@@ -143,7 +155,7 @@ const PerformanceDashboard = ({ result, retakeTest }) => {
 
                                     return (
                                         <div key={optIndex} className={`rounded-md border-l-4 p-3 transition-colors ${style}`}>
-                                            <Latex>{cleanLatex(option)}</Latex>
+                                            <Latex>{formatMathText(option)}</Latex>
                                             {isUserAnswer && <span className="ml-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t('perfDash_review_yourAnswer')}</span>}
                                             {isCorrectAnswer && !isUserAnswer && <span className="ml-2 text-xs font-medium text-green-600 dark:text-green-400">{t('perfDash_review_correctTag')}</span>}
                                         </div>

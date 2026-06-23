@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Trash2, Trophy, X } from 'lucide-react';
+import Latex from '../../components/shared/LatexWrapper';
+import { formatMathText } from '../AITutorPage/mathText';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -199,8 +201,8 @@ const LibraryPage = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">{index < 3 ? 'Due today' : 'Repeat in 2 days'}</p>
-                            <p className="mt-1 text-sm font-semibold leading-6 text-slate-950 dark:text-white">{item.question_text}</p>
-                            <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">Correct answer: {item.correct_answer}</p>
+                            <p className="mt-1 text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(item.question_text)}</Latex></p>
+                            <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">Correct answer: <Latex>{formatMathText(item.correct_answer)}</Latex></p>
                         </div>
                     </div>
                 </div>
@@ -291,11 +293,11 @@ const LibraryPage = () => {
                                 {(selectedMock.analysis_json?.detailed_results || []).map((item, index) => (
                                     <div key={index} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
                                         <div className="flex items-start justify-between gap-3">
-                                            <p className="text-sm font-semibold leading-6 text-slate-950 dark:text-white">{index + 1}. {item.question}</p>
+                                            <p className="text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white">{index + 1}. <Latex>{formatMathText(item.question)}</Latex></p>
                                             <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${item.is_correct ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'}`}>{item.is_correct ? 'Correct' : 'Review'}</span>
                                         </div>
-                                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your answer: {item.user_answer || 'Not answered'}</p>
-                                        <p className="mt-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">Correct answer: {item.correct_answer}</p>
+                                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your answer: <Latex>{formatMathText(item.user_answer || 'Not answered')}</Latex></p>
+                                        <p className="mt-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">Correct answer: <Latex>{formatMathText(item.correct_answer)}</Latex></p>
                                     </div>
                                 ))}
                             </div>

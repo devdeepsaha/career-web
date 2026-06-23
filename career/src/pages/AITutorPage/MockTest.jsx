@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Latex from '../../components/shared/LatexWrapper'; // 1. Import Latex
+import { formatMathText } from './mathText';
 
 const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoading, handleEndTest }) => {
     const { t } = useTranslation();
@@ -23,9 +24,6 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
     const handleAnswer = (qIndex, option) => {
         setUserAnswers(prev => ({ ...prev, [qIndex]: option }));
     };
-
-    const cleanLatex = (str) => 
-    str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
 
     if (!questions || questions.length === 0) {
         return (
@@ -50,22 +48,22 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
                     </button>
                 </div>
             </div>
-            <div className="saas-card flex-1 overflow-y-auto p-4">
+            <div className="saas-card mx-auto flex w-full max-w-5xl flex-1 overflow-y-auto p-4">
                 <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
                     {/* 2. Wrap the question in Latex */}
-                    <p className="text-sm font-semibold leading-6 text-slate-950 dark:text-white"><Latex>{cleanLatex(questions[currentQ]?.question)}</Latex></p>
+                    <p className="text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(questions[currentQ]?.question)}</Latex></p>
                 </div>
                 <div className="space-y-2">
                     {questions[currentQ]?.options.map((opt, i) => (
                         <label key={i} className={`flex cursor-pointer items-center rounded-md border p-3 text-sm transition-[background-color,border-color] duration-150 ${userAnswers[currentQ] === opt ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/30' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900'}`}>
                             <input type="radio" name={`q${currentQ}`} value={opt} checked={userAnswers[currentQ] === opt} onChange={() => handleAnswer(currentQ, opt)} className="mr-3 form-radio text-slate-950 focus:ring-slate-950 dark:text-cyan-300 dark:focus:ring-cyan-300"/>
                             {/* 3. Wrap the options in Latex */}
-                            <span className="text-slate-700 dark:text-slate-300"><Latex>{cleanLatex(opt)}</Latex></span>
+                            <span className="text-slate-700 dark:text-slate-300"><Latex>{formatMathText(opt)}</Latex></span>
                         </label>
                     ))}
                 </div>
             </div>
-            <div className="mt-3 flex justify-between">
+            <div className="mx-auto mt-3 flex w-full max-w-5xl justify-between">
                 <button onClick={() => setCurrentQ(p => Math.max(0, p - 1))} disabled={currentQ === 0} className="pp-button-secondary disabled:opacity-50">
                     {t('mockTest_prevButton')}
                 </button>

@@ -34,7 +34,7 @@ const SimpleMarkdownRenderer = ({ text }) => {
           const content = line.slice(2).split('**');
           return (
             <div key={idx} className="flex items-start space-x-2">
-              <span className="mt-1">•</span>
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />
               <p className="flex-1">
                 {content.map((part, i) =>
                   i % 2 === 1 ? <strong key={i}>{parseMath(part)}</strong> : parseMath(part)

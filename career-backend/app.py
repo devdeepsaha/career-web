@@ -740,17 +740,17 @@ def analyze_performance():
         Score: {score}%
         Questions and user answers: {json.dumps(detailed_results, ensure_ascii=False)}
 
-        Analyze the student's performance. 
-        1. Explain in simple language which topics/questions were done well and which were wrong.
-        2. Identify the student's STRENGTHS (topics/questions they excelled at) as a list.
-        3. Identify the student's WEAKNESSES (topics/questions they struggled with) as a list.
-        4. Give study recommendations for improvement.
-        5. Output as JSON with keys:
-           "analysis": "string explaining performance",
-           "strengths": ["list of strengths"],
-           "weaknesses": ["list of weaknesses"],
-           "recommendations": ["list of actionable recommendations"]
-        Respond in concise, friendly language.
+        Analyze the student's performance as a practical study dashboard, not as a motivational paragraph.
+        1. Mention exact question types, topics, concepts, or skills the student handled well.
+        2. Mention exact question types, topics, concepts, or skills the student missed.
+        3. Give concrete next actions: what to revise, what kind of questions to practice, and what to do in the next mock.
+        4. Keep the analysis short and useful.
+        5. Output valid JSON only with keys:
+           "analysis": "2-3 sentence summary, no markdown",
+           "strengths": ["specific strength 1", "specific strength 2"],
+           "weaknesses": ["specific weak area 1", "specific weak area 2"],
+           "recommendations": ["actionable next step 1", "actionable next step 2", "actionable next step 3"]
+        Avoid generic praise. Avoid emojis.
         """
 
         ai_response = model.generate_content(analysis_prompt)

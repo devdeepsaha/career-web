@@ -5,11 +5,9 @@ import MockTest from './MockTest';
 import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 import Latex from '../../components/shared/LatexWrapper';
+import { formatMathText } from './mathText';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
-
-const cleanLatex = (str) => 
-    str ? str.replace(/ext|\\t|\\n/g, '').replace(/\s+/g, ' ').trim() : '';
 
 const AITutorPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
@@ -61,6 +59,8 @@ const AITutorPage = ({ currentUser, showAuth }) => {
             return;
         }
 
+        const safeOverrides = overrides && overrides.constructor === Object ? overrides : {};
+
         setIsLoadingQuestion(true);
         setQuestion(null);
         setSelectedPracticeAnswer(null);
@@ -75,7 +75,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     subject: practiceSubject,
                     topic: practiceTopic,
                     difficulty: practiceDifficulty,
-                    ...overrides,
+                    ...safeOverrides,
                     language: i18n.language
                 })
             });
@@ -244,22 +244,24 @@ const AITutorPage = ({ currentUser, showAuth }) => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <title>Free MCQs practice for JEE, NEET & UPSC | Potho-Prodorshok</title>
+            <title>{t('aiTutor_seo_title')}</title>
             <meta 
                 name="description" 
-                content="Practice for competitive exams with our free AI Tutor. Get unlimited questions, mock tests, and instant doubt-solving for JEE, NEET, UPSC, and more." 
+                content={t('aiTutor_seo_desc')}
             />
             
             <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">AI Exam Studio</p>
+                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('aiTutor_eyebrow')}</p>
                 <h1 className="pp-page-title">{t('aiTutor_title')}</h1>
                 <p className="pp-page-copy mt-1 max-w-3xl">{t('aiTutor_subtitle')}</p>
             </div>
             
-            <div className="saas-card p-4">
-                <div className="mb-4 flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900 sm:w-fit">
-                    <button onClick={() => setTutorView('practice')} className={`rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color] duration-150 ${tutorView === 'practice' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_practice')}</button>
-                    <button onClick={() => setTutorView('test')} className={`rounded-md px-4 py-2 text-sm font-medium transition-[color,background-color] duration-150 ${tutorView === 'test' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_mockTests')}</button>
+            <div className="saas-card mx-auto max-w-6xl p-4">
+                <div className="mb-4 flex w-full justify-center">
+                    <div className="grid w-full max-w-md grid-cols-2 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                        <button onClick={() => setTutorView('practice')} className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'practice' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_practice')}</button>
+                        <button onClick={() => setTutorView('test')} className={`min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'test' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_mockTests')}</button>
+                    </div>
                 </div>
 
                 {tutorView === 'practice' && (
@@ -317,18 +319,18 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                         </div>
                         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                            <button onClick={fetchQuestion} disabled={isLoadingQuestion} className="pp-button w-full sm:w-auto">
+                            <button onClick={() => fetchQuestion()} disabled={isLoadingQuestion} className="pp-button w-full sm:w-auto">
                                 {isLoadingQuestion ? t('aiTutor_button_generating') : t('aiTutor_button_generateQuestion')}
                             </button>
                             <button onClick={fetchAdaptiveQuestion} disabled={isLoadingQuestion || weakQueue.length === 0} className="pp-button-secondary flex w-full items-center justify-center gap-2 sm:w-auto">
                                 <Target className="h-4 w-4" />
-                                Adaptive weak-area question
+                                {t('aiTutor_button_adaptiveQuestion')}
                             </button>
                         </div>
                         {questionError && <p className="text-red-500 text-sm mt-4 text-center">{questionError}</p>}
                         {question && (
                             <div className="pp-subpanel mt-4 p-4">
-                                <p className="mb-3 text-sm font-semibold text-slate-950 dark:text-white"><Latex>{cleanLatex(question.question)}</Latex></p>
+                                <p className="mb-3 text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(question.question)}</Latex></p>
                                 <div className="space-y-2">
                                     {question.options.map((opt, i) => {
                                         const hasAnswered = Boolean(selectedPracticeAnswer);
@@ -345,19 +347,19 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                                 onClick={() => answerPracticeQuestion(opt)}
                                                 className={`flex min-h-10 w-full items-center rounded-md border p-3 text-left text-sm transition-[background-color,border-color,transform] duration-150 active:scale-[0.96] ${stateClass}`}
                                             >
-                                                <Latex>{cleanLatex(opt)}</Latex>
+                                                <Latex>{formatMathText(opt)}</Latex>
                                             </button>
                                         );
                                     })}
                                 </div>
                                 {selectedPracticeAnswer && (
                                     <div className={`mt-3 rounded-md border p-3 text-sm ${selectedPracticeAnswer === question.answer ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300' : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300'}`}>
-                                        {selectedPracticeAnswer === question.answer ? 'Correct.' : 'Not quite.'} Correct answer: <span className="font-semibold"><Latex>{cleanLatex(question.answer)}</Latex></span>
+                                        {selectedPracticeAnswer === question.answer ? t('aiTutor_answer_correct') : t('aiTutor_answer_incorrect')} {t('aiTutor_answer_correctAnswer')}: <span className="font-semibold"><Latex>{formatMathText(question.answer)}</Latex></span>
                                     </div>
                                 )}
                                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <button onClick={savePracticeQuestion} className="ios-pill text-sm">
-                                        {isQuestionSaved ? 'Saved' : 'Save question'}
+                                        {isQuestionSaved ? t('aiTutor_savedQuestion') : t('aiTutor_saveQuestion')}
                                     </button>
                                     <button onClick={() => handleSolveItClick(question.question)} className="ios-pill text-sm">{t('aiTutor_solveItLink')}</button>
                                 </div>
