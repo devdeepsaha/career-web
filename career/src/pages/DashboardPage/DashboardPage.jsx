@@ -135,7 +135,7 @@ const MockSnapshot = ({ summary, counts, onNavigate }) => (
     </div>
 );
 
-const DashboardPage = ({ currentUser, onNavigate }) => {
+const DashboardPage = ({ onNavigate }) => {
     const [summary, setSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -203,17 +203,6 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 xl:flex-row xl:items-end xl:justify-between">
-                <div>
-                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Command Center</p>
-                    <h1 className="pp-page-title">Your career operating system</h1>
-                    <p className="pp-page-copy mt-1 max-w-3xl">Everything you generate now becomes reusable progress, history, and next actions.</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-                    {currentUser?.email || 'Signed in'}
-                </div>
-            </div>
-
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
