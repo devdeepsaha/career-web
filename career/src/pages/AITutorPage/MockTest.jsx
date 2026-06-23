@@ -35,7 +35,7 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 p-3 dark:bg-slate-950 sm:p-4 lg:p-5">
-            <div className="mb-3 flex flex-col gap-3 border-b border-slate-200 pb-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mx-auto mb-3 flex w-full max-w-4xl flex-col gap-3 border-b border-slate-200 pb-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-base font-semibold text-slate-950 dark:text-white md:text-lg">
                     {t('mockTest_title', { current: currentQ + 1, total: questions.length })}
                 </h2>
@@ -48,22 +48,22 @@ const MockTest = ({ questions, userAnswers, setUserAnswers, submitTest, isLoadin
                     </button>
                 </div>
             </div>
-            <div className="saas-card mx-auto flex w-full max-w-5xl flex-1 overflow-y-auto p-4">
-                <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="saas-card mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-y-auto p-4">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
                     {/* 2. Wrap the question in Latex */}
-                    <p className="text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(questions[currentQ]?.question)}</Latex></p>
+                    <p className="text-base font-semibold leading-7 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(questions[currentQ]?.question)}</Latex></p>
                 </div>
-                <div className="space-y-2">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {questions[currentQ]?.options.map((opt, i) => (
-                        <label key={i} className={`flex cursor-pointer items-center rounded-md border p-3 text-sm transition-[background-color,border-color] duration-150 ${userAnswers[currentQ] === opt ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/30' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900'}`}>
+                        <label key={i} className={`flex min-h-14 cursor-pointer items-center rounded-lg border p-4 text-sm transition-[background-color,border-color,transform] duration-150 active:scale-[0.98] ${userAnswers[currentQ] === opt ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/30' : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900'}`}>
                             <input type="radio" name={`q${currentQ}`} value={opt} checked={userAnswers[currentQ] === opt} onChange={() => handleAnswer(currentQ, opt)} className="mr-3 form-radio text-slate-950 focus:ring-slate-950 dark:text-cyan-300 dark:focus:ring-cyan-300"/>
                             {/* 3. Wrap the options in Latex */}
-                            <span className="text-slate-700 dark:text-slate-300"><Latex>{formatMathText(opt)}</Latex></span>
+                            <span className="min-w-0 text-slate-700 dark:text-slate-300"><Latex>{formatMathText(opt)}</Latex></span>
                         </label>
                     ))}
                 </div>
             </div>
-            <div className="mx-auto mt-3 flex w-full max-w-5xl justify-between">
+            <div className="mx-auto mt-3 flex w-full max-w-4xl justify-between">
                 <button onClick={() => setCurrentQ(p => Math.max(0, p - 1))} disabled={currentQ === 0} className="pp-button-secondary disabled:opacity-50">
                     {t('mockTest_prevButton')}
                 </button>

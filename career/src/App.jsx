@@ -21,10 +21,32 @@ import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+const tabToPath = {
+    dashboard: '/dashboard',
+    planner: '/planner',
+    tutor: '/tutor',
+    scholarship: '/scholarships',
+    library: '/library',
+    profile: '/profile',
+    team: '/team',
+    support: '/support',
+    policies: '/policies',
+    thankyou: '/thank-you',
+};
+
+const pathToTab = Object.fromEntries(Object.entries(tabToPath).map(([tab, path]) => [path, tab]));
+const publicTabs = new Set(['team', 'support', 'policies', 'thankyou']);
+
+const tabFromLocation = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) return tabParam;
+    return pathToTab[window.location.pathname] || 'dashboard';
+};
 
 export default function App() {
     const { t, i18n } = useTranslation();
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState(() => tabFromLocation());
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [currentUser, setCurrentUser] = useState(null);
     const [authView, setAuthView] = useState(null);
@@ -136,17 +158,26 @@ export default function App() {
     }, []);
 
     useEffect(() => {
+        const syncRoute = () => setActiveTab(tabFromLocation());
+        window.addEventListener('popstate', syncRoute);
         const urlParams = new URLSearchParams(window.location.search);
-        const tabParam = urlParams.get('tab');
-        if (tabParam) {
-            setActiveTab(tabParam);
-            window.history.replaceState({}, '', window.location.pathname);
+        if (urlParams.get('tab')) {
+            const nextTab = tabFromLocation();
+            window.history.replaceState({ tab: nextTab }, '', tabToPath[nextTab] || '/dashboard');
+            setActiveTab(nextTab);
         }
+        return () => window.removeEventListener('popstate', syncRoute);
     }, []);
 
-    const navigateTo = (tabName) => {
+    const navigateTo = (tabName, options = {}) => {
         setActiveTab(tabName);
         setCommandOpen(false);
+        const path = tabToPath[tabName] || '/dashboard';
+        if (!options.replace && window.location.pathname !== path) {
+            window.history.pushState({ tab: tabName }, '', path);
+        } else if (options.replace) {
+            window.history.replaceState({ tab: tabName }, '', path);
+        }
     };
 
     const handleCommandResult = (result) => {
@@ -233,7 +264,7 @@ export default function App() {
         return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-white">Loading...</div>;
     }
 
-    if (!currentUser) {
+    if (!currentUser && !publicTabs.has(activeTab)) {
         const authScreen = renderAuthScreen();
         if (authScreen) return authScreen;
 
@@ -246,6 +277,29 @@ export default function App() {
                 currentLanguage={i18n.language}
                 onLanguageChange={changeLanguage}
             />
+        );
+    }
+
+    if (!currentUser && publicTabs.has(activeTab)) {
+        return (
+            <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-white">
+                <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+                    <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
+                        <button onClick={() => { setActiveTab('dashboard'); window.history.pushState({}, '', '/'); }} className="flex items-center gap-2 text-sm font-semibold">
+                            <img src="/logo-dark.png" alt="Logo" className="block h-8 w-auto dark:hidden" />
+                            <img src="/logo-light.png" alt="Logo" className="hidden h-8 w-auto dark:block" />
+                            {t('header_title')}
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => showAuth('login')} className="pp-button-secondary">{t('landing_nav_login')}</button>
+                            <button onClick={() => showAuth('signup')} className="pp-button">{t('landing_getStarted')}</button>
+                        </div>
+                    </div>
+                </header>
+                <Suspense fallback={<div className="p-12 text-center dark:text-white">Loading...</div>}>
+                    {renderActiveTab()}
+                </Suspense>
+            </div>
         );
     }
 

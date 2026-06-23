@@ -9,11 +9,11 @@ export default {
     extend: {
       fontFamily: {
         // This is your default body font
-        sans: ['Poppins', 'sans-serif'], 
+        sans: ['DM Sans', 'sans-serif'],
         
         // --- ADD THIS LINE ---
         // This creates a new 'font-title' utility class
-        title: ['Outfit', 'sans-serif'], 
+        title: ['Inter', 'sans-serif'],
       },
     },
   },

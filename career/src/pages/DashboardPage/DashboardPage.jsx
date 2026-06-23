@@ -176,42 +176,9 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                         <StatCard label="Scholarships" value={counts.saved_scholarships || 0} detail="Tracked opportunities" icon={GraduationCap} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                        <InsightCard title="Goal timeline" icon={CalendarDays}>
-                            <div className="space-y-2">
-                                {(summary?.timeline || []).slice(0, 5).map((item, index) => (
-                                    <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.status || item.type}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                {(!summary?.timeline || summary.timeline.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
-                            </div>
-                        </InsightCard>
-
-                        <InsightCard title="Revision queue" icon={BookMarked}>
-                            <div className="space-y-2">
-                                {(summary?.revision_queue || []).slice(0, 4).map((item, index) => (
-                                    <div key={`${item.type}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                        <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.due_state}</p>
-                                    </div>
-                                ))}
-                                {(!summary?.revision_queue || summary.revision_queue.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Wrong answers and saved questions will appear here for daily review.</p>}
-                            </div>
-                        </InsightCard>
-
-                        <InsightCard title="Study timer" icon={Timer}>
-                            <StudyTimer />
-                        </InsightCard>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
                         <InsightCard title="Personal learning graph" icon={TrendingUp}>
-                            <div className="grid gap-3 md:grid-cols-2">
+                            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                                 {(summary?.topic_insights || []).slice(0, 6).map((item) => <TopicBar key={item.topic} item={item} />)}
                                 {(!summary?.topic_insights || summary.topic_insights.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Answer practice questions to build a topic strength graph.</p>}
                             </div>
@@ -225,6 +192,43 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
                                 ))}
                             </div>
                             <button onClick={exportWeeklyReport} className="pp-button-secondary mt-3 w-full">Export report</button>
+                        </InsightCard>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                        <InsightCard title="Goal timeline" icon={CalendarDays}>
+                            <div className="space-y-2">
+                                {(summary?.timeline || []).slice(0, 5).map((item, index) => (
+                                    <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                                                <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold capitalize text-slate-500 dark:bg-slate-950 dark:text-slate-400">{item.type}</span>
+                                            </div>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.status || 'active'} {item.date ? `· ${new Date(item.date).toLocaleDateString()}` : ''}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {(!summary?.timeline || summary.timeline.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
+                            </div>
+                        </InsightCard>
+
+                        <InsightCard title="Revision queue" icon={BookMarked}>
+                            <p className="mb-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Due review cards from saved questions and wrong answers.</p>
+                            <div className="space-y-2">
+                                {(summary?.revision_queue || []).slice(0, 4).map((item, index) => (
+                                    <div key={`${item.type}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                        <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.due_state}</p>
+                                    </div>
+                                ))}
+                                {(!summary?.revision_queue || summary.revision_queue.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Wrong answers and saved questions will appear here for daily review.</p>}
+                            </div>
+                        </InsightCard>
+
+                        <InsightCard title="Study timer" icon={Timer}>
+                            <StudyTimer />
                         </InsightCard>
                     </div>
 
@@ -307,6 +311,15 @@ const DashboardPage = ({ currentUser, onNavigate }) => {
 
 const StudyTimer = () => {
     const [seconds, setSeconds] = useState(() => Number(localStorage.getItem('study_timer_seconds') || 25 * 60));
+    const [durationMinutes, setDurationMinutes] = useState(() => Number(localStorage.getItem('study_timer_duration') || 25));
+    const [topic, setTopic] = useState(() => localStorage.getItem('study_timer_topic') || '');
+    const [sessions, setSessions] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('study_sessions') || '[]');
+        } catch {
+            return [];
+        }
+    });
     const [running, setRunning] = useState(false);
 
     useEffect(() => {
@@ -323,14 +336,42 @@ const StudyTimer = () => {
 
     const minutes = Math.floor(seconds / 60);
     const rest = String(seconds % 60).padStart(2, '0');
+    const today = new Date().toDateString();
+    const studiedToday = sessions
+        .filter((session) => new Date(session.createdAt).toDateString() === today)
+        .reduce((sum, session) => sum + Number(session.minutes || 0), 0);
+
+    const updateDuration = (value) => {
+        const next = Math.max(5, Math.min(180, Number(value) || 25));
+        setDurationMinutes(next);
+        setSeconds(next * 60);
+        localStorage.setItem('study_timer_duration', String(next));
+        localStorage.setItem('study_timer_seconds', String(next * 60));
+    };
+
+    const saveSession = () => {
+        const studied = Math.max(1, Math.round((durationMinutes * 60 - seconds) / 60));
+        const nextSessions = [{ topic: topic || 'General study', minutes: studied, createdAt: new Date().toISOString() }, ...sessions].slice(0, 60);
+        setSessions(nextSessions);
+        localStorage.setItem('study_sessions', JSON.stringify(nextSessions));
+        localStorage.setItem('study_timer_topic', topic || '');
+        setRunning(false);
+        setSeconds(durationMinutes * 60);
+        localStorage.setItem('study_timer_seconds', String(durationMinutes * 60));
+    };
 
     return (
         <div>
             <p className="text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{minutes}:{rest}</p>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Focus block for a topic or roadmap step.</p>
-            <div className="mt-4 flex gap-2">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Today studied: <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-200">{studiedToday} min</span></p>
+            <div className="mt-3 grid grid-cols-[1fr_96px] gap-2">
+                <input value={topic} onChange={(event) => setTopic(event.target.value)} className="pp-input" placeholder="Topic or roadmap step" />
+                <input type="number" min="5" max="180" value={durationMinutes} onChange={(event) => updateDuration(event.target.value)} className="pp-input tabular-nums" aria-label="Timer minutes" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
                 <button onClick={() => setRunning((value) => !value)} className="pp-button">{running ? 'Pause' : 'Start'}</button>
-                <button onClick={() => { setRunning(false); setSeconds(25 * 60); localStorage.setItem('study_timer_seconds', String(25 * 60)); }} className="pp-button-secondary">Reset</button>
+                <button onClick={saveSession} className="pp-button-secondary">Save time</button>
+                <button onClick={() => { setRunning(false); setSeconds(durationMinutes * 60); localStorage.setItem('study_timer_seconds', String(durationMinutes * 60)); }} className="pp-button-secondary">Reset</button>
             </div>
         </div>
     );

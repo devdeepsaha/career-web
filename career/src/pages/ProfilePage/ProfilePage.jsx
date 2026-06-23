@@ -14,6 +14,58 @@ const emptyProfile = {
     preferred_language: 'en',
 };
 
+const branchOptions = [
+    'Systems / EDP',
+    'Mining',
+    'Electrical',
+    'Mechanical',
+    'Civil',
+    'Finance',
+    'Personnel & HR',
+    'Materials Management',
+    'Marketing & Sales',
+    'Legal',
+    'Environment',
+    'Geology',
+];
+
+const readTag = (text = '', label) => {
+    const match = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, 'i'));
+    return match?.[1]?.trim() || '';
+};
+
+const stripTags = (text = '') => (
+    text
+        .split('\n')
+        .filter((line) => !/^(Branch|Preferred subjects|Region|Annual family income):/i.test(line.trim()))
+        .join('\n')
+        .trim()
+);
+
+const normalizeProfile = (data) => ({
+    ...emptyProfile,
+    ...data,
+    target_exams: stripTags(data?.target_exams || ''),
+    exam_branch: readTag(data?.target_exams || '', 'Branch'),
+    preferred_subjects: readTag(data?.target_exams || '', 'Preferred subjects'),
+    region: readTag(data?.target_exams || '', 'Region'),
+    annual_income: readTag(data?.target_exams || '', 'Annual family income'),
+});
+
+const serializeProfile = (profile) => {
+    const tags = [
+        profile.exam_branch ? `Branch: ${profile.exam_branch}` : '',
+        profile.preferred_subjects ? `Preferred subjects: ${profile.preferred_subjects}` : '',
+        profile.region ? `Region: ${profile.region}` : '',
+        profile.annual_income ? `Annual family income: ${profile.annual_income}` : '',
+    ].filter(Boolean);
+
+    return {
+        ...profile,
+        target_exams: [stripTags(profile.target_exams || ''), ...tags].filter(Boolean).join('\n'),
+    };
+};
+
 const ProfilePage = ({ currentUser }) => {
     const [profile, setProfile] = useState(emptyProfile);
     const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +78,7 @@ const ProfilePage = ({ currentUser }) => {
                 const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
                 if (response.ok) {
                     const data = await response.json();
-                    if (data) setProfile({ ...emptyProfile, ...data });
+                    if (data) setProfile(normalizeProfile(data));
                 }
             } catch (error) {
                 console.error(error);
@@ -51,11 +103,11 @@ const ProfilePage = ({ currentUser }) => {
                 method: 'PUT',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profile),
+                body: JSON.stringify(serializeProfile(profile)),
             });
             if (!response.ok) throw new Error('Save failed');
             const data = await response.json();
-            setProfile({ ...emptyProfile, ...data });
+            setProfile(normalizeProfile(data));
             setMessage('Profile saved.');
         } catch (error) {
             console.error(error);
@@ -98,7 +150,26 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                         <div>
                             <label className="pp-label">Target exams</label>
-                            <input value={profile.target_exams || ''} onChange={(event) => updateField('target_exams', event.target.value)} className="pp-input" placeholder="JEE, NEET, UPSC, CAT..." />
+                            <input value={profile.target_exams || ''} onChange={(event) => updateField('target_exams', event.target.value)} className="pp-input" placeholder="CIL, GATE, JEE, NEET, UPSC..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Exam branch or department</label>
+                            <select value={profile.exam_branch || ''} onChange={(event) => updateField('exam_branch', event.target.value)} className="pp-input">
+                                <option value="">Select branch</option>
+                                {branchOptions.map((branch) => <option key={branch}>{branch}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="pp-label">Preferred subjects</label>
+                            <input value={profile.preferred_subjects || ''} onChange={(event) => updateField('preferred_subjects', event.target.value)} className="pp-input" placeholder="Computer networks, DBMS, aptitude..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Region</label>
+                            <input value={profile.region || ''} onChange={(event) => updateField('region', event.target.value)} className="pp-input" placeholder="West Bengal, India" />
+                        </div>
+                        <div>
+                            <label className="pp-label">Annual family income</label>
+                            <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" placeholder="e.g. 350000" />
                         </div>
                     </div>
 

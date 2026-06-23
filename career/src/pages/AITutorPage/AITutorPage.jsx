@@ -8,6 +8,74 @@ import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from './mathText';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+const EXAM_OPTIONS = [
+    'Boards(Class 10th)',
+    'Boards(Class 12th Science)',
+    'Boards(Class 12th Commerce)',
+    'Boards(Class 12th Arts)',
+    'JEE Advanced',
+    'JEE',
+    'NEET',
+    'UPSC',
+    'GATE',
+    'CAT',
+    'Banking',
+    'RRB',
+    'SSC',
+    'State PSC',
+    'NDA',
+    'PSC',
+    'UGC NET/CSIR NET',
+    'IES',
+    'ISRO',
+    'DRDO',
+    'PSU',
+    'CIL',
+    'CIL Management Trainee',
+    'CIL Systems / EDP',
+    'CIL Mining',
+    'CIL Electrical',
+    'CIL Mechanical',
+    'CIL Civil',
+    'CIL Finance',
+    'CIL Personnel & HR',
+    'CLAT (UG/PG)',
+    'GRE',
+    'TOEFL/IELTS/PTE',
+    'TCS NQT',
+    'Infosys InfyTQ',
+    'Wipro Elite NTH',
+    'NTSE',
+];
+
+const inferExam = (targetExams = '') => {
+    const text = targetExams.toLowerCase();
+    return EXAM_OPTIONS.find((exam) => text.includes(exam.toLowerCase())) || (text.includes('coal india') ? 'CIL' : 'Boards(Class 10th)');
+};
+
+const inferSubject = (profile = {}) => {
+    const combined = `${profile.exam_branch || ''} ${profile.education || ''} ${profile.skills || ''} ${profile.goals || ''} ${profile.target_exams || ''}`.toLowerCase();
+    if (combined.includes('system') || combined.includes('computer') || combined.includes('cse') || combined.includes('it')) return 'Computer Science';
+    if (combined.includes('electrical')) return 'Electrical Engineering';
+    if (combined.includes('mechanical')) return 'Mechanical Engineering';
+    if (combined.includes('civil')) return 'Civil Engineering';
+    if (combined.includes('mining')) return 'Mining Engineering';
+    if (combined.includes('finance')) return 'Finance';
+    if (combined.includes('hr') || combined.includes('personnel')) return 'Human Resources';
+    return 'All';
+};
+
+const buildProfileContext = (profile = {}) => (
+    [
+        `Status: ${profile.status || 'not set'}`,
+        `Education: ${profile.education || 'not set'}`,
+        `Target exams and branch: ${profile.target_exams || 'not set'}`,
+        `Skills: ${profile.skills || 'not set'}`,
+        `Interests: ${profile.interests || 'not set'}`,
+        `Career goals: ${profile.goals || 'not set'}`,
+        `Target companies or institutions: ${profile.target_companies || 'not set'}`,
+    ].join('\n')
+);
 
 const AITutorPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
@@ -39,6 +107,31 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [numQuestions, setNumQuestions] = useState(5);
     const [weakQueue, setWeakQueue] = useState([]);
+    const [studentProfile, setStudentProfile] = useState(null);
+
+    React.useEffect(() => {
+        const loadProfileDefaults = async () => {
+            if (!currentUser) return;
+            try {
+                const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
+                if (!response.ok) return;
+                const profile = await response.json();
+                if (!profile) return;
+                setStudentProfile(profile);
+                const exam = inferExam(profile.target_exams || profile.goals || profile.education || '');
+                const subject = inferSubject(profile);
+                setPracticeExam(exam);
+                setMockExam(exam);
+                setPracticeSubject(subject);
+                setMockSubject(subject === 'All' ? 'English' : subject);
+                setPracticeTopic((current) => (profile.goals && current === 'All' ? profile.goals : current));
+                setMockTopic((current) => (profile.goals && current === 'All' ? profile.goals : current));
+            } catch (err) {
+                console.error('Profile defaults could not load:', err);
+            }
+        };
+        loadProfileDefaults();
+    }, [currentUser]);
 
     React.useEffect(() => {
         const loadWeakQueue = async () => {
@@ -76,7 +169,8 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     topic: practiceTopic,
                     difficulty: practiceDifficulty,
                     ...safeOverrides,
-                    language: i18n.language
+                    language: i18n.language,
+                    profile_context: buildProfileContext(studentProfile || {}),
                 })
             });
             if (!response.ok) throw new Error('Network response was not ok');
@@ -186,7 +280,8 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     topic: mockTopic,
                     difficulty: mockDifficulty,
                     num_questions: numQuestions,
-                    language: i18n.language
+                    language: i18n.language,
+                    profile_context: buildProfileContext(studentProfile || {}),
                 })
             });
             if (!response.ok) throw new Error('Failed to generate test');
@@ -271,34 +366,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_exam')}</label>
                                 <select value={practiceExam} onChange={e => setPracticeExam(e.target.value)} className="pp-input">
-                                    <option>Boards(Class 10th)</option>
-                                    <option>Boards(Class 12th Science)</option>
-                                    <option>Boards(Class 12th Commerce)</option>
-                                    <option>Boards(Class 12th Arts)</option>
-                                    <option>JEE Advanced</option>
-                                    <option>JEE</option>
-                                    <option>NEET</option>
-                                    <option>UPSC</option>
-                                    <option>GATE</option>
-                                    <option>CAT</option>
-                                    <option>Banking</option>
-                                    <option>RRB</option>
-                                    <option>SSC</option>
-                                    <option>State PSC</option>
-                                    <option>NDA</option>
-                                    <option>PSC</option>
-                                    <option>UGC NET/CSIR NET</option>
-                                    <option>IES</option>
-                                    <option>ISRO</option>
-                                    <option>DRDO</option>
-                                    <option>PSU</option>
-                                    <option>CLAT (UG/PG)</option>
-                                    <option>GRE</option>
-                                    <option>TOEFL/IELTS/PTE</option>
-                                    <option>TCS NQT</option>
-                                    <option>Infosys InfyTQ</option>
-                                    <option>Wipro Elite NTH</option>
-                                    <option>NTSE</option>
+                                    {EXAM_OPTIONS.map((exam) => <option key={exam}>{exam}</option>)}
                                 </select>
                             </div>
                             <div>
@@ -375,34 +443,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_exam')}</label>
                                 <select value={mockExam} onChange={e => setMockExam(e.target.value)} className="pp-input">
-                                    <option>Boards(Class 10th)</option>
-                                    <option>Boards(Class 12th Science)</option>
-                                    <option>Boards(Class 12th Commerce)</option>
-                                    <option>Boards(Class 12th Arts)</option>
-                                    <option>JEE Advanced</option>
-                                    <option>JEE</option>
-                                    <option>NEET</option>
-                                    <option>UPSC</option>
-                                    <option>GATE</option>
-                                    <option>CAT</option>
-                                    <option>Banking</option>
-                                    <option>RRB</option>
-                                    <option>SSC</option>
-                                    <option>State PSC</option>
-                                    <option>NDA</option>
-                                    <option>PSC</option>
-                                    <option>UGC NET/CSIR NET</option>
-                                    <option>IES</option>
-                                    <option>ISRO</option>
-                                    <option>DRDO</option>
-                                    <option>PSU</option>
-                                    <option>CLAT (UG/PG)</option>
-                                    <option>GRE</option>
-                                    <option>TOEFL/IELTS/PTE</option>
-                                    <option>TCS NQT</option>
-                                    <option>Infosys InfyTQ</option>
-                                    <option>Wipro Elite NTH</option>
-                                    <option>NTSE</option>
+                                    {EXAM_OPTIONS.map((exam) => <option key={exam}>{exam}</option>)}
                                 </select>
                             </div>
                             <div>

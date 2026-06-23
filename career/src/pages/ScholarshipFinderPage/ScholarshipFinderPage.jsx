@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ScholarshipEmptyState from './ScholarshipEmptyState';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+
+const readTag = (text = '', label) => {
+    const match = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, 'i'));
+    return match?.[1]?.trim() || '';
+};
+
+const buildProfileContext = (profile = {}) => (
+    [
+        `Status: ${profile.status || 'not set'}`,
+        `Education: ${profile.education || 'not set'}`,
+        `Target exams and branch: ${profile.target_exams || 'not set'}`,
+        `Skills: ${profile.skills || 'not set'}`,
+        `Interests: ${profile.interests || 'not set'}`,
+        `Career goals: ${profile.goals || 'not set'}`,
+        `Target companies or institutions: ${profile.target_companies || 'not set'}`,
+    ].join('\n')
+);
 
 const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
@@ -16,6 +33,29 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
     const [error, setError] = useState('');
     const [hasSearched, setHasSearched] = useState(false);
     const [savedScholarshipKeys, setSavedScholarshipKeys] = useState({});
+    const [studentProfile, setStudentProfile] = useState(null);
+
+    useEffect(() => {
+        const loadProfileDefaults = async () => {
+            if (!currentUser) return;
+            try {
+                const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
+                if (!response.ok) return;
+                const profile = await response.json();
+                if (!profile) return;
+                setStudentProfile(profile);
+                const profileRegion = readTag(profile.target_exams || '', 'Region');
+                const profileIncome = readTag(profile.target_exams || '', 'Annual family income');
+                if (profileRegion) setRegion(profileRegion);
+                if (profileIncome) setIncome(profileIncome);
+            } catch (err) {
+                console.error('Scholarship profile defaults could not load:', err);
+            }
+        };
+        loadProfileDefaults();
+    }, [currentUser]);
+
+    const profileContext = useMemo(() => buildProfileContext(studentProfile || {}), [studentProfile]);
 
     const findScholarships = async (e) => {
         e.preventDefault();
@@ -41,7 +81,8 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                     region,
                     destination,
                     religion,
-                    language: i18n.language
+                    language: i18n.language,
+                    profile_context: profileContext,
                 })
             });
             if (!response.ok) throw new Error('Network response was not ok');

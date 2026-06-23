@@ -1090,6 +1090,7 @@ def get_question():
     subject = data.get('subject', '')
     topic = data.get('topic', '')
     difficulty = data.get('difficulty', '')
+    profile_context = data.get('profile_context', '')
     seen = read_history()
 
     prompt = f"""
@@ -1099,10 +1100,13 @@ def get_question():
     - Subject: {subject}
     - Topic: {topic}
     - Difficulty: {difficulty}
+    - Student profile context:
+    {profile_context}
 
     CRITICAL INSTRUCTION 1: The entire response, including the "question", "options", and "answer", MUST be in the {language_name} language.
     CRITICAL INSTRUCTION 2: Do NOT generate a question from this list of previously seen questions: {json.dumps(seen)}
     CRITICAL INSTRUCTION 3: Pay special attention to chemical formulas. They must be written correctly (e.g., NaCl, H₂O, CaCO₃) without any extra prefixes like 'ext'. The response 'extNaCl' is WRONG; the correct response is 'NaCl'. Use LaTeX for formatting where appropriate (e.g., $H_2O$).
+    CRITICAL INSTRUCTION 4: If the profile mentions CIL, Coal India Limited, Systems, EDP, or an engineering branch, align the question with that exam/branch instead of falling back to school-level defaults.
     Return ONLY a single valid JSON object with keys: "question", "options" (an array of 4 strings), and "answer".
     """
 
@@ -1175,12 +1179,15 @@ def generate_mock_test():
     subject = data.get('subject', '')
     topic = data.get('topic', '')
     num_q = data.get('num_questions', 5)
+    profile_context = data.get('profile_context', '')
 
     prompt = f"""
 Generate {num_q} MCQs in JSON format for:
 Exam: {exam}
 Subject: {subject}
 Topic: {topic}
+Student profile context:
+{profile_context}
 
 Each question must have keys:
 - "question"
@@ -1189,6 +1196,8 @@ Each question must have keys:
 
 Pay special attention to chemical formulas: write them correctly (e.g., NaCl, H₂O, CaCO₃), no prefixes like 'ext'.
 Use LaTeX formatting where appropriate (e.g., $H_2O$).
+If the profile mentions CIL, Coal India Limited, Systems, EDP, or an engineering branch, target that exam and branch instead of generic Class 10 questions.
+The entire response must be in {language}.
 Respond only with a JSON array.
 """
 
@@ -1223,6 +1232,7 @@ def fetch_real_scholarships(data):
     region = data.get("region", "")
     destination = data.get("destination", "")
     religion = data.get("religion", "")
+    profile_context = data.get("profile_context", "")
 
     prompt = f"""
     You are an expert scholarship advisor.
@@ -1232,6 +1242,8 @@ def fetch_real_scholarships(data):
     Region: {region}
     Destination: {destination}
     Religion: {religion}
+    Student profile context:
+    {profile_context}
 
     Each scholarship must have keys:
       "name" - the scholarship name

@@ -4,6 +4,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    font-family: "DM Sans", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-title,
+  .pp-page-title,
+  .saas-section-title {
+    font-family: "Inter", sans-serif;
+  }
+}
+
 @layer components {
   .ios-surface {
     @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950;
