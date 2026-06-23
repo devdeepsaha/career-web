@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookMarked, CalendarDays, Clock3, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
+import { ArrowRight, BookMarked, BriefcaseBusiness, Clock3, ExternalLink, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -68,7 +68,7 @@ const scoreTrend = (summary) => {
 };
 
 const LearningBrief = ({ summary, onNavigate }) => {
-    const topics = summary?.topic_insights || [];
+    const topics = (summary?.topic_insights || []).filter((item) => item.topic && item.topic.toLowerCase() !== 'all');
     const bestTopic = [...topics].sort((a, b) => (b.accuracy || 0) - (a.accuracy || 0))[0];
     const weakTopic = [...topics].sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0))[0];
     const actions = summary?.weekly_report?.next_actions?.length
@@ -86,11 +86,11 @@ const LearningBrief = ({ summary, onNavigate }) => {
             <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                     <p className="saas-meta">Best</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{bestTopic?.topic || 'Not enough data'}</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{bestTopic?.topic || 'Start topic practice'}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                     <p className="saas-meta">Weakest</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{weakTopic?.topic || 'Not enough data'}</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{weakTopic?.topic || 'No weak topic yet'}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                     <p className="saas-meta">Trend</p>
@@ -139,23 +139,51 @@ const TopicBar = ({ item }) => (
     </div>
 );
 
-const CompactTimeline = ({ items = [] }) => (
-    <div>
-        <div className="flex gap-3 overflow-x-auto pb-1">
-            {items.slice(0, 5).map((item, index) => (
-                <div key={`${item.type}-${index}`} className="min-w-[180px] rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold capitalize text-slate-500 dark:bg-slate-950 dark:text-slate-400">{item.type}</span>
-                    </div>
-                    <p className="line-clamp-2 min-h-10 text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.status || 'active'} {item.date ? `· ${new Date(item.date).toLocaleDateString()}` : ''}</p>
+const CareerPath = ({ path, onNavigate }) => {
+    const steps = path?.steps || [];
+
+    return (
+        <div>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p className="text-sm font-semibold text-slate-950 dark:text-white">{path?.title || 'No saved career path yet'}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{path ? `${path.step_count} stages · ${path.status}` : 'Generate and save a roadmap to see your career stages here.'}</p>
                 </div>
-            ))}
+                <button onClick={() => onNavigate('planner')} className="pp-button-secondary">Open planner</button>
+            </div>
+            {steps.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                    {steps.slice(0, 6).map((step) => (
+                        <div key={`${step.stage}-${step.title}`} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className="rounded-full bg-white px-2 py-0.5 text-[0.68rem] font-semibold text-slate-500 dark:bg-slate-950 dark:text-slate-400">Stage {step.stage}</span>
+                                <span className="h-2 w-2 rounded-full bg-blue-500" />
+                            </div>
+                            <p className="line-clamp-2 text-sm font-semibold text-slate-950 dark:text-white">{step.title}</p>
+                            {step.detail && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{step.detail}</p>}
+                            {step.resources?.length > 0 && (
+                                <div className="mt-3 grid gap-1.5">
+                                    {step.resources.slice(0, 2).map((resource) => resource.url ? (
+                                        <a key={`${step.stage}-${resource.title}`} href={resource.url} target="_blank" rel="noreferrer" className="inline-flex min-h-8 items-center justify-between gap-2 rounded-md bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800">
+                                            <span className="line-clamp-1">{resource.title}</span>
+                                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                        </a>
+                                    ) : (
+                                        <div key={`${step.stage}-${resource.title}`} className="rounded-md bg-white px-2 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-950 dark:text-slate-400">{resource.title}</div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    Your saved roadmap stages and resource links will appear here after you generate a career path.
+                </div>
+            )}
         </div>
-        {items.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Saved plans, mocks, and applications will form your timeline.</p>}
-    </div>
-);
+    );
+};
 
 const RevisionSummary = ({ items = [], counts = {}, onNavigate }) => {
     const dueToday = items.filter((item) => String(item.due_state || '').toLowerCase().includes('today')).length;
@@ -258,7 +286,8 @@ const DashboardPage = ({ onNavigate }) => {
     }
 
     const counts = summary?.counts || {};
-    const weakTopic = [...(summary?.topic_insights || [])].sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0))[0];
+    const meaningfulTopics = (summary?.topic_insights || []).filter((item) => item.topic && item.topic.toLowerCase() !== 'all');
+    const weakTopic = [...meaningfulTopics].sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0))[0];
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
@@ -306,8 +335,8 @@ const DashboardPage = ({ onNavigate }) => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-                    <InsightCard title="Goal timeline" icon={CalendarDays}>
-                        <CompactTimeline items={summary?.timeline || []} />
+                    <InsightCard title="Career path" icon={BriefcaseBusiness}>
+                        <CareerPath path={summary?.career_path} onNavigate={onNavigate} />
                     </InsightCard>
 
                     <InsightCard title="Study timer" icon={Timer}>

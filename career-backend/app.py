@@ -306,6 +306,55 @@ def timeline_for_user(user_id):
         })
     return sorted(items, key=lambda item: item.get("date") or "", reverse=True)[:10]
 
+def career_path_for_roadmap(roadmap):
+    if not roadmap:
+        return None
+
+    steps = roadmap.roadmap_json or []
+    career_steps = []
+
+    for index, step in enumerate(steps[:6]):
+        if isinstance(step, str):
+            title = step
+            detail = ""
+            resources = []
+        elif isinstance(step, dict):
+            title = step.get("title") or step.get("step") or step.get("name") or step.get("phase") or f"Stage {index + 1}"
+            detail = step.get("description") or step.get("details") or step.get("action") or step.get("summary") or ""
+            raw_resources = step.get("resources") or step.get("links") or step.get("resource_links") or []
+            if isinstance(raw_resources, str):
+                resources = [{"title": raw_resources, "url": raw_resources if raw_resources.startswith("http") else ""}]
+            else:
+                resources = []
+                for resource in raw_resources[:3] if isinstance(raw_resources, list) else []:
+                    if isinstance(resource, str):
+                        resources.append({"title": resource, "url": resource if resource.startswith("http") else ""})
+                    elif isinstance(resource, dict):
+                        resources.append({
+                            "title": resource.get("title") or resource.get("name") or resource.get("label") or resource.get("url") or "Resource",
+                            "url": resource.get("url") or resource.get("link") or "",
+                        })
+        else:
+            title = f"Stage {index + 1}"
+            detail = ""
+            resources = []
+
+        career_steps.append({
+            "stage": index + 1,
+            "title": title,
+            "detail": detail,
+            "resources": resources,
+        })
+
+    return {
+        "id": roadmap.id,
+        "title": roadmap.title,
+        "status": roadmap.status,
+        "step_count": len(steps),
+        "updated_at": roadmap.updated_at.isoformat() if roadmap.updated_at else None,
+        "steps": career_steps,
+    }
+
 def readiness_score(profile, counts, mock_average):
     profile_score = profile_completeness(profile) * 0.35
     practice_score = min(counts.get("question_attempts", 0), 40) / 40 * 20
@@ -392,6 +441,7 @@ def dashboard_summary():
         "mock_average": mock_average,
         "career_readiness_score": readiness,
         "latest_roadmap": latest_roadmap.to_dict(include_json=False) if latest_roadmap else None,
+        "career_path": career_path_for_roadmap(latest_roadmap),
         "latest_chat": latest_chat.to_dict() if latest_chat else None,
         "latest_mock": latest_mock.to_dict(include_payload=False) if latest_mock else None,
         "recent_activity": recent_activity_for_user(current_user.id),
