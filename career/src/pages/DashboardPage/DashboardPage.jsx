@@ -4,17 +4,17 @@ import { ArrowRight, BookMarked, BriefcaseBusiness, Clock3, ExternalLink, Map, M
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 const ContinueCard = ({ title, label, detail, action, icon }) => (
-    <button onClick={action} className="group flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white p-3 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
-        <div className="flex min-w-0 items-center gap-3">
+    <button onClick={action} className="group flex min-w-0 w-full items-center justify-between overflow-hidden rounded-lg border border-slate-200 bg-white p-3 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
+        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
                 {React.createElement(icon, { className: 'h-4 w-4' })}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 overflow-hidden">
                 <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{title}</p>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{label || detail}</p>
             </div>
         </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+        <ArrowRight className="ml-2 hidden h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5 sm:block" />
     </button>
 );
 
