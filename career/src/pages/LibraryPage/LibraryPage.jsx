@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Trash2, Trophy, X } from 'lucide-react';
+import { BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Search, Trash2, Trophy, X } from 'lucide-react';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from '../AITutorPage/mathText';
 
@@ -28,6 +28,7 @@ const LibraryPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedMock, setSelectedMock] = useState(null);
+    const [query, setQuery] = useState('');
     const [resources, setResources] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem('resource_vault') || '[]');
@@ -44,6 +45,35 @@ const LibraryPage = () => {
         scholarships: '/saved-scholarships',
         chats: '/chat-sessions',
     }), []);
+
+    const counts = useMemo(() => ({
+        roadmaps: data.roadmaps.length,
+        questions: data.questions.length,
+        mocks: data.mocks.length,
+        scholarships: data.scholarships.length,
+        revision: data.questions.length,
+        resources: resources.length,
+        chats: data.chats.length,
+    }), [data, resources]);
+
+    const activeMeta = tabs.find((tab) => tab.id === activeTab) || tabs[0];
+    const activeCount = counts[activeTab] || 0;
+    const searchable = useMemo(() => ({
+        roadmaps: data.roadmaps,
+        questions: data.questions,
+        mocks: data.mocks,
+        scholarships: data.scholarships,
+        revision: data.questions,
+        resources,
+        chats: data.chats,
+    }), [data, resources]);
+
+    const filtered = useMemo(() => {
+        const needle = query.trim().toLowerCase();
+        const source = searchable[activeTab] || [];
+        if (!needle) return source;
+        return source.filter((item) => JSON.stringify(item).toLowerCase().includes(needle));
+    }, [activeTab, query, searchable]);
 
     const loadAll = useCallback(async () => {
         setIsLoading(true);
@@ -118,8 +148,8 @@ const LibraryPage = () => {
         }
 
         if (activeTab === 'roadmaps') {
-            if (!data.roadmaps.length) return <Empty label="Generated roadmaps will appear here after you save them." />;
-            return data.roadmaps.map((item) => (
+            if (!filtered.length) return <Empty label={query ? "No roadmaps match this search." : "Generated roadmaps will appear here after you save them."} />;
+            return filtered.map((item) => (
                 <div key={item.id} className="saas-card p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -133,8 +163,8 @@ const LibraryPage = () => {
         }
 
         if (activeTab === 'questions') {
-            if (!data.questions.length) return <Empty label="Saved practice questions and mistake notebook items will appear here." />;
-            return data.questions.map((item) => (
+            if (!filtered.length) return <Empty label={query ? "No saved questions match this search." : "Saved practice questions and mistake notebook items will appear here."} />;
+            return filtered.map((item) => (
                 <div key={item.id} className="saas-card p-4">
                     <div className="flex items-start justify-between gap-3">
                         <div>
@@ -151,8 +181,8 @@ const LibraryPage = () => {
         }
 
         if (activeTab === 'mocks') {
-            if (!data.mocks.length) return <Empty label="Completed mock tests will be saved with score and topic context." />;
-            return data.mocks.map((item) => (
+            if (!filtered.length) return <Empty label={query ? "No mock tests match this search." : "Completed mock tests will be saved with score and topic context."} />;
+            return filtered.map((item) => (
                 <button key={item.id} onClick={() => openMock(item.id)} className="saas-card w-full p-4 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:hover:border-slate-700 dark:hover:bg-slate-900">
                     <div className="flex items-center justify-between gap-3">
                         <div>
@@ -167,8 +197,8 @@ const LibraryPage = () => {
         }
 
         if (activeTab === 'scholarships') {
-            if (!data.scholarships.length) return <Empty label="Saved scholarship opportunities will become your application tracker." />;
-            return data.scholarships.map((item) => {
+            if (!filtered.length) return <Empty label={query ? "No scholarships match this search." : "Saved scholarship opportunities will become your application tracker."} />;
+            return filtered.map((item) => {
                 const scholarship = item.scholarship_json || {};
                 return (
                     <div key={item.id} className="saas-card p-4">
@@ -192,8 +222,8 @@ const LibraryPage = () => {
         }
 
         if (activeTab === 'revision') {
-            if (!data.questions.length) return <Empty label="Save practice questions and wrong answers to build daily review cards." />;
-            return data.questions.map((item, index) => (
+            if (!filtered.length) return <Empty label={query ? "No revision cards match this search." : "Save practice questions and wrong answers to build daily review cards."} />;
+            return filtered.map((item, index) => (
                 <div key={item.id} className="saas-card p-4">
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
@@ -218,8 +248,8 @@ const LibraryPage = () => {
                         <input value={resourceDraft.tag} onChange={(event) => setResourceDraft((prev) => ({ ...prev, tag: event.target.value }))} className="pp-input" placeholder="Topic tag" />
                         <button className="pp-button flex items-center justify-center gap-2"><Plus className="h-4 w-4" /> Save</button>
                     </form>
-                    {resources.length === 0 && <Empty label="Save videos, PDFs, links, courses, and project resources here." />}
-                    {resources.map((item) => (
+                    {filtered.length === 0 && <Empty label={query ? "No resources match this search." : "Save videos, PDFs, links, courses, and project resources here."} />}
+                    {filtered.map((item) => (
                         <div key={item.id} className="saas-card p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
@@ -237,8 +267,8 @@ const LibraryPage = () => {
             );
         }
 
-        if (!data.chats.length) return <Empty label="Career planner and tutor chats are already auto-saved here." />;
-        return data.chats.map((item) => (
+        if (!filtered.length) return <Empty label={query ? "No chats match this search." : "Career planner and tutor chats are already auto-saved here."} />;
+        return filtered.map((item) => (
             <div key={item.id} className="saas-card p-4">
                 <p className="text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.chat_type} | {item.message_count} messages</p>
@@ -248,24 +278,57 @@ const LibraryPage = () => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Saved Library</p>
-                <h1 className="pp-page-title">Everything you have built</h1>
-                <p className="pp-page-copy mt-1 max-w-3xl">Roadmaps, questions, mocks, scholarships, resources, and chats stay organized here.</p>
+            <div className="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="saas-card p-4">
+                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Saved Library</p>
+                    <h1 className="pp-page-title">Everything you have built</h1>
+                    <p className="pp-page-copy mt-1 max-w-3xl">Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.</p>
+                </div>
+                <div className="saas-card grid grid-cols-3 gap-2 p-3">
+                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="saas-meta">Plans</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.roadmaps}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="saas-meta">Practice</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.questions}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                        <p className="saas-meta">Mocks</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.mocks}</p>
+                    </div>
+                </div>
             </div>
 
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
-            <div className="mb-4 flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-950">
-                {tabs.map((tab) => {
-                    const Icon = tab.icon;
-                    return (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-slate-100 text-slate-950 dark:bg-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
-                            <Icon className="h-4 w-4" />
-                            {tab.label}
-                        </button>
-                    );
-                })}
+            <div className="mb-4 saas-card p-3">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div>
+                        <p className="saas-meta">Current view</p>
+                        <div className="mt-1 flex items-center gap-2">
+                            {React.createElement(activeMeta.icon, { className: 'h-4 w-4 text-slate-500 dark:text-slate-400' })}
+                            <p className="text-sm font-semibold text-slate-950 dark:text-white">{activeMeta.label}</p>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-500 dark:bg-slate-900 dark:text-slate-400">{activeCount}</span>
+                        </div>
+                    </div>
+                    <label className="relative block w-full xl:max-w-md">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input value={query} onChange={(event) => setQuery(event.target.value)} className="pp-input pl-9" placeholder={`Search ${activeMeta.label.toLowerCase()}...`} />
+                    </label>
+                </div>
+                <div className="mt-3 flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setQuery(''); }} className={`flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
+                                <Icon className="h-4 w-4" />
+                                {tab.label}
+                                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.68rem] tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">{counts[tab.id] || 0}</span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             <div className="space-y-3">{renderItems()}</div>
