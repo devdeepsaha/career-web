@@ -7,6 +7,14 @@ import { Maximize, Minimize, Copy, Plus, Trash2, Clock, Menu } from 'lucide-reac
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
+const normalizeQuestionPayload = (payload) => {
+    if (typeof payload === 'string') return payload;
+    if (typeof payload?.detail === 'string') return payload.detail;
+    if (typeof payload?.question === 'string') return payload.question;
+    if (typeof payload?.text === 'string') return payload.text;
+    return '';
+};
+
 const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoading: propLoading, handleSend: propHandleSend }) => {
     const { t, i18n } = useTranslation();
     const [input, setInput] = useState('');
@@ -31,8 +39,8 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
         
         // Listen for external question triggers (from AI Tutor page)
         const handleExternalQuestion = (event) => {
-            const question = event.detail;
-            if (question && typeof question === 'string') {
+            const question = normalizeQuestionPayload(event);
+            if (question) {
                 // Simulate form submission with this question
                 setTimeout(() => {
                     handleExternalSend(question);
@@ -201,7 +209,8 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     }, [isOpen]);
 
     // Separate handler for external sends (from AI Tutor)
-    const handleExternalSend = async (question) => {
+    const handleExternalSend = async (payload) => {
+        const question = normalizeQuestionPayload(payload).trim();
         if (!question.trim()) return;
 
         // Auto-create session if logged in but no session exists

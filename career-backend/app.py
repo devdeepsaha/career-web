@@ -110,15 +110,6 @@ def load_user(user_id):
 def make_session_permanent():
     session.permanent = True
 
-# Add error handler for OPTIONS requests
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,PATCH,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-
 # ------------------- Routes -------------------
 
 @app.route('/')

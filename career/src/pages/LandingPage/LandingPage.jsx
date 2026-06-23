@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, BookOpen, GraduationCap, Map, Moon, Route, Sparkles, Sun, Trophy } from 'lucide-react';
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
 
-const LandingPage = ({ onLogin, onSignup, theme, setTheme }) => {
+const LandingPage = ({ onLogin, onSignup, theme, setTheme, currentLanguage = 'en', onLanguageChange }) => {
     const { t } = useTranslation();
     const hyperspeedOptions = useMemo(() => ({
         distortion: 'xyDistortion',
@@ -65,6 +65,26 @@ const LandingPage = ({ onLogin, onSignup, theme, setTheme }) => {
                     </nav>
 
                     <div className="flex items-center gap-3">
+                        <div className="grid grid-cols-3 rounded-full border border-white/20 bg-white/10 p-0.5 backdrop-blur" aria-label={t('sidebar_language')}>
+                            {[
+                                ['en', 'EN'],
+                                ['hi', 'हिं'],
+                                ['bn', 'বা'],
+                            ].map(([value, label]) => (
+                                <button
+                                    key={value}
+                                    onClick={() => onLanguageChange?.(value)}
+                                    className={`h-9 min-w-9 rounded-full px-2 text-xs font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${
+                                        currentLanguage === value
+                                            ? 'bg-white text-slate-950'
+                                            : 'text-white/75 hover:text-white'
+                                    }`}
+                                    type="button"
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
                         <button
                             onClick={toggleTheme}
                             className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur transition hover:bg-white/20 sm:flex"

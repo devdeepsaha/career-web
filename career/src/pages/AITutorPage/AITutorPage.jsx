@@ -59,7 +59,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
             return;
         }
 
-        const safeOverrides = overrides && overrides.constructor === Object ? overrides : {};
+        const safeOverrides = overrides && Object.getPrototypeOf(overrides) === Object.prototype ? overrides : {};
 
         setIsLoadingQuestion(true);
         setQuestion(null);

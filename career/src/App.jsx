@@ -23,7 +23,7 @@ import BottomNav from './components/sidebar/BottomNav';
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
 export default function App() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [currentUser, setCurrentUser] = useState(null);
@@ -32,6 +32,16 @@ export default function App() {
     const [commandOpen, setCommandOpen] = useState(false);
     const [commandQuery, setCommandQuery] = useState('');
     const [commandResults, setCommandResults] = useState([]);
+    const languageOptions = [
+        { value: 'en', label: 'EN' },
+        { value: 'hi', label: 'हिं' },
+        { value: 'bn', label: 'বা' },
+    ];
+
+    const changeLanguage = (language) => {
+        i18n.changeLanguage(language);
+        localStorage.setItem('language', language);
+    };
 
     useEffect(() => {
         ReactGA.send({ hitType: 'pageview', page: `/${activeTab}`, title: activeTab });
@@ -80,6 +90,13 @@ export default function App() {
         root.classList.add(theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
+
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem('language');
+        if (savedLanguage && savedLanguage !== i18n.language) {
+            i18n.changeLanguage(savedLanguage);
+        }
+    }, [i18n]);
 
     useEffect(() => {
         const checkUserSession = async () => {
@@ -149,7 +166,11 @@ export default function App() {
     };
 
     const handleLogout = async () => {
-        await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
+        try {
+            await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
         setCurrentUser(null);
     };
 
@@ -222,6 +243,8 @@ export default function App() {
                 onSignup={() => showAuth('signup')}
                 theme={theme}
                 setTheme={setTheme}
+                currentLanguage={i18n.language}
+                onLanguageChange={changeLanguage}
             />
         );
     }
@@ -254,6 +277,22 @@ export default function App() {
                     <div className="flex items-center gap-2">
                         <div className="hidden max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 md:block">
                             {currentUser?.email || currentUser?.name || 'Signed in'}
+                        </div>
+                        <div className="grid grid-cols-3 rounded-md border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950" aria-label={t('sidebar_language')}>
+                            {languageOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => changeLanguage(option.value)}
+                                    className={`h-8 min-w-8 rounded px-2 text-xs font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${
+                                        i18n.language === option.value
+                                            ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                                            : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+                                    }`}
+                                    type="button"
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
                         </div>
                         <ThemeToggle theme={theme} setTheme={setTheme} />
                         <button
