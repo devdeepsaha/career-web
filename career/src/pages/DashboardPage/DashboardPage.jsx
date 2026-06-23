@@ -1,22 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookMarked, CalendarDays, CheckCircle2, Clock3, FileText, GraduationCap, Library, LineChart, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
+import { ArrowRight, BookMarked, CalendarDays, Clock3, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
-
-const StatCard = ({ label, value, detail, icon }) => (
-    <div className="saas-card p-4">
-        <div className="flex items-start justify-between gap-3">
-            <div>
-                <p className="saas-meta">{label}</p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{value}</p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                {React.createElement(icon, { className: 'h-4 w-4' })}
-            </div>
-        </div>
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{detail}</p>
-    </div>
-);
 
 const ContinueCard = ({ title, label, detail, action, icon }) => (
     <button onClick={action} className="group flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white p-3 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
@@ -32,6 +17,102 @@ const ContinueCard = ({ title, label, detail, action, icon }) => (
         <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
     </button>
 );
+
+const getPrimaryAction = (summary) => {
+    const counts = summary?.counts || {};
+    if ((counts.wrong_attempts || 0) > 0) {
+        return {
+            title: `Review ${counts.wrong_attempts} wrong practice questions`,
+            detail: 'Start with mistakes first. That is where the fastest score improvement usually sits.',
+            primaryLabel: 'Start review',
+            primaryTab: 'library',
+            secondaryLabel: 'Practice weak area',
+            secondaryTab: 'tutor',
+        };
+    }
+    if (summary?.latest_roadmap) {
+        return {
+            title: `Continue ${summary.latest_roadmap.title}`,
+            detail: 'Pick up the roadmap step you already started instead of creating a new plan.',
+            primaryLabel: 'Open roadmap',
+            primaryTab: 'planner',
+            secondaryLabel: 'Ask AI tutor',
+            secondaryTab: 'tutor',
+        };
+    }
+    if (summary?.latest_mock) {
+        return {
+            title: `Review your ${summary.latest_mock.score}% mock result`,
+            detail: 'Use the latest mock to decide what to revise before taking another test.',
+            primaryLabel: 'Open mock review',
+            primaryTab: 'tutor',
+            secondaryLabel: 'Saved library',
+            secondaryTab: 'library',
+        };
+    }
+    return {
+        title: 'Create your first focused career plan',
+        detail: 'Start with one roadmap, then the dashboard can turn your activity into next actions.',
+        primaryLabel: 'Create roadmap',
+        primaryTab: 'planner',
+        secondaryLabel: 'Practice now',
+        secondaryTab: 'tutor',
+    };
+};
+
+const scoreTrend = (summary) => {
+    if (!summary?.latest_mock || !summary?.mock_average) return 'Needs data';
+    if (summary.latest_mock.score > summary.mock_average) return 'Improving';
+    if (summary.latest_mock.score < summary.mock_average) return 'Needs review';
+    return 'Stable';
+};
+
+const LearningBrief = ({ summary, onNavigate }) => {
+    const topics = summary?.topic_insights || [];
+    const bestTopic = [...topics].sort((a, b) => (b.accuracy || 0) - (a.accuracy || 0))[0];
+    const weakTopic = [...topics].sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0))[0];
+    const actions = summary?.weekly_report?.next_actions?.length
+        ? summary.weekly_report.next_actions.slice(0, 3)
+        : ['Review due mistakes', 'Take one mock from a weak topic', 'Pin the roadmap you want to execute'];
+
+    return (
+        <div className="saas-card p-4">
+            <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <TrendingUp className="h-4 w-4" />
+                </div>
+                <h2 className="saas-section-title">AI report + learning graph</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="saas-meta">Best</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{bestTopic?.topic || 'Not enough data'}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="saas-meta">Weakest</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{weakTopic?.topic || 'Not enough data'}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="saas-meta">Trend</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">{scoreTrend(summary)}</p>
+                </div>
+            </div>
+            {topics.length > 0 && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {[bestTopic, weakTopic].filter(Boolean).map((item) => <TopicBar key={`${item.topic}-${item.strength}`} item={item} />)}
+                </div>
+            )}
+            <div className="mt-3 grid gap-2">
+                {actions.map((item, index) => (
+                    <button key={`${item}-${index}`} onClick={() => onNavigate(index === 0 ? 'library' : 'tutor')} className="group flex min-h-11 items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <span className="line-clamp-1">{item}</span>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const InsightCard = ({ title, children, icon }) => (
     <div className="saas-card p-4">
@@ -76,24 +157,28 @@ const CompactTimeline = ({ items = [] }) => (
     </div>
 );
 
-const RevisionSummary = ({ items = [], onNavigate }) => {
+const RevisionSummary = ({ items = [], counts = {}, onNavigate }) => {
     const dueToday = items.filter((item) => String(item.due_state || '').toLowerCase().includes('today')).length;
     const overdue = items.filter((item) => String(item.due_state || '').toLowerCase().includes('overdue')).length;
 
     return (
         <div>
-            <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{items.length}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">queued</p>
-                </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                     <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{dueToday}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">today</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">due today</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                     <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{overdue}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">overdue</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.wrong_attempts || 0}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">wrong</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                    <p className="text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.mastered_questions || 0}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">mastered</p>
                 </div>
             </div>
             <div className="mt-3 space-y-2">
@@ -109,7 +194,7 @@ const RevisionSummary = ({ items = [], onNavigate }) => {
     );
 };
 
-const MockSnapshot = ({ summary, counts, onNavigate }) => (
+const MockSnapshot = ({ summary, counts, weakTopic, onNavigate }) => (
     <div className="saas-card p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -130,8 +215,8 @@ const MockSnapshot = ({ summary, counts, onNavigate }) => (
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.latest_mock?.score ?? 0}%</p>
             </div>
         </div>
-        <p className="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{summary?.latest_mock?.exam || 'Start one focused mock to unlock weakness analysis.'}</p>
-        <button onClick={() => onNavigate('tutor')} className="pp-button mt-3 w-full">Open mock tests</button>
+        <p className="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{weakTopic ? `Weak area: ${weakTopic.topic}` : summary?.latest_mock?.exam || 'Start one focused mock to unlock weakness analysis.'}</p>
+        <button onClick={() => onNavigate('tutor')} className="pp-button mt-3 w-full">Open full analysis</button>
     </div>
 );
 
@@ -158,34 +243,7 @@ const DashboardPage = ({ onNavigate }) => {
         loadSummary();
     }, []);
 
-    const todayAction = useMemo(() => {
-        if (!summary) return 'Build your career workspace';
-        if ((summary.profile_completeness || 0) < 80) return 'Complete your student profile';
-        if (!summary.latest_roadmap) return 'Generate your first roadmap';
-        if ((summary.counts?.wrong_attempts || 0) > 0) return 'Review your weak practice questions';
-        return 'Take a focused mock test';
-    }, [summary]);
-
-    const exportWeeklyReport = () => {
-        const report = summary?.weekly_report;
-        if (!report) return;
-        const html = `
-            <html>
-                <head><title>Career Weekly Report</title></head>
-                <body style="font-family:Inter,Arial,sans-serif;padding:32px;line-height:1.5;color:#0f172a">
-                    <h1>Career Weekly Report</h1>
-                    <p>${report.summary}</p>
-                    <h2>Wins</h2><ul>${(report.wins || []).map((item) => `<li>${item}</li>`).join('')}</ul>
-                    <h2>Weak Areas</h2><ul>${(report.weak_areas || []).map((item) => `<li>${item}</li>`).join('')}</ul>
-                    <h2>Next Actions</h2><ul>${(report.next_actions || []).map((item) => `<li>${item}</li>`).join('')}</ul>
-                </body>
-            </html>
-        `;
-        const win = window.open('', '_blank');
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    };
+    const primaryAction = useMemo(() => getPrimaryAction(summary), [summary]);
 
     if (isLoading) {
         return (
@@ -200,156 +258,102 @@ const DashboardPage = ({ onNavigate }) => {
     }
 
     const counts = summary?.counts || {};
+    const weakTopic = [...(summary?.topic_insights || [])].sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0))[0];
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="space-y-4">
-                    <div className="saas-card overflow-hidden">
-                        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
-                            <div className="p-5">
-                                <div className="flex items-center gap-2">
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-950 text-white dark:bg-white dark:text-slate-950">
-                                        <Sparkles className="h-4 w-4" />
-                                    </span>
-                                    <p className="text-sm font-semibold text-slate-950 dark:text-white">Today</p>
-                                </div>
-                                <h2 className="mt-4 max-w-2xl text-balance text-2xl font-semibold tracking-[-0.01em] text-slate-950 dark:text-white md:text-3xl">{todayAction}</h2>
-                                <p className="mt-2 max-w-2xl text-pretty text-sm leading-6 text-slate-600 dark:text-slate-400">Use the saved data trail to keep improving instead of starting from zero every session.</p>
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    <button onClick={() => onNavigate('planner')} className="pp-button">Open planner</button>
-                                    <button onClick={() => onNavigate('tutor')} className="pp-button-secondary">Practice now</button>
-                                </div>
-                            </div>
-                            <div className="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60 lg:border-l lg:border-t-0">
-                                <p className="saas-meta">Career readiness</p>
-                                <p className="mt-2 text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{summary?.career_readiness_score || 0}%</p>
-                                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${summary?.career_readiness_score || 0}%` }} />
-                                </div>
-                                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{summary?.profile_completeness || 0}% profile complete</p>
-                                <button onClick={() => onNavigate('profile')} className="mt-3 text-sm font-semibold text-blue-600 dark:text-blue-400">Update profile</button>
-                            </div>
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+                    <div className="saas-card p-5">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                                <Sparkles className="h-4 w-4" />
+                            </span>
+                            <p className="text-sm font-semibold text-slate-950 dark:text-white">Today's next action</p>
+                        </div>
+                        <h1 className="mt-4 max-w-3xl text-balance text-3xl font-semibold tracking-[-0.01em] text-slate-950 dark:text-white md:text-4xl">{primaryAction.title}</h1>
+                        <p className="mt-3 max-w-2xl text-pretty text-sm leading-6 text-slate-600 dark:text-slate-400">{primaryAction.detail}</p>
+                        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                            <button onClick={() => onNavigate(primaryAction.primaryTab)} className="pp-button">{primaryAction.primaryLabel}</button>
+                            <button onClick={() => onNavigate(primaryAction.secondaryTab)} className="pp-button-secondary">{primaryAction.secondaryLabel}</button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                        <StatCard label="Roadmaps" value={counts.roadmaps || 0} detail="Saved plans" icon={Map} />
-                        <StatCard label="Questions" value={counts.saved_questions || 0} detail="Saved for review" icon={BookMarked} />
-                        <StatCard label="Mock average" value={`${summary?.mock_average || 0}%`} detail={`${counts.mock_tests || 0} tests completed`} icon={LineChart} />
-                        <StatCard label="Scholarships" value={counts.saved_scholarships || 0} detail="Tracked opportunities" icon={GraduationCap} />
-                    </div>
+                    <LearningBrief summary={summary} onNavigate={onNavigate} />
+                </div>
 
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-                        <div className="saas-card p-4">
-                            <div className="mb-3 flex items-center justify-between">
-                                <h2 className="saas-section-title">Continue where you left off</h2>
-                                <button onClick={() => onNavigate('library')} className="text-xs font-semibold text-blue-600 dark:text-blue-400">View library</button>
-                            </div>
-                            <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-1 2xl:grid-cols-3">
-                                <ContinueCard title={summary?.latest_roadmap?.title || 'Create your first roadmap'} label={summary?.latest_roadmap ? `${summary.latest_roadmap.step_count} steps` : 'Planner'} action={() => onNavigate('planner')} icon={Map} />
-                                <ContinueCard title={summary?.latest_mock?.exam || 'Start a mock test'} label={summary?.latest_mock ? `${summary.latest_mock.score}% latest score` : 'AI Tutor'} action={() => onNavigate('tutor')} icon={Target} />
-                                <ContinueCard title={summary?.latest_chat?.title || 'Ask your AI tutor'} label={summary?.latest_chat ? `${summary.latest_chat.message_count} messages` : 'Chat history'} action={() => onNavigate('tutor')} icon={MessageSquare} />
-                            </div>
+                <div className="saas-card p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                        <h2 className="saas-section-title">Continue</h2>
+                        <button onClick={() => onNavigate('library')} className="text-xs font-semibold text-blue-600 dark:text-blue-400">Saved library</button>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        <ContinueCard title={summary?.latest_roadmap?.title || 'Create your first roadmap'} label={summary?.latest_roadmap ? `${summary.latest_roadmap.step_count} steps` : 'Continue latest roadmap'} action={() => onNavigate('planner')} icon={Map} />
+                        <ContinueCard title={summary?.latest_mock?.exam || 'Start a mock test'} label={summary?.latest_mock ? `${summary.latest_mock.score}% latest score` : 'Resume latest mock review'} action={() => onNavigate('tutor')} icon={Target} />
+                        <ContinueCard title={counts.wrong_attempts ? `${counts.wrong_attempts} wrong questions` : 'No mistake queue yet'} label="Revisit saved wrong questions" action={() => onNavigate('library')} icon={BookMarked} />
+                        <ContinueCard title={summary?.latest_chat?.title || 'Ask your AI tutor'} label={summary?.latest_chat ? `${summary.latest_chat.message_count} messages` : 'Continue last AI chat'} action={() => onNavigate('tutor')} icon={MessageSquare} />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)]">
+                    <InsightCard title="Practice / revision queue" icon={BookMarked}>
+                        <RevisionSummary items={summary?.revision_queue || []} counts={counts} onNavigate={onNavigate} />
+                    </InsightCard>
+
+                    <MockSnapshot summary={summary} counts={counts} weakTopic={weakTopic} onNavigate={onNavigate} />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+                    <InsightCard title="Goal timeline" icon={CalendarDays}>
+                        <CompactTimeline items={summary?.timeline || []} />
+                    </InsightCard>
+
+                    <InsightCard title="Study timer" icon={Timer}>
+                        <StudyTimer />
+                    </InsightCard>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+                    <div className="saas-card p-4">
+                        <h2 className="saas-section-title">Scholarship and deadline signals</h2>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {(summary?.opportunity_matches || []).slice(0, 3).map((item) => (
+                                <button key={item} onClick={() => onNavigate('scholarship')} className="rounded-lg bg-slate-50 p-3 text-left text-sm font-medium text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">{item}</button>
+                            ))}
+                            {(!summary?.opportunity_matches || summary.opportunity_matches.length === 0) && (
+                                <button onClick={() => onNavigate('scholarship')} className="rounded-lg bg-slate-50 p-3 text-left text-sm font-medium text-slate-700 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">Find scholarships based on your profile</button>
+                            )}
                         </div>
-                        <MockSnapshot summary={summary} counts={counts} onNavigate={onNavigate} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-                        <InsightCard title="Personal learning graph" icon={TrendingUp}>
-                            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                                {(summary?.topic_insights || []).slice(0, 6).map((item) => <TopicBar key={item.topic} item={item} />)}
-                                {(!summary?.topic_insights || summary.topic_insights.length === 0) && <p className="text-sm text-slate-500 dark:text-slate-400">Answer practice questions to build a topic strength graph.</p>}
-                            </div>
-                        </InsightCard>
-
-                        <InsightCard title="AI weekly report" icon={FileText}>
-                            <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">{summary?.weekly_report?.summary}</p>
-                            <div className="mt-3 space-y-2">
-                                {(summary?.weekly_report?.next_actions || []).slice(0, 3).map((item) => (
-                                    <div key={item} className="rounded-lg bg-slate-50 p-3 text-sm font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">{item}</div>
-                                ))}
-                            </div>
-                            <button onClick={exportWeeklyReport} className="pp-button-secondary mt-3 w-full">Export report</button>
-                        </InsightCard>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)_minmax(260px,0.75fr)]">
-                        <InsightCard title="Goal timeline" icon={CalendarDays}>
-                            <CompactTimeline items={summary?.timeline || []} />
-                        </InsightCard>
-
-                        <InsightCard title="Revision queue" icon={BookMarked}>
-                            <RevisionSummary items={summary?.revision_queue || []} onNavigate={onNavigate} />
-                        </InsightCard>
-
-                        <InsightCard title="Study timer" icon={Timer}>
-                            <StudyTimer />
-                        </InsightCard>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="saas-card p-4">
-                            <h2 className="saas-section-title">Recent activity</h2>
-                            <div className="mt-3 space-y-2">
-                                {(summary?.recent_activity || []).length === 0 && (
-                                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">Generate a roadmap, answer questions, or save scholarships to build your activity trail.</div>
-                                )}
-                                {(summary?.recent_activity || []).map((item, index) => (
-                                    <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
-                                        <Clock3 className="h-4 w-4 shrink-0 text-slate-400" />
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
-                                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.detail}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="saas-card p-4">
+                        <h2 className="saas-section-title">AI tutor and chat</h2>
+                        <div className="mt-3 grid gap-2">
+                            <button onClick={() => onNavigate('tutor')} className="pp-button-secondary flex items-center justify-center gap-2"><MessageSquare className="h-4 w-4" /> Open AI tutor</button>
+                            <button onClick={() => onNavigate('library')} className="pp-button-secondary flex items-center justify-center gap-2"><BookMarked className="h-4 w-4" /> Saved questions</button>
                         </div>
                     </div>
                 </div>
 
-                <aside className="space-y-4">
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Smart recommendations</h2>
-                        <div className="mt-3 space-y-2">
-                            {(summary?.recommendations || []).map((item) => (
-                                <div key={item} className="flex gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                                    <p className="text-sm leading-5 text-slate-700 dark:text-slate-300">{item}</p>
+                <div className="saas-card p-4">
+                    <h2 className="saas-section-title">Recent activity</h2>
+                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        {(summary?.recent_activity || []).length === 0 && (
+                            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">Generate a roadmap, answer questions, or save scholarships to build your activity trail.</div>
+                        )}
+                        {(summary?.recent_activity || []).slice(0, 4).map((item, index) => (
+                            <div key={`${item.type}-${index}`} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+                                <Clock3 className="h-4 w-4 shrink-0 text-slate-400" />
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.detail}</p>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Opportunity matches</h2>
-                        <div className="mt-3 space-y-2">
-                            {(summary?.opportunity_matches || []).map((item) => (
-                                <div key={item} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">{item}</div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Notifications</h2>
-                        <div className="mt-3 space-y-2">
-                            {(summary?.notifications || []).map((item) => (
-                                <div key={item} className="flex gap-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-                                    <p className="text-sm leading-5 text-slate-700 dark:text-slate-300">{item}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Quick actions</h2>
-                        <div className="mt-3 grid gap-2">
-                            <button onClick={() => onNavigate('library')} className="pp-button-secondary flex items-center justify-center gap-2"><Library className="h-4 w-4" /> Saved library</button>
-                            <button onClick={() => onNavigate('scholarship')} className="pp-button-secondary flex items-center justify-center gap-2"><GraduationCap className="h-4 w-4" /> Find scholarships</button>
-                        </div>
-                    </div>
-                </aside>
+                </div>
             </div>
         </div>
     );
