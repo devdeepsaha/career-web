@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
+import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
 
 const quickAskKeys = [
@@ -17,6 +17,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const [askAnswer, setAskAnswer] = useState(t('landing_ask_intro'));
     const [lastAsked, setLastAsked] = useState('');
     const [showQa, setShowQa] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     const activeHero = heroActive ? t('landing_hero_cta_phrase') : t('landing_hero_phrase');
     const hyperspeedOptions = {
@@ -120,6 +121,23 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                     <button onClick={toggleTheme} className="landing-theme-button" aria-label="Toggle theme">
                         {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                     </button>
+                    <button
+                        onClick={() => setMobileNavOpen((open) => !open)}
+                        className="landing-mobile-menu-button"
+                        aria-label="Toggle navigation"
+                        aria-expanded={mobileNavOpen}
+                    >
+                        {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                    </button>
+                </div>
+
+                <div className={`landing-mobile-menu ${mobileNavOpen ? 'is-open' : ''}`}>
+                    <a href="#how" onClick={() => setMobileNavOpen(false)}>{t('landing_nav_how')}</a>
+                    <a href="#features" onClick={() => setMobileNavOpen(false)}>{t('landing_nav_features')}</a>
+                    <a href="#guest" onClick={() => setMobileNavOpen(false)}>{t('landing_nav_guest')}</a>
+                    <button onClick={onLogin}>{t('landing_nav_login')}</button>
+                    <button onClick={onGuest}>{t('landing_guest_cta')}</button>
+                    <button onClick={onSignup}>{t('landing_getStarted')}</button>
                 </div>
             </header>
 

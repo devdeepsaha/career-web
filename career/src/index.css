@@ -135,25 +135,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  overflow: visible;
   gap: 14px;
-  width: min(94vw, 1780px);
-  min-height: 58px;
+  width: min(92vw, 1220px);
+  min-height: 56px;
   margin: 18px auto 0;
-  padding: 7px 8px 7px 16px;
+  padding: 8px 10px 8px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: var(--landing-shadow);
+  border: 1px solid rgba(21, 18, 15, 0.06);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 48px rgba(21, 18, 15, 0.08);
   backdrop-filter: blur(22px);
 }
 
 .dark .landing-pill-nav {
-  background: rgba(10, 12, 18, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(10, 12, 18, 0.78);
 }
 
 .landing-logo,
 .landing-nav-actions,
 .landing-nav-links,
 .landing-language-switch,
+.landing-mobile-menu-button,
 .landing-hero-actions,
 .landing-audience-strip,
 .landing-workflow-tabs,
@@ -173,11 +177,11 @@
 }
 
 .landing-logo img {
-  height: 2rem;
+  height: 1.9rem;
 }
 
 .landing-logo span {
-  font-size: 0.96rem;
+  font-size: 0.9rem;
   letter-spacing: -0.02em;
 }
 
@@ -192,8 +196,8 @@
 .landing-nav-links {
   flex: 1 1 auto;
   justify-content: center;
-  gap: clamp(18px, 3vw, 56px);
-  font-size: 0.9rem;
+  gap: clamp(18px, 3.4vw, 64px);
+  font-size: 0.82rem;
   font-weight: 680;
   color: rgba(21, 18, 15, 0.68);
 }
@@ -204,11 +208,32 @@
 
 .landing-nav-links a,
 .landing-login-link {
+  position: relative;
   min-height: 38px;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
   transition-property: color, transform;
   transition-duration: 150ms;
+}
+
+.landing-nav-links a::after {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.landing-nav-links a:hover::after {
+  opacity: 0.9;
+  transform: scaleX(1);
 }
 
 .landing-nav-links a:hover,
@@ -225,6 +250,7 @@
 .landing-start-button,
 .landing-guest-pill,
 .landing-theme-button,
+.landing-mobile-menu-button,
 .landing-primary-action,
 .landing-secondary-action,
 .landing-workflow-tabs button,
@@ -236,11 +262,11 @@
 }
 
 .landing-start-button {
-  min-height: 42px;
+  min-height: 40px;
   border-radius: 999px;
   background: var(--landing-red);
-  padding: 0 26px;
-  font-size: 0.9rem;
+  padding: 0 24px;
+  font-size: 0.82rem;
   font-weight: 850;
   color: #fff;
   box-shadow: 0 14px 32px rgba(255, 16, 42, 0.18);
@@ -285,8 +311,73 @@
   background: rgba(21, 18, 15, 0.06);
 }
 
+.landing-mobile-menu-button {
+  display: none;
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(21, 18, 15, 0.06);
+  color: var(--landing-ink);
+}
+
 .dark .landing-theme-button {
   background: rgba(255, 255, 255, 0.09);
+}
+
+.dark .landing-mobile-menu-button {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.landing-mobile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: none;
+  width: min(320px, calc(100vw - 32px));
+  border: 1px solid rgba(21, 18, 15, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 10px;
+  box-shadow: 0 24px 70px rgba(21, 18, 15, 0.16);
+  backdrop-filter: blur(22px);
+}
+
+.dark .landing-mobile-menu {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(12, 16, 28, 0.96);
+}
+
+.landing-mobile-menu.is-open {
+  display: grid;
+  gap: 6px;
+}
+
+.landing-mobile-menu a,
+.landing-mobile-menu button {
+  min-height: 44px;
+  border-radius: 16px;
+  padding: 0 14px;
+  text-align: left;
+  font-size: 0.92rem;
+  font-weight: 760;
+  color: var(--landing-ink);
+}
+
+.landing-mobile-menu a,
+.landing-mobile-menu button:not(:last-child) {
+  background: rgba(21, 18, 15, 0.04);
+}
+
+.dark .landing-mobile-menu a,
+.dark .landing-mobile-menu button:not(:last-child) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.landing-mobile-menu button:last-child {
+  background: var(--landing-red);
+  color: #fff;
+  text-align: center;
 }
 
 .landing-language-switch {
@@ -918,6 +1009,7 @@
 .landing-start-button:active,
 .landing-guest-pill:active,
 .landing-theme-button:active,
+.landing-mobile-menu-button:active,
 .landing-primary-action:active,
 .landing-secondary-action:active,
 .landing-workflow-tabs button:active,
@@ -964,6 +1056,10 @@
 
   .landing-language-switch {
     display: none;
+  }
+
+  .landing-mobile-menu-button {
+    display: flex;
   }
 
   .landing-hero-simple {
@@ -1076,6 +1172,10 @@
 
   .landing-login-link {
     display: none;
+  }
+
+  .landing-mobile-menu-button {
+    display: flex;
   }
 
   .landing-pill-nav {
