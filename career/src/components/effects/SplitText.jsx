@@ -20,7 +20,6 @@ const SplitText = ({
   textAlign = 'center',
   tag = 'p',
   onLetterAnimationComplete,
-  // CHANGED: Added isExiting prop to handle the outward animation
   isExiting = false 
 }) => {
   const ref = useRef(null);
@@ -49,10 +48,7 @@ const SplitText = ({
       const el = ref.current;
 
       if (el._rbsplitInstance) {
-        try {
-          el._rbsplitInstance.revert();
-        } catch (_) {
-        }
+        try { el._rbsplitInstance.revert(); } catch (_) {}
         el._rbsplitInstance = null;
       }
 
@@ -60,12 +56,7 @@ const SplitText = ({
       const marginMatch = /^(-?\d+(?:\.\d+)?)(px|em|rem|%)?$/.exec(rootMargin);
       const marginValue = marginMatch ? parseFloat(marginMatch[1]) : 0;
       const marginUnit = marginMatch ? marginMatch[2] || 'px' : 'px';
-      const sign =
-        marginValue === 0
-          ? ''
-          : marginValue < 0
-            ? `-=${Math.abs(marginValue)}${marginUnit}`
-            : `+=${marginValue}${marginUnit}`;
+      const sign = marginValue === 0 ? '' : marginValue < 0 ? `-=${Math.abs(marginValue)}${marginUnit}` : `+=${marginValue}${marginUnit}`;
       const start = `top ${startPct}%${sign}`;
 
       let targets;
@@ -94,13 +85,7 @@ const SplitText = ({
               duration,
               ease,
               stagger: delay / 1000,
-              scrollTrigger: {
-                trigger: el,
-                start,
-                once: true,
-                fastScrollEnd: true,
-                anticipatePin: 0.4
-              },
+              scrollTrigger: { trigger: el, start, once: true, fastScrollEnd: true, anticipatePin: 0.4 },
               onComplete: () => {
                 animationCompletedRef.current = true;
                 onCompleteRef.current?.();
@@ -119,31 +104,17 @@ const SplitText = ({
         ScrollTrigger.getAll().forEach(st => {
           if (st.trigger === el) st.kill();
         });
-        try {
-          splitInstance.revert();
-        } catch (_) {
-        }
+        try { splitInstance.revert(); } catch (_) {}
         el._rbsplitInstance = null;
       };
     },
     {
-      dependencies: [
-        text,
-        delay,
-        duration,
-        ease,
-        splitType,
-        JSON.stringify(from),
-        JSON.stringify(to),
-        threshold,
-        rootMargin,
-        fontsLoaded
-      ],
+      dependencies: [ text, delay, duration, ease, splitType, JSON.stringify(from), JSON.stringify(to), threshold, rootMargin, fontsLoaded ],
       scope: ref
     }
   );
 
-  // CHANGED: New effect that triggers a GSAP tween back to the initial 'from' state when isExiting becomes true
+  // Smooth upward exit animation
   useEffect(() => {
     if (isExiting && ref.current && ref.current._rbsplitInstance) {
       const splitInstance = ref.current._rbsplitInstance;
@@ -152,35 +123,23 @@ const SplitText = ({
       if (targets) {
         gsap.to(targets, {
           opacity: 0,
-          y: -40, // CHANGED: Animates upward to disappear
+          y: -40, // Animates upward to disappear
           duration: 0.6,
           ease: "power2.in",
           stagger: {
             each: delay / 1000,
-            from: "start" // Staggered order same as entry
+            from: "start"
           }
         });
       }
     }
-  }, [isExiting, delay]);
+  }, [isExiting, delay]); // Clean, fixed dependencies
 
   const renderTag = () => {
-    const style = {
-      textAlign,
-      overflow: 'hidden',
-      display: 'inline-block',
-      whiteSpace: 'normal',
-      wordWrap: 'break-word',
-      willChange: 'transform, opacity'
-    };
+    const style = { textAlign, overflow: 'hidden', display: 'inline-block', whiteSpace: 'normal', wordWrap: 'break-word', willChange: 'transform, opacity' };
     const classes = `split-parent ${className}`;
     const Tag = tag || 'p';
-
-    return (
-      <Tag ref={ref} style={style} className={classes}>
-        {text}
-      </Tag>
-    );
+    return ( <Tag ref={ref} style={style} className={classes}>{text}</Tag> );
   };
   return renderTag();
 };
