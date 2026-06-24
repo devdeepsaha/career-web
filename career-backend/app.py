@@ -14,6 +14,7 @@ import secrets
 import threading
 from datetime import datetime, timedelta
 import re
+import random
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -152,7 +153,7 @@ if not api_key:
     raise ValueError("GOOGLE_API_KEY missing")
 
 genai.configure(api_key=api_key)
-generation_config = {"temperature": 0.7, "max_output_tokens": 2048}
+generation_config = {"temperature": 0.7, "max_output_tokens": 4096}
 MODEL = "models/gemini-3.1-flash-lite-preview"
 model = genai.GenerativeModel(model_name=MODEL, generation_config=generation_config)
 
@@ -167,6 +168,121 @@ def parse_date(value):
         return datetime.strptime(value[:10], "%Y-%m-%d").date()
     except Exception:
         return None
+
+def days_until_date(value):
+    date_value = parse_date(value)
+    if not date_value:
+        return None
+    return (date_value - datetime.utcnow().date()).days
+
+def deadline_signal(value, status=""):
+    status_text = (status or "").lower()
+    days_left = days_until_date(value)
+    if "not" in status_text and "open" in status_text:
+        return {"label": "Not opened", "tone": "neutral", "days_left": days_left}
+    if days_left is None:
+        return {"label": "Check official notice", "tone": "neutral", "days_left": None}
+    if days_left < 0:
+        return {"label": "Closed", "tone": "closed", "days_left": days_left}
+    if days_left == 0:
+        return {"label": "Deadline today", "tone": "critical", "days_left": days_left}
+    if days_left == 1:
+        return {"label": "Deadline tomorrow", "tone": "critical", "days_left": days_left}
+    if days_left <= 7:
+        return {"label": f"Closes in {days_left} days", "tone": "urgent", "days_left": days_left}
+    if days_left <= 30:
+        return {"label": f"Closes in {days_left} days", "tone": "soon", "days_left": days_left}
+    return {"label": f"{days_left} days left", "tone": "open", "days_left": days_left}
+
+DOCUMENT_LABELS = {
+    "aadhaar": "Aadhaar card",
+    "pan": "PAN card",
+    "bank": "Bank account",
+    "marksheet": "Latest marksheet",
+    "income_certificate": "Income certificate",
+    "caste_certificate": "Caste certificate",
+    "domicile_certificate": "Domicile certificate",
+    "bonafide": "Bonafide or institute certificate",
+    "admission_receipt": "Admission or fee receipt",
+    "photo": "Passport photo",
+}
+
+def normalize_student_documents(data):
+    raw = data.get("documents") or {}
+    return {key: bool(raw.get(key)) for key in DOCUMENT_LABELS}
+
+def missing_documents_for(required_documents, student_documents):
+    required = required_documents or []
+    missing = []
+    for document in required:
+        label = str(document).strip()
+        key = next((doc_key for doc_key, doc_label in DOCUMENT_LABELS.items() if doc_label.lower() == label.lower()), None)
+        if key and not student_documents.get(key):
+            missing.append(DOCUMENT_LABELS[key])
+        elif not key:
+            normalized = label.lower()
+            found = any(doc_label.lower() in normalized and student_documents.get(doc_key) for doc_key, doc_label in DOCUMENT_LABELS.items())
+            if not found:
+                missing.append(label)
+    return list(dict.fromkeys(missing))
+
+def apply_scholarship_quality_fields(scholarships, data):
+    student_documents = normalize_student_documents(data)
+    normalized = []
+    for item in scholarships:
+        if not isinstance(item, dict):
+            continue
+        required_documents = item.get("documents_required") or item.get("required_documents") or []
+        if isinstance(required_documents, str):
+            required_documents = [part.strip() for part in required_documents.split(",") if part.strip()]
+        missing_documents = item.get("missing_documents") or missing_documents_for(required_documents, student_documents)
+        deadline = item.get("deadline") or item.get("application_deadline")
+        status = item.get("application_status") or item.get("status") or ""
+        signal = deadline_signal(deadline, status)
+        score = item.get("match_score")
+        try:
+            score = int(score)
+        except Exception:
+            score = 0
+        if not score:
+            doc_ready = 100 if not required_documents else int(((len(required_documents) - len(missing_documents)) / max(len(required_documents), 1)) * 100)
+            score = max(35, min(96, int(doc_ready * 0.35 + 58)))
+        item["match_score"] = max(0, min(100, score))
+        item["documents_required"] = required_documents
+        item["missing_documents"] = missing_documents
+        item["deadline"] = deadline
+        item["deadline_signal"] = signal
+        item["application_status"] = status or ("open" if signal.get("tone") in ["open", "soon", "urgent", "critical"] else "check official notice")
+        if not item.get("amount"):
+            item["amount"] = "Amount not confirmed"
+        if not item.get("amount_basis"):
+            item["amount_basis"] = "Exact benefit not available from generated data. Verify in the official notice before applying."
+        if not item.get("source_note"):
+            item["source_note"] = "Generated from profile context and known scholarship patterns; verify final amount, date, and rules from the official portal."
+        if not item.get("direct_url", "").startswith("https://"):
+            item["direct_url"] = "https://scholarships.gov.in/All-Scholarships"
+        if not item.get("search_url", "").startswith("https://"):
+            item["search_url"] = f"https://www.google.com/search?q={item.get('name', '').replace(' ', '+')}+scholarship"
+        normalized.append(item)
+    return normalized
+
+def shuffle_question_options(question):
+    if not isinstance(question, dict):
+        return question
+    options = question.get("options")
+    answer = question.get("answer")
+    if not isinstance(options, list) or len(options) != 4 or answer is None:
+        return question
+    shuffled = options[:]
+    for _ in range(5):
+        random.shuffle(shuffled)
+        if shuffled != options:
+            break
+    if answer not in shuffled:
+        shuffled[0] = answer
+        random.shuffle(shuffled)
+    question["options"] = shuffled
+    return question
 
 def first_profile_for_user(user_id):
     return StudentProfile.query.filter_by(user_id=user_id).order_by(StudentProfile.updated_at.desc()).first()
@@ -510,9 +626,35 @@ def student_profile():
         profile = StudentProfile(user_id=current_user.id)
         db.session.add(profile)
 
-    for field in ['status', 'education', 'skills', 'interests', 'goals', 'preferred_language']:
+    for field in [
+        'status',
+        'education',
+        'skills',
+        'interests',
+        'goals',
+        'preferred_language',
+        'student_type',
+        'course_stream',
+        'institution_name',
+        'study_level',
+        'gender',
+        'caste_category',
+        'disability_status',
+        'region',
+        'study_destination',
+    ]:
         if field in data:
             setattr(profile, field, data.get(field))
+    if 'annual_family_income' in data:
+        profile.annual_family_income = data.get('annual_family_income') or None
+    if 'annual_income' in data:
+        profile.annual_family_income = data.get('annual_income') or None
+    if 'documents_json' in data:
+        profile.documents_json = data.get('documents_json') or {}
+    if 'documents' in data:
+        profile.documents_json = data.get('documents') or {}
+    if 'scholarship_preferences_json' in data:
+        profile.scholarship_preferences_json = data.get('scholarship_preferences_json') or {}
     if 'target_companies' in data:
         profile.target_companies = data.get('target_companies')
     if 'targetCompanies' in data:
@@ -786,6 +928,22 @@ def saved_scholarships():
         scholarship_json=payload,
         deadline=parse_date(data.get('deadline') or payload.get('deadline')),
         status=data.get('status') or 'saved',
+        match_score=data.get('match_score') or payload.get('match_score'),
+        amount=data.get('amount') or payload.get('amount'),
+        application_status=data.get('application_status') or payload.get('application_status'),
+        documents_required_json=data.get('documents_required_json') or payload.get('documents_required') or [],
+        missing_documents_json=data.get('missing_documents_json') or payload.get('missing_documents') or [],
+        eligibility_snapshot_json=data.get('eligibility_snapshot_json') or {
+            "eligibility": payload.get("eligibility"),
+            "matched_reasons": payload.get("matched_reasons") or [],
+            "not_eligible_reasons": payload.get("not_eligible_reasons") or [],
+            "next_year_eligibility": payload.get("next_year_eligibility"),
+            "smart_answers": payload.get("smart_answers") or {},
+        },
+        reminder_enabled=bool(data.get('reminder_enabled')),
+        reminder_date=parse_date(data.get('reminder_date')),
+        notes=data.get('notes'),
+        official_url=data.get('official_url') or payload.get('direct_url'),
     )
     db.session.add(item)
     db.session.commit()
@@ -808,6 +966,26 @@ def saved_scholarship_detail(scholarship_id):
         item.status = data.get('status') or item.status
     if 'deadline' in data:
         item.deadline = parse_date(data.get('deadline'))
+    if 'match_score' in data:
+        item.match_score = data.get('match_score')
+    if 'amount' in data:
+        item.amount = data.get('amount')
+    if 'application_status' in data:
+        item.application_status = data.get('application_status')
+    if 'documents_required_json' in data:
+        item.documents_required_json = data.get('documents_required_json') or []
+    if 'missing_documents_json' in data:
+        item.missing_documents_json = data.get('missing_documents_json') or []
+    if 'eligibility_snapshot_json' in data:
+        item.eligibility_snapshot_json = data.get('eligibility_snapshot_json') or {}
+    if 'reminder_enabled' in data:
+        item.reminder_enabled = bool(data.get('reminder_enabled'))
+    if 'reminder_date' in data:
+        item.reminder_date = parse_date(data.get('reminder_date'))
+    if 'notes' in data:
+        item.notes = data.get('notes')
+    if 'official_url' in data:
+        item.official_url = data.get('official_url')
     if 'scholarship_json' in data:
         item.scholarship_json = data.get('scholarship_json') or item.scholarship_json
     item.updated_at = datetime.utcnow()
@@ -1235,8 +1413,8 @@ def get_question():
             if all(k in q for k in ["question", "options", "answer"]) and isinstance(q["options"], list) and len(q["options"]) == 4:
                 if q['question'] not in seen:
                     write_history(q['question'])
-                    return jsonify(q)
-        return jsonify(q)
+                    return jsonify(shuffle_question_options(q))
+        return jsonify(shuffle_question_options(q))
     except Exception as e:
         print("Question error:", e)
         return jsonify({"error": str(e)}), 500
@@ -1322,7 +1500,7 @@ Respond only with a JSON array.
         response = model.generate_content(prompt)
         cleaned = response.text.strip().replace('```json', '').replace('```', '')
         questions = json.loads(cleaned)
-        valid_questions = [q for q in questions if all(k in q for k in ["question", "options", "answer"]) and isinstance(q["options"], list) and len(q["options"]) == 4]
+        valid_questions = [shuffle_question_options(q) for q in questions if all(k in q for k in ["question", "options", "answer"]) and isinstance(q["options"], list) and len(q["options"]) == 4]
         if not valid_questions:
             return jsonify({"error": "No valid questions generated"}), 500
         return jsonify(valid_questions)
@@ -1349,26 +1527,62 @@ def fetch_real_scholarships(data):
     region = data.get("region", "")
     destination = data.get("destination", "")
     religion = data.get("religion", "")
+    student_type = data.get("student_type", "")
+    course_stream = data.get("course_stream", "")
+    institution = data.get("institution", "")
+    gender = data.get("gender", "")
+    caste = data.get("caste", "")
+    disability = data.get("disability", "")
+    documents = {DOCUMENT_LABELS.get(key, key): value for key, value in normalize_student_documents(data).items()}
     profile_context = data.get("profile_context", "")
 
     prompt = f"""
-    You are an expert scholarship advisor.
-    Generate a JSON array of 5-10 scholarships in {language} tailored for these user inputs:
+    You are an expert Indian scholarship advisor and application-readiness analyst.
+    Generate a JSON array of 5-8 real or well-known scholarship opportunities in {language} tailored for this student.
+    Use official Indian scholarship sources when possible, especially National Scholarship Portal schemes, AICTE schemes, UGC schemes, state schemes, and credible private scholarship portals.
+
+    Current date: {datetime.utcnow().date().isoformat()}
     Marks: {marks}
-    Income: {income}
+    Annual family income: {income}
     Region: {region}
     Destination: {destination}
     Religion: {religion}
+    Student type: {student_type}
+    Course/stream: {course_stream}
+    Institution/college/school: {institution}
+    Gender: {gender}
+    Caste/category: {caste}
+    Disability status: {disability}
+    Documents available: {json.dumps(documents, ensure_ascii=False)}
     Student profile context:
     {profile_context}
 
-    Each scholarship must have keys:
+    Official research context:
+    - National Scholarship Portal lists academic year 2026-27 schemes, student application open/close status, eligibility checker, OTR, Aadhaar/EID based registration, Aadhaar-bank seeding, and PFMS payment tracking.
+    - NSP examples currently show many central schemes opened from 2026-06-01 with student application deadlines such as 2026-10-31 or 2026-08-31; some schemes are "NOT YET OPENED".
+    - Common scholarship documents include Aadhaar/EID, bank account details, latest marksheet, income certificate, caste/category certificate where applicable, domicile certificate where applicable, bonafide/institute certificate, admission/fee receipt, and photograph.
+
+    Each scholarship object must have these keys:
       "name" - the scholarship name
       "description" - a short description
-      "eligibility" - eligibility criteria
+      "amount" - expected benefit amount. Prefer exact amount from the known scheme. If exact amount is unknown, provide a clearly labeled scheme-based range and explain why.
+      "amount_basis" - one sentence explaining where the amount comes from, such as scheme rules, NSP/AICTE pattern, or "official notice needed".
+      "source_note" - short source transparency note, e.g. "NSP scheme listing / official notice should be checked before applying"
+      "deadline" - ISO date YYYY-MM-DD if known, otherwise null
+      "application_status" - "open", "not yet opened", "closed", or "check official notice"
+      "eligibility" - eligibility criteria in clear student language
+      "match_score" - integer 0-100 based on stream, income, marks, region, gender/category/disability and documents
+      "matched_reasons" - array of concrete reasons with approximate contribution percentages, e.g. "Course stream match +25%", "Income under likely limit +20%". Never write generic phrases like "profile context matches".
+      "not_eligible_reasons" - array of concrete blockers with approximate impact percentages, empty if likely eligible
+      "next_year_eligibility" - short answer on whether the student can become eligible next year and what must change
+      "documents_required" - array of required documents
+      "missing_documents" - array of required documents the student does not currently have
+      "application_steps" - array of 3-5 next actions
+      "smart_answers" - object with keys "am_i_eligible", "why_not", "next_year", "documents"
       "direct_url" - a valid URL starting with "https://"
       "search_url" - a Google search URL for the scholarship
-    Make the scholarships **realistic for India**. Fictional scholarships are fine, but URLs must be valid.
+    Do not invent fake official domains. If unsure, use the NSP all-scholarships page or a Google search URL.
+    Return ONLY valid JSON. No markdown.
     """
 
     try:
@@ -1378,12 +1592,7 @@ def fetch_real_scholarships(data):
             try:
                 scholarships = json.loads(cleaned)
                 if isinstance(scholarships, list) and len(scholarships) > 0:
-                    for s in scholarships:
-                        if not s.get("direct_url", "").startswith("https://"):
-                            s["direct_url"] = "https://example.com"
-                        if not s.get("search_url", "").startswith("https://"):
-                            s["search_url"] = f"https://www.google.com/search?q={s.get('name', '').replace(' ', '+')}"
-                    return scholarships
+                    return apply_scholarship_quality_fields(scholarships, data)
             except json.JSONDecodeError:
                 continue
         return []

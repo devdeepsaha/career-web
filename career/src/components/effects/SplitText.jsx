@@ -48,7 +48,7 @@ const SplitText = ({
       const el = ref.current;
 
       if (el._rbsplitInstance) {
-        try { el._rbsplitInstance.revert(); } catch (_) {}
+        try { el._rbsplitInstance.revert(); } catch { /* split instance may already be reverted */ }
         el._rbsplitInstance = null;
       }
 
@@ -104,7 +104,7 @@ const SplitText = ({
         ScrollTrigger.getAll().forEach(st => {
           if (st.trigger === el) st.kill();
         });
-        try { splitInstance.revert(); } catch (_) {}
+        try { splitInstance.revert(); } catch { /* split instance may already be reverted */ }
         el._rbsplitInstance = null;
       };
     },

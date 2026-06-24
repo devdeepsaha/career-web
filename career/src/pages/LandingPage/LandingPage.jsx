@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
 import SplitText from '../../components/effects/SplitText';
@@ -206,7 +206,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                         <div className={`flex items-center p-1 rounded-full ${theme === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
                             {languages.map((lang) => (
                                 <button key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-colors z-10 ${currentLangCode === lang.code ? 'text-[#15120f]' : (theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-[#15120f]/60 hover:text-[#15120f]')}`}>
-                                    {currentLangCode === lang.code && <motion.div layoutId="active-lang-pill" className="absolute inset-0 bg-white rounded-full -z-10 shadow-sm" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                                    {currentLangCode === lang.code && <Motion.div layoutId="active-lang-pill" className="absolute inset-0 bg-white rounded-full -z-10 shadow-sm" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                                     {lang.label}
                                 </button>
                             ))}
@@ -222,7 +222,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
 
                 <AnimatePresence>
                     {mobileNavOpen && (
-                        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-20 left-4 right-4 mt-2 p-4 rounded-3xl bg-white dark:bg-[#0c101c] border border-black/5 dark:border-white/10 shadow-xl lg:hidden z-50">
+                        <Motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-20 left-4 right-4 mt-2 p-4 rounded-3xl bg-white dark:bg-[#0c101c] border border-black/5 dark:border-white/10 shadow-xl lg:hidden z-50">
                             <div className="flex flex-col gap-2">
                                 {[{ label: t('landing_nav_how'), href: '#how' }, { label: t('landing_nav_features'), href: '#features' }, { label: t('landing_nav_guest'), href: '#guest' }].map((link) => (
                                     <a key={link.href} href={link.href} onClick={() => setMobileNavOpen(false)} className="px-4 py-3 text-base font-medium rounded-xl opacity-80 hover:bg-black/5 dark:hover:bg-white/10">
@@ -249,7 +249,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 <button onClick={onSignup} className="w-full py-3 font-bold bg-[#f1b017] text-black rounded-xl">{t('landing_join')}</button>
                                 <button onClick={onGuest} className="w-full py-3 font-medium bg-black/5 dark:bg-white/10 rounded-xl">{t('landing_guest_cta')}</button>
                             </div>
-                        </motion.div>
+                        </Motion.div>
                     )}
                 </AnimatePresence>
             </div>
@@ -316,7 +316,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 </button>
                             ))}
                         </div>
-                        <motion.div
+                        <Motion.div
                             key={activeWorkflowTab}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -325,7 +325,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                             {React.createElement(workflowSteps[activeWorkflowTab].icon, { className: 'h-8 w-8 mb-4' })}
                             <h3 className="text-2xl font-black tracking-tight mb-2">{workflowSteps[activeWorkflowTab].title}</h3>
                             <p className="text-black/60 dark:text-white/60 leading-relaxed">{workflowSteps[activeWorkflowTab].body}</p>
-                        </motion.div>
+                        </Motion.div>
                     </div>
 
                     <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 scrollbar-hide">

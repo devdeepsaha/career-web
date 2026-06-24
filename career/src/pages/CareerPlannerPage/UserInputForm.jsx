@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, Sparkles } from 'lucide-react';
+import { ChevronDown, Info, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next'; // Import the hook
 
 const UserInputForm = ({
@@ -10,7 +10,10 @@ const UserInputForm = ({
     targetCompanies, setTargetCompanies,
     education, setEducation,
     syncProfile, setSyncProfile,
-    generateRoadmap, isLoading, error
+    generateRoadmap, isLoading, error,
+    isCollapsed = false,
+    onToggleCollapsed,
+    hasOutput = false,
 }) => {
     const { t } = useTranslation(); // Initialize the hook
 
@@ -29,7 +32,17 @@ const UserInputForm = ({
                         <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">{t('userInput_subtitle')}</p>
                     </div>
                 </div>
-                <form onSubmit={generateRoadmap} className="max-h-none p-4 xl:max-h-[calc(100vh-11rem)] xl:overflow-y-auto">
+                {hasOutput && (
+                    <button
+                        type="button"
+                        onClick={onToggleCollapsed}
+                        className="mx-4 mt-4 flex min-h-10 w-[calc(100%-2rem)] items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 xl:hidden"
+                    >
+                        {isCollapsed ? 'Edit roadmap inputs' : 'Hide inputs and focus roadmap'}
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${isCollapsed ? '' : 'rotate-180'}`} />
+                    </button>
+                )}
+                <form onSubmit={generateRoadmap} className={`${hasOutput && isCollapsed ? 'hidden xl:block' : 'block'} max-h-none p-4 xl:max-h-[calc(100vh-11rem)] xl:overflow-y-auto`}>
                     <div className="space-y-3">
                         <div>
                             <label htmlFor="skills" className={labelClass}>{t('userInput_skillsLabel')} <Info className="h-3.5 w-3.5 text-slate-400" /></label>

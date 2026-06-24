@@ -24,6 +24,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
     const [savedRoadmaps, setSavedRoadmaps] = useState([]);
     const [savedRoadmapMeta, setSavedRoadmapMeta] = useState(null);
     const [syncProfile, setSyncProfile] = useState(true);
+    const [inputsCollapsed, setInputsCollapsed] = useState(false);
 
     const loadSavedRoadmaps = useCallback(async () => {
         if (!currentUser) return;
@@ -66,6 +67,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
             setRoadmap(data.roadmap_json || []);
             setSavedRoadmapMeta(data);
             setIsRoadmapVisible(true);
+            setInputsCollapsed(true);
         } catch (err) {
             console.error('Failed to open roadmap:', err);
         }
@@ -129,6 +131,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
             const generatedSteps = Array.isArray(payload) ? payload : payload.roadmap;
             setRoadmap(generatedSteps);
             setSavedRoadmapMeta(Array.isArray(payload) ? null : payload.saved_roadmap);
+            setInputsCollapsed(true);
             if (!currentUser?.is_guest) loadSavedRoadmaps();
         } catch (err) {
             console.error('Failed to fetch roadmap:', err);
@@ -191,6 +194,9 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                     generateRoadmap={generateRoadmap}
                     isLoading={isLoading}
                     error={error}
+                    isCollapsed={inputsCollapsed}
+                    onToggleCollapsed={() => setInputsCollapsed((value) => !value)}
+                    hasOutput={isRoadmapVisible && roadmap.length > 0}
                 />
                 <div className="space-y-4">
                 {!isRoadmapVisible ? (

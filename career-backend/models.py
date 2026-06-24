@@ -86,6 +86,18 @@ class StudentProfile(db.Model):
     target_companies = db.Column(db.Text, nullable=True)
     target_exams = db.Column(db.Text, nullable=True)
     preferred_language = db.Column(db.String(20), default='en')
+    student_type = db.Column(db.String(80), nullable=True)
+    course_stream = db.Column(db.String(160), nullable=True)
+    institution_name = db.Column(db.String(220), nullable=True)
+    study_level = db.Column(db.String(120), nullable=True)
+    gender = db.Column(db.String(60), nullable=True)
+    caste_category = db.Column(db.String(80), nullable=True)
+    disability_status = db.Column(db.String(80), nullable=True)
+    annual_family_income = db.Column(db.Numeric, nullable=True)
+    region = db.Column(db.String(160), nullable=True)
+    study_destination = db.Column(db.String(160), nullable=True)
+    documents_json = db.Column(db.JSON, nullable=True, default=dict)
+    scholarship_preferences_json = db.Column(db.JSON, nullable=True, default=dict)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -101,6 +113,18 @@ class StudentProfile(db.Model):
             'target_companies': self.target_companies,
             'target_exams': self.target_exams,
             'preferred_language': self.preferred_language,
+            'student_type': self.student_type,
+            'course_stream': self.course_stream,
+            'institution_name': self.institution_name,
+            'study_level': self.study_level,
+            'gender': self.gender,
+            'caste_category': self.caste_category,
+            'disability_status': self.disability_status,
+            'annual_family_income': float(self.annual_family_income) if self.annual_family_income is not None else None,
+            'region': self.region,
+            'study_destination': self.study_destination,
+            'documents_json': self.documents_json or {},
+            'scholarship_preferences_json': self.scholarship_preferences_json or {},
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -246,6 +270,16 @@ class SavedScholarship(db.Model):
     scholarship_json = db.Column(db.JSON, nullable=False)
     deadline = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(40), default='saved')
+    match_score = db.Column(db.Integer, nullable=True)
+    amount = db.Column(db.String(160), nullable=True)
+    application_status = db.Column(db.String(80), nullable=True)
+    documents_required_json = db.Column(db.JSON, nullable=True, default=list)
+    missing_documents_json = db.Column(db.JSON, nullable=True, default=list)
+    eligibility_snapshot_json = db.Column(db.JSON, nullable=True, default=dict)
+    reminder_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    reminder_date = db.Column(db.Date, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    official_url = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -256,6 +290,16 @@ class SavedScholarship(db.Model):
             'scholarship_json': self.scholarship_json,
             'deadline': self.deadline.isoformat() if self.deadline else None,
             'status': self.status,
+            'match_score': self.match_score,
+            'amount': self.amount,
+            'application_status': self.application_status,
+            'documents_required_json': self.documents_required_json or [],
+            'missing_documents_json': self.missing_documents_json or [],
+            'eligibility_snapshot_json': self.eligibility_snapshot_json or {},
+            'reminder_enabled': self.reminder_enabled,
+            'reminder_date': self.reminder_date.isoformat() if self.reminder_date else None,
+            'notes': self.notes,
+            'official_url': self.official_url,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
