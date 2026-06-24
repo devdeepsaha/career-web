@@ -205,6 +205,10 @@ const AITutorPage = ({ currentUser, showAuth }) => {
         if (!question || selectedPracticeAnswer) return;
         setSelectedPracticeAnswer(option);
         const isCorrect = option === question.answer;
+        if (currentUser?.is_guest) {
+            if (!isCorrect) setIsQuestionSaved(false);
+            return;
+        }
         try {
             await fetch(`${API_URL}/question-attempts`, {
                 method: 'POST',
@@ -259,6 +263,10 @@ const AITutorPage = ({ currentUser, showAuth }) => {
 
     const savePracticeQuestion = async () => {
         if (!question) return;
+        if (currentUser?.is_guest) {
+            showAuth('signup');
+            return;
+        }
         try {
             const response = await fetch(`${API_URL}/saved-questions`, {
                 method: 'POST',
@@ -337,13 +345,13 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     questions: testQuestions,
                     userAnswers: testAnswers,
                     language: i18n.language,
-                    save: true,
+                    save: !currentUser?.is_guest,
                     exam: mockExam,
                     subject: mockSubject,
                     topic: mockTopic,
                     difficulty: mockDifficulty,
                 }),
-                credentials: 'include',
+                credentials: currentUser?.is_guest ? 'same-origin' : 'include',
             });
             if (!response.ok) throw new Error('Failed to analyze test');
             const data = await response.json();
@@ -353,7 +361,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
             console.error(err);
             setTestState('in-progress');
         }
-    }, [testQuestions, testAnswers, i18n.language, mockExam, mockSubject, mockTopic, mockDifficulty]);
+    }, [testQuestions, testAnswers, i18n.language, mockExam, mockSubject, mockTopic, mockDifficulty, currentUser?.is_guest]);
 
     const handleEndTest = useCallback(() => {
         setTestState('idle');
@@ -381,6 +389,11 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('aiTutor_eyebrow')}</p>
                     <h1 className="pp-page-title">{t('aiTutor_title')}</h1>
                     <p className="pp-page-copy mt-1 max-w-3xl">{t('aiTutor_subtitle')}</p>
+                    {currentUser?.is_guest && (
+                        <button onClick={() => showAuth('signup')} className="mt-3 rounded-md bg-amber-100 px-3 py-2 text-sm font-bold text-amber-900 transition-[background-color,transform] duration-150 hover:bg-amber-200 active:scale-[0.96] dark:bg-amber-950/40 dark:text-amber-200">
+                            Sign up to save attempts and mock history
+                        </button>
+                    )}
                 </div>
                 <div className="saas-card grid grid-cols-2 gap-2 p-3">
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">

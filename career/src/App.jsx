@@ -38,6 +38,28 @@ const tabToPath = {
 
 const pathToTab = Object.fromEntries(Object.entries(tabToPath).map(([tab, path]) => [path, tab]));
 const publicTabs = new Set(['team', 'support', 'policies', 'thankyou']);
+const guestAllowedTabs = new Set(['dashboard', 'planner', 'tutor', 'scholarship', 'team', 'support', 'policies']);
+const guestUser = {
+    email: 'Guest workspace',
+    name: 'Guest workspace',
+    is_guest: true,
+};
+
+const GuestUpgrade = ({ showAuth, onGuestHome }) => (
+    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-12">
+        <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-[0_0_0_1px_rgba(15,23,42,0.08),0_24px_80px_rgba(15,23,42,0.10)] dark:bg-slate-950 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.1)]">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">Guest limit</p>
+            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-[-0.02em] text-slate-950 dark:text-white">Create an account to save this workspace</h1>
+            <p className="mt-3 text-pretty text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Guest mode is for exploring the product. Saved roadmaps, profile memory, library, mock history, and long-term analytics need a real account.
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <button onClick={() => showAuth('signup')} className="pp-button">Create free account</button>
+                <button onClick={onGuestHome} className="pp-button-secondary">Back to guest dashboard</button>
+            </div>
+        </div>
+    </div>
+);
 
 const tabFromLocation = () => {
     const params = new URLSearchParams(window.location.search);
@@ -134,10 +156,18 @@ export default function App() {
                     const data = await response.json();
                     if (data.is_logged_in) {
                         setCurrentUser(data.user);
+                        localStorage.removeItem('guest_mode');
+                    } else if (localStorage.getItem('guest_mode') === 'true') {
+                        setCurrentUser(guestUser);
                     }
+                } else if (localStorage.getItem('guest_mode') === 'true') {
+                    setCurrentUser(guestUser);
                 }
             } catch (error) {
                 console.error('Could not check session:', error);
+                if (localStorage.getItem('guest_mode') === 'true') {
+                    setCurrentUser(guestUser);
+                }
             } finally {
                 setIsLoadingAuth(false);
             }
@@ -172,6 +202,10 @@ export default function App() {
     }, []);
 
     const navigateTo = (tabName, options = {}) => {
+        if (currentUser?.is_guest && !guestAllowedTabs.has(tabName)) {
+            setAuthView('signup');
+            return;
+        }
         setActiveTab(tabName);
         setCommandOpen(false);
         const basePath = tabToPath[tabName] || '/dashboard';
@@ -197,19 +231,30 @@ export default function App() {
 
     const handleLoginSuccess = (user) => {
         setCurrentUser(user);
+        localStorage.removeItem('guest_mode');
         setAuthView(null);
     };
 
     const handleLogout = async () => {
-        try {
-            await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
-        } catch (error) {
-            console.error('Logout failed:', error);
+        if (!currentUser?.is_guest) {
+            try {
+                await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
         }
+        localStorage.removeItem('guest_mode');
         setCurrentUser(null);
     };
 
     const showAuth = (view) => setAuthView(view);
+
+    const continueAsGuest = () => {
+        localStorage.setItem('guest_mode', 'true');
+        setCurrentUser(guestUser);
+        setAuthView(null);
+        navigateTo('dashboard', { replace: true });
+    };
 
     const renderAuthScreen = () => {
         if (authView === 'login') {
@@ -237,6 +282,14 @@ export default function App() {
 
     const renderActiveTab = () => {
         const pageProps = { currentUser, showAuth };
+        if (currentUser?.is_guest && !guestAllowedTabs.has(activeTab)) {
+            return (
+                <GuestUpgrade
+                    showAuth={showAuth}
+                    onGuestHome={() => navigateTo('dashboard', { replace: true })}
+                />
+            );
+        }
         switch (activeTab) {
             case 'dashboard': return <DashboardPage {...pageProps} onNavigate={navigateTo} />;
             case 'tutor': return <AITutorPage {...pageProps} />;
@@ -269,6 +322,10 @@ export default function App() {
         return <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-white">Loading...</div>;
     }
 
+    if (currentUser?.is_guest && authView) {
+        return renderAuthScreen();
+    }
+
     if (!currentUser && !publicTabs.has(activeTab)) {
         const authScreen = renderAuthScreen();
         if (authScreen) return authScreen;
@@ -277,6 +334,7 @@ export default function App() {
             <LandingPage
                 onLogin={() => showAuth('login')}
                 onSignup={() => showAuth('signup')}
+                onGuest={continueAsGuest}
                 theme={theme}
                 setTheme={setTheme}
                 currentLanguage={i18n.language}
@@ -334,6 +392,11 @@ export default function App() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {currentUser?.is_guest && (
+                            <button onClick={() => showAuth('signup')} className="hidden rounded-md bg-amber-100 px-2.5 py-1.5 text-xs font-bold text-amber-900 transition-[background-color,transform] duration-150 hover:bg-amber-200 active:scale-[0.96] md:block">
+                                Guest mode
+                            </button>
+                        )}
                         <div className="hidden max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 md:block">
                             {currentUser?.email || currentUser?.name || 'Signed in'}
                         </div>
@@ -357,7 +420,7 @@ export default function App() {
                         <button
                             onClick={handleLogout}
                             className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white"
-                            title={t('logout_button') || 'Logout'}
+                            title={currentUser?.is_guest ? 'Exit guest mode' : (t('logout_button') || 'Logout')}
                         >
                             <LogOut className="h-4 w-4" />
                         </button>
@@ -395,6 +458,11 @@ export default function App() {
                     <div className="mt-auto border-t border-slate-200 p-3 dark:border-slate-800">
                         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400">Session</p>
                         <p className="mt-1 truncate text-xs font-medium text-slate-700 dark:text-slate-300">{currentUser?.email || currentUser?.name || 'Active user'}</p>
+                        {currentUser?.is_guest && (
+                            <button onClick={() => showAuth('signup')} className="mt-2 w-full rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-slate-800 active:scale-[0.96] dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
+                                Save this workspace
+                            </button>
+                        )}
                     </div>
                 </aside>
 

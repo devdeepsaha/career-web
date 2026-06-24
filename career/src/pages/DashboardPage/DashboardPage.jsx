@@ -3,6 +3,64 @@ import { ArrowRight, BookMarked, BriefcaseBusiness, Clock3, ExternalLink, Map, M
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
+const guestSummary = {
+    counts: {
+        roadmaps: 1,
+        saved_questions: 3,
+        wrong_attempts: 2,
+        mastered_questions: 1,
+        mock_tests: 1,
+        scholarships: 0,
+    },
+    latest_roadmap: {
+        title: 'CIL Systems / EDP readiness path',
+        step_count: 6,
+    },
+    latest_mock: {
+        exam: 'CIL Systems / EDP',
+        score: 62,
+    },
+    mock_average: 62,
+    latest_chat: {
+        title: 'Career fit questions',
+        message_count: 4,
+    },
+    topic_insights: [
+        { topic: 'Computer Networks', accuracy: 76, attempts: 4, strength: 'improving' },
+        { topic: 'DBMS', accuracy: 42, attempts: 5, strength: 'weak' },
+    ],
+    weekly_report: {
+        next_actions: [
+            'Review DBMS mistakes before another mock',
+            'Generate a roadmap from your target exam',
+            'Create an account to save your progress',
+        ],
+    },
+    revision_queue: [
+        { type: 'question', title: 'DBMS normalization mistake', due_state: 'due today' },
+        { type: 'question', title: 'OSI layer revision', due_state: 'repeat soon' },
+    ],
+    career_path: {
+        id: 'guest',
+        title: 'CIL Systems / EDP',
+        status: 'guest preview',
+        step_count: 6,
+        steps: [
+            { stage: 1, title: 'Map the exam syllabus', detail: 'Turn the CIL Systems / EDP syllabus into weekly blocks.', resources: [] },
+            { stage: 2, title: 'Strengthen CS fundamentals', detail: 'Prioritize DBMS, OS, CN, DSA, and aptitude.', resources: [] },
+            { stage: 3, title: 'Take one diagnostic mock', detail: 'Find weak topics before making a revision plan.', resources: [] },
+        ],
+    },
+    opportunity_matches: [
+        'Scholarships for final year engineering students',
+        'Practice plan for CIL Systems / EDP',
+        'Portfolio projects for web developer roles',
+    ],
+    recent_activity: [
+        { type: 'guest', title: 'Guest workspace started', detail: 'Create an account to preserve real activity.' },
+    ],
+};
+
 const ContinueCard = ({ title, label, detail, action, icon }) => (
     <button onClick={action} className="group flex min-w-0 w-full items-center justify-between overflow-hidden rounded-lg border border-slate-200 bg-white p-3 text-left transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 dark:hover:bg-slate-900">
         <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
@@ -254,13 +312,19 @@ const MockSnapshot = ({ summary, counts, weakTopic, onNavigate }) => (
     </div>
 );
 
-const DashboardPage = ({ onNavigate }) => {
+const DashboardPage = ({ onNavigate, currentUser, showAuth }) => {
     const [summary, setSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const loadSummary = async () => {
+            if (currentUser?.is_guest) {
+                setSummary(guestSummary);
+                setError('');
+                setIsLoading(false);
+                return;
+            }
             setIsLoading(true);
             setError('');
             try {
@@ -275,7 +339,7 @@ const DashboardPage = ({ onNavigate }) => {
             }
         };
         loadSummary();
-    }, []);
+    }, [currentUser]);
 
     const primaryAction = useMemo(() => getPrimaryAction(summary), [summary]);
 
@@ -297,6 +361,15 @@ const DashboardPage = ({ onNavigate }) => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
+            {currentUser?.is_guest && (
+                <div className="mb-4 flex flex-col gap-3 rounded-xl bg-amber-50 p-4 shadow-[0_0_0_1px_rgba(180,83,9,0.16)] dark:bg-amber-950/20 dark:shadow-[0_0_0_1px_rgba(251,191,36,0.18)] sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Guest preview</p>
+                        <p className="mt-1 text-sm text-amber-800/80 dark:text-amber-200/75">Try the workspace with sample data. Sign up to save roadmaps, mock results, questions, and profile memory.</p>
+                    </div>
+                    <button onClick={() => showAuth?.('signup')} className="rounded-md bg-amber-500 px-4 py-2.5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-amber-600 active:scale-[0.96]">Save my workspace</button>
+                </div>
+            )}
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
             <div className="space-y-4">

@@ -16,7 +16,6 @@
     "logout": "লগআউট",
     "getStarted": "শুরু করুন"
   },
-  
   "aiTutor_title": "প্রতিযোগিতামূলক পরীক্ষার জন্য AI Tutor",
   "aiTutor_subtitle": "জেইই, নিট, ইউপিএসসি এবং আরও অনেক কিছুর জন্য ব্যক্তিগতকৃত অনুশীলন এবং তাত্ক্ষণিক সন্দেহ নিরসন।",
   "aiTutor_tab_practice": "অনুশীলন প্রশ্ন",
@@ -47,16 +46,14 @@
   "aiTutor_button_startTest": "মক টেস্ট শুরু করুন",
   "aiTutor_chatbot_initialMessage": "কোন সন্দেহ আছে? আমাকে কিছু জিজ্ঞাসা করুন!",
   "aiTutor_error_chatbotConnect": "দুঃখিত, সংযোগ করতে সমস্যা হচ্ছে।",
-
-    "mockTest_loading": "টেস্ট লোড হচ্ছে...",
+  "mockTest_loading": "টেস্ট লোড হচ্ছে...",
   "mockTest_title": "মক টেস্ট: প্রশ্ন {{current}} / {{total}}",
   "mockTest_endButton": "টেস্ট শেষ করুন",
   "mockTest_prevButton": "পূর্ববর্তী",
   "mockTest_nextButton": "পরবর্তী",
   "mockTest_submitButton": "টেস্ট জমা দিন",
   "mockTest_submittingButton": "জমা দেওয়া হচ্ছে...",
-
-    "perfDash_title": "টেস্ট পারফরম্যান্স ড্যাশবোর্ড",
+  "perfDash_title": "টেস্ট পারফরম্যান্স ড্যাশবোর্ড",
   "perfDash_subtitle": "এখানে আপনার ফলাফলের একটি বিস্তারিত বিবরণ দেওয়া হলো।",
   "perfDash_score_title": "মোট স্কোর",
   "perfDash_score_details": "{{total}} এর মধ্যে {{correct}} টি সঠিক",
@@ -69,19 +66,14 @@
   "perfDash_review_incorrectTag": "ভুল",
   "perfDash_review_yourAnswer": "(আপনার উত্তর)",
   "perfDash_retakeButton": "আবার পরীক্ষা দিন",
-
   "careerPlanner_title": "পথ-প্রদর্শক",
   "careerPlanner_subtitle": "আপনার স্বপ্ন, আমাদের দিকনির্দেশন",
   "careerPlanner_error_fillFields": "অনুগ্রহ করে সমস্ত ক্ষেত্র পূরণ করুন।",
   "careerPlanner_error_generateFailed": "দুঃখিত, আমরা আপনার রোডম্যাপ তৈরি করতে পারিনি। অনুগ্রহ করে আবার চেষ্টা করুন।",
-
   "emptyState_roadmapText": "আপনার ব্যক্তিগত রোডম্যাপ এখানে প্রদর্শিত হবে...",
-
   "roadmapDisplay_title": "আপনার ব্যক্তিগত রোডম্যাপ",
   "roadmapDisplay_subtitle": "আপনার ক্যারিয়ারের লক্ষ্য অর্জনের জন্য এই পদক্ষেপগুলি অনুসরণ করুন। প্রতিটি পদক্ষেপ আপনার ভবিষ্যতের জন্য একটি বিল্ডিং ব্লক।",
-
   "roadmapCard_learnMore": "{{source}} থেকে আরও জানুন",
-
   "scholarship_title": "স্মার্ট স্কলারশিপ ফাইন্ডার",
   "scholarship_subtitle": "ভারতে এবং বিদেশে পড়াশোনার জন্য আপনার প্রোফাইলের সাথে মেলে এমন স্কলারশিপ খুঁজুন।",
   "scholarship_error_fetchFailed": "স্কলারশিপ খুঁজে পাওয়া যায়নি। অনুগ্রহ করে নিশ্চিত করুন যে ব্যাকএন্ড চলছে।",
@@ -102,12 +94,10 @@
   "scholarship_results_officialLink": "অফিসিয়াল লিঙ্ক",
   "scholarship_results_searchGoogle": "গুগলে অনুসন্ধান করুন",
   "scholarship_emptyStateText": "মিল থাকা স্কলারশিপ খুঁজে পেতে আপনার বিবরণ দিন।",
-
   "stepType_course": "প্রস্তাবিত কোর্স",
   "stepType_project": "হ্যান্ডস-অন প্রজেক্ট",
   "stepType_skill": "দক্ষতা অর্জন",
   "stepType_mentor": "নেটওয়ার্কিং এবং মেন্টরশিপ",
-
   "userInput_title": "আপনার পথ তৈরি করুন",
   "userInput_subtitle": "একটি বিশদ এবং কার্যকর ক্যারিয়ার পরিকল্পনার জন্য আপনার সম্পর্কে আমাদের বলুন।",
   "userInput_skillsLabel": "আপনার বর্তমান দক্ষতা",
@@ -130,7 +120,6 @@
   "userInput_targetPlaceholder": "যেমন, স্যামসাং, এইমস দিল্লি, সিভিল সার্ভিসেস",
   "userInput_button_generating": "জেনারেট হচ্ছে...",
   "userInput_button_generate": "আমার বিস্তারিত পরিকল্পনা তৈরি করুন",
-
   "chatbot_initialMessage": "নমস্কার! আমি আজ আপনার ক্যারিয়ারের পথে কীভাবে সাহায্য করতে পারি?",
   "chatbot_errorMessage": "দুঃখিত, সংযোগ করতে সমস্যা হচ্ছে। অনুগ্রহ করে পরে আবার চেষ্টা করুন।",
   "chatbot_toggleAriaLabel": "চ্যাট টগল করুন",
@@ -138,14 +127,11 @@
   "chatbot_typing": "টাইপ করছে...",
   "chatbot_placeholder": "একটি প্রশ্ন জিজ্ঞাসা করুন...",
   "chatbot_sendButton": "পাঠান",
-
   "doubtChat_toggleAriaLabel": "সন্দেহ সমাধান চ্যাট টগল করুন",
   "doubtChat_header": "তাত্ক্ষণিক সন্দেহ সমাধানকারী",
   "doubtChat_thinking": "ভাবছে...",
   "doubtChat_placeholder": "একটি সন্দেহ জিজ্ঞাসা করুন...",
   "doubtChat_sendButton": "পাঠান",
-
-  
   "policies_seo_title": "গোপনীয়তা নীতি এবং শর্তাবলী | পথ-প্রদর্শক",
   "policies_seo_desc": "আমরা কীভাবে আপনার ডেটা পরিচালনা করি এবং আপনার গোপনীয়তা ও সুরক্ষার প্রতি আমাদের প্রতিশ্রুতি বুঝতে আমাদের গোপনীয়তা নীতি এবং পরিষেবার শর্তাবলী পড়ুন।",
   "policies_main_title": "নীতিমালা",
@@ -228,8 +214,8 @@
   "landing_step_3": "অনুশীলন করুন, প্রশ্ন করুন এবং স্কলারশিপ খুঁজুন",
   "landing_step_caption": "Potho Prodorshok যাত্রার একটি পরিষ্কার ধাপ।",
   "landing_nav_platform": "প্ল্যাটফর্ম",
-  "landing_hero_phrase": "PATHO-PRODORSHOK আপনার ক্যারিয়ার এগিয়ে দেয়",
-  "landing_hero_cta_phrase": "আমার Career OS তৈরি করুন",
+  "landing_hero_phrase": "Potho Prodorshok ????? ?????????? ?????? ????",
+  "landing_hero_cta_phrase": "????? ??????? ??????? ????",
   "landing_hero_cta_hint": "শুরু করতে ক্লিক করুন",
   "landing_stack_heading": "ছাত্রের যাত্রাকে কেন্দ্র করে এক স্ট্যাকড ওয়ার্কস্পেস।",
   "landing_stack_label_1": "প্ল্যান",
@@ -243,8 +229,8 @@
   "landing_stack_stat_4": "স্থায়ী ছাত্র মেমরি",
   "landing_stack_final_label": "আপনি প্রস্তুত হলেই",
   "landing_stack_final_title": "একটি প্রোফাইল দিয়ে শুরু করুন। ওয়ার্কস্পেস প্রতি সপ্তাহে আরও স্মার্ট হবে।",
-  "landing_ask_title": "যা খুশি জিজ্ঞাসা করুন",
-  "landing_ask_subtitle": "Career OS গাইড",
+  "landing_ask_title": "QA Ai",
+  "landing_ask_subtitle": "Potho Prodorshok Q&A agent",
   "landing_ask_placeholder": "রোডম্যাপ, মক, স্কলারশিপ জিজ্ঞাসা করুন...",
   "landing_ask_submit": "জিজ্ঞাসা করুন",
   "landing_ask_intro": "এই প্ল্যাটফর্ম কী সেভ করে, পরীক্ষায় কীভাবে সাহায্য করে, বা রোডম্যাপ কীভাবে অ্যাকশনে বদলায় তা জিজ্ঞাসা করুন।",
@@ -254,8 +240,25 @@
   "landing_ask_answer_roadmap": "রোডম্যাপ আপনার প্রোফাইল, স্কিল, পরীক্ষা এবং ক্যারিয়ার লক্ষ্য থেকে স্টেজ তৈরি করে। প্রতিটি স্টেজ সেভড AI গাইড হতে পারে যেখানে অ্যাকশন, রিসোর্স এবং চেকলিস্ট থাকে।",
   "landing_ask_answer_practice": "AI Tutor অনুশীলন প্রশ্ন এবং মক টেস্ট তৈরি করে। ভুল উত্তর রিভিশন উপাদান হয়ে যায় যাতে পরে সেই ভুলগুলো আবার দেখা যায়।",
   "landing_ask_answer_scholarship": "স্কলারশিপ সার্চ প্রোফাইল প্রসঙ্গ ব্যবহার করতে পারে, তারপর সেভড সুযোগগুলো স্ট্যাটাস ও ডেডলাইনসহ অ্যাপ্লিকেশন ট্র্যাকার হয়।",
-  "landing_ask_answer_default": "Potho Prodorshok একটি লগইন করা career workspace: পথ পরিকল্পনা করুন, পরীক্ষার অনুশীলন করুন, দরকারি আউটপুট সেভ করুন, এবং এক ড্যাশবোর্ড থেকে অগ্রগতিতে ফিরে আসুন।"
-
-
-
+  "landing_ask_answer_default": "Potho Prodorshok একটি লগইন করা career workspace: পথ পরিকল্পনা করুন, পরীক্ষার অনুশীলন করুন, দরকারি আউটপুট সেভ করুন, এবং এক ড্যাশবোর্ড থেকে অগ্রগতিতে ফিরে আসুন।",
+  "landing_nav_how": "?????? ??? ???",
+  "landing_nav_guest": "????? ???",
+  "landing_guest_cta": "????? ?????? ??????? ???",
+  "landing_audience_label": "?? ???????? ???? ????",
+  "landing_workflow_title": "????? ???? career program, ?? connected workflow-???",
+  "landing_workflow_tab_1": "????????",
+  "landing_workflow_tab_2": "??????????",
+  "landing_workflow_tab_3": "?????????",
+  "landing_workflow_tab_4": "?????",
+  "landing_workflow_card_1_title": "???? profile ????? ???? ????",
+  "landing_workflow_card_1_body": "????? exam, branch, skills, goals ??? target companies ??????? suggestion guide ????",
+  "landing_workflow_card_2_title": "??????? useful output ?????",
+  "landing_workflow_card_2_body": "Roadmaps, wrong answers, mock results, stage guides, chats ??? opportunities reusable memory ???? ?????",
+  "landing_guest_label": "????? ?????????",
+  "landing_guest_title": "??? workspace try ????? ????? ??? ??? save ?????",
+  "landing_guest_body": "Guest mode-? dashboard, planner, tutor ??? scholarship flow lighter limits ?? explore ??? ????? Account ???? saved history, profile memory, mock analytics ??? library unlock ????",
+  "landing_guest_free_1": "Dashboard, planner, tutor ??? scholarship surfaces try ?????",
+  "landing_guest_free_2": "Roadmaps ??? practice guidance preview ?????",
+  "landing_guest_locked_1": "Data save ??? long-term analytics-?? ???? sign in ?????",
+  "landing_ask_answer_guest": "Guest mode preview workspace ????? Key flows explore ??? ????, ?????? saved roadmaps, mock history, profile memory ??? library data-?? ???? account ??????"
 }

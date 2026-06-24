@@ -117,11 +117,11 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                     targetCompanies,
                     education,
                     language: i18n.language,
-                    save: true,
-                    update_profile: syncProfile,
+                    save: !currentUser?.is_guest,
+                    update_profile: !currentUser?.is_guest && syncProfile,
                     title: goals || 'Career roadmap',
                 }),
-                credentials: 'include',
+                credentials: currentUser?.is_guest ? 'same-origin' : 'include',
             });
 
             if (!response.ok) throw new Error('Network response was not ok');
@@ -129,10 +129,10 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
             const generatedSteps = Array.isArray(payload) ? payload : payload.roadmap;
             setRoadmap(generatedSteps);
             setSavedRoadmapMeta(Array.isArray(payload) ? null : payload.saved_roadmap);
-            loadSavedRoadmaps();
+            if (!currentUser?.is_guest) loadSavedRoadmaps();
         } catch (err) {
             console.error('Failed to fetch roadmap:', err);
-            setError(t('careerPlanner_error_generateFailed'));
+            setError(currentUser?.is_guest ? 'Guest roadmaps are previews only. Create an account if this endpoint requires saved workspace access.' : t('careerPlanner_error_generateFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -157,6 +157,11 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                     {t('careerPlanner_subtitle')}
                 </p>
                 </div>
+                {currentUser?.is_guest && (
+                    <button onClick={() => showAuth('signup')} className="rounded-md bg-amber-100 px-3 py-2 text-sm font-bold text-amber-900 transition-[background-color,transform] duration-150 hover:bg-amber-200 active:scale-[0.96] dark:bg-amber-950/40 dark:text-amber-200">
+                        Sign up to save generated plans
+                    </button>
+                )}
                 <div className="grid w-full grid-cols-3 overflow-hidden rounded-lg border border-slate-200 bg-white text-center dark:border-slate-800 dark:bg-slate-950 xl:w-auto">
                     {['Profile', 'Roadmap', 'Action'].map((item, index) => (
                         <div key={item} className="min-w-28 border-r border-slate-200 px-3 py-2 last:border-r-0 dark:border-slate-800">
