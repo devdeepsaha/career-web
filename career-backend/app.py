@@ -63,14 +63,18 @@ mail = Mail(app)
 # Initialize login manager
 login_manager.init_app(app)
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://pothoprodorshok.onrender.com",
+    "https://pothoprodorshok.mooo.com",
+]
+extra_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+ALLOWED_ORIGINS = list(dict.fromkeys(ALLOWED_ORIGINS + extra_origins))
+
 # CORS Configuration - MUST be before blueprint registration
-CORS(app, 
+CORS(app,
     supports_credentials=True, 
-    origins=[
-        "http://localhost:5173", 
-        "https://pothoprodorshok.onrender.com",
-        "https://pothoprodorshok.mooo.com"
-    ],
+    origins=ALLOWED_ORIGINS,
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["Set-Cookie"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
@@ -106,10 +110,52 @@ with app.app_context():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Basic public AI rate limiting. This protects API quota; persistent per-user limits can be added later.
+RATE_LIMIT_WINDOW_SECONDS = 600
+PUBLIC_AI_LIMIT = 45
+public_ai_hits = {}
+PUBLIC_AI_ENDPOINTS = {
+    "landing_ai",
+    "get_question",
+    "generate_mock_test",
+    "find_scholarships",
+    "generate_roadmap",
+    "chat",
+    "solve_doubt",
+    "solve_doubt_chat",
+    "analyze_performance",
+}
+
+def client_ip():
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    return forwarded.split(",")[0].strip() or request.remote_addr or "unknown"
+
+def public_ai_rate_limited():
+    now = datetime.utcnow()
+    key = client_ip()
+    hits = public_ai_hits.setdefault(key, deque())
+    while hits and (now - hits[0]).total_seconds() > RATE_LIMIT_WINDOW_SECONDS:
+        hits.popleft()
+    if len(hits) >= PUBLIC_AI_LIMIT:
+        return True
+    hits.append(now)
+    return False
+
 # Make sessions permanent
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+    if request.method == "OPTIONS":
+        return None
+
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin = request.headers.get("Origin")
+        if origin and origin not in ALLOWED_ORIGINS:
+            return jsonify({"error": "Origin not allowed"}), 403
+
+    if request.endpoint in PUBLIC_AI_ENDPOINTS and public_ai_rate_limited():
+        return jsonify({"error": "Too many requests. Please wait a moment and try again."}), 429
+    return None
 
 # ------------------- Routes -------------------
 
@@ -235,7 +281,7 @@ def apply_scholarship_quality_fields(scholarships, data):
         required_documents = item.get("documents_required") or item.get("required_documents") or []
         if isinstance(required_documents, str):
             required_documents = [part.strip() for part in required_documents.split(",") if part.strip()]
-        missing_documents = item.get("missing_documents") or missing_documents_for(required_documents, student_documents)
+        missing_documents = missing_documents_for(required_documents, student_documents)
         deadline = item.get("deadline") or item.get("application_deadline")
         status = item.get("application_status") or item.get("status") or ""
         signal = deadline_signal(deadline, status)
@@ -640,6 +686,8 @@ def student_profile():
         'gender',
         'caste_category',
         'disability_status',
+        'scholarship_marks',
+        'religion',
         'region',
         'study_destination',
     ]:
@@ -782,7 +830,7 @@ def roadmap_stage_guide(roadmap_id, stage_number):
     except Exception as e:
         db.session.rollback()
         print("Stage guide error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate this roadmap stage guide."}), 500
 
 @app.route('/saved-questions', methods=['GET', 'POST'])
 @login_required
@@ -1265,7 +1313,7 @@ def generate_roadmap():
         return jsonify({"error": "Failed to parse roadmap JSON"}), 500
     except Exception as e:
         print("Roadmap error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate roadmap."}), 500
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -1319,7 +1367,7 @@ def chat():
         return jsonify({"reply": response.text})
     except Exception as e:
         print("Chat error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate chat reply."}), 500
 
 @app.route('/solve-doubt-chat', methods=['POST'])
 def solve_doubt_chat():
@@ -1374,7 +1422,7 @@ def solve_doubt_chat():
         return jsonify({"reply": response.text})
     except Exception as e:
         print("Doubt chat error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate tutor reply."}), 500
 
 @app.route('/get-question', methods=['POST'])
 def get_question():
@@ -1417,7 +1465,7 @@ def get_question():
         return jsonify(shuffle_question_options(q))
     except Exception as e:
         print("Question error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate question."}), 500
 
 @app.route('/solve-doubt', methods=['POST'])
 def solve_doubt():
@@ -1464,7 +1512,7 @@ def solve_doubt():
         return jsonify({"explanation": response.text})
     except Exception as e:
         print("Doubt error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not solve this doubt."}), 500
 
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test():
@@ -1506,7 +1554,7 @@ Respond only with a JSON array.
         return jsonify(valid_questions)
     except Exception as e:
         print("Mock test error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not generate mock test."}), 500
 
 @app.route('/find-scholarships', methods=['POST'])
 def find_scholarships():
@@ -1518,7 +1566,46 @@ def find_scholarships():
         return jsonify(scholarships)
     except Exception as e:
         print("Scholarship Finder error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Could not find scholarships right now."}), 500
+
+@app.route('/landing-ai', methods=['POST'])
+def landing_ai():
+    data = request.get_json() or {}
+    question = (data.get("question") or "").strip()
+    language = get_language_name(data)
+    if not question:
+        return jsonify({"answer": "Ask me about roadmaps, mock tests, scholarships, AI tutor, saved library, guest mode, or how the platform uses your profile."}), 200
+
+    prompt = f"""
+    You are QA AI for Potho-Prodorshok, an AI-powered career operating system for students and aspirants.
+    Answer the visitor's question in {language}. Be helpful, concrete, and product-specific. No emojis.
+
+    Product capabilities you can discuss:
+    - Landing page, login/register, and guest preview mode. Guest mode lets visitors explore, but saving long-term data needs an account.
+    - Student profile memory: education/status, skills, interests, goals, preferred language, target exams, CIL branch/context, stream, institution, region, gender/category/disability, income, and scholarship documents.
+    - Dashboard: today's next action, AI weekly report, learning graph, continue cards, mock snapshot, revision queue, goal/career stage view, study timer, smart recommendations.
+    - Career Planner: generates saved roadmaps, roadmap history, stage progress, stage pages with AI guides, resources, actions, and completion checklists.
+    - AI Tutor: practice questions, tap-to-answer feedback, wrong-answer saving, explanations, adaptive weak-area questions, mock tests, mock analysis, and saved mock history.
+    - Scholarship desk: eligibility match score, amount basis, deadlines, documents ready/missing, blockers, official portal links, notifications, application tracking, and scholarship smart bot.
+    - Library: roadmaps, saved questions, mistakes, mock tests, scholarships, chats, and resources in one searchable workspace.
+    - Dark/light mode, mobile/tablet/desktop responsive UI, language switching.
+
+    Rules:
+    - If asked what the app can do, give a concise but complete overview.
+    - If asked about data, explain saved roadmaps, questions, attempts, mocks, scholarships, profile, and chats.
+    - If asked about scholarships, say final amount/deadline must be verified on the official portal.
+    - If asked to start or save, explain that full saving requires login; guest mode is a preview.
+    - Keep answer under 120 words unless the user asks for detail.
+    - Do not claim features outside the list.
+
+    Visitor question: {question}
+    """
+    try:
+        response = model.generate_content(prompt)
+        return jsonify({"answer": response.text.strip()}), 200
+    except Exception as e:
+        print("Landing AI error:", e)
+        return jsonify({"answer": "I can explain roadmaps, practice, mock tests, scholarships, saved library, profile memory, and guest mode. Try asking what you want to do first."}), 200
 
 def fetch_real_scholarships(data):
     language = get_language_name(data)
@@ -1561,6 +1648,7 @@ def fetch_real_scholarships(data):
     - National Scholarship Portal lists academic year 2026-27 schemes, student application open/close status, eligibility checker, OTR, Aadhaar/EID based registration, Aadhaar-bank seeding, and PFMS payment tracking.
     - NSP examples currently show many central schemes opened from 2026-06-01 with student application deadlines such as 2026-10-31 or 2026-08-31; some schemes are "NOT YET OPENED".
     - Common scholarship documents include Aadhaar/EID, bank account details, latest marksheet, income certificate, caste/category certificate where applicable, domicile certificate where applicable, bonafide/institute certificate, admission/fee receipt, and photograph.
+    - Treat the institution/college/school field as student context only. Do not claim that the institute itself issues a scholarship document unless the official scheme explicitly requires an institute/bonafide certificate.
 
     Each scholarship object must have these keys:
       "name" - the scholarship name
@@ -1577,7 +1665,7 @@ def fetch_real_scholarships(data):
       "next_year_eligibility" - short answer on whether the student can become eligible next year and what must change
       "documents_required" - array of required documents
       "missing_documents" - array of required documents the student does not currently have
-      "application_steps" - array of 3-5 next actions
+      "application_steps" - array of 3-5 general next actions. Do not invent institute-specific steps such as "upload certificate from {institution}". Prefer actions like "Open the official portal", "Verify scheme notice", "Prepare listed documents", "Submit before deadline".
       "smart_answers" - object with keys "am_i_eligible", "why_not", "next_year", "documents"
       "direct_url" - a valid URL starting with "https://"
       "search_url" - a Google search URL for the scholarship

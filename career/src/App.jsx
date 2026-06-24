@@ -1,12 +1,13 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactGA from 'react-ga4';
-import { ArrowRight, Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Route, Search, UserRound, Users, X } from 'lucide-react';
+import { ArrowRight, Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Menu, Route, Search, UserRound, Users, X } from 'lucide-react';
 
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage/DashboardPage'));
 const CareerPlannerPage = React.lazy(() => import('./pages/CareerPlannerPage/CareerPlannerPage'));
 const AITutorPage = React.lazy(() => import('./pages/AITutorPage/AITutorPage'));
 const ScholarshipFinderPage = React.lazy(() => import('./pages/ScholarshipFinderPage/ScholarshipFinderPage'));
+const ScholarshipDetailPage = React.lazy(() => import('./pages/ScholarshipDetailPage/ScholarshipDetailPage'));
 const LibraryPage = React.lazy(() => import('./pages/LibraryPage/LibraryPage'));
 const RoadmapStagePage = React.lazy(() => import('./pages/RoadmapStagePage/RoadmapStagePage'));
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage/ProfilePage'));
@@ -27,6 +28,7 @@ const tabToPath = {
     planner: '/planner',
     tutor: '/tutor',
     scholarship: '/scholarships',
+    scholarshipDetail: '/scholarship-detail',
     library: '/library',
     stage: '/roadmap-stage',
     profile: '/profile',
@@ -38,7 +40,7 @@ const tabToPath = {
 
 const pathToTab = Object.fromEntries(Object.entries(tabToPath).map(([tab, path]) => [path, tab]));
 const publicTabs = new Set(['team', 'support', 'policies', 'thankyou']);
-const guestAllowedTabs = new Set(['dashboard', 'planner', 'tutor', 'scholarship', 'team', 'support', 'policies']);
+const guestAllowedTabs = new Set(['dashboard', 'planner', 'tutor', 'scholarship', 'scholarshipDetail', 'team', 'support', 'policies']);
 const guestUser = {
     email: 'Guest workspace',
     name: 'Guest workspace',
@@ -76,6 +78,7 @@ export default function App() {
     const [authView, setAuthView] = useState(null);
     const [isLoadingAuth, setIsLoadingAuth] = useState(false);
     const [commandOpen, setCommandOpen] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [commandQuery, setCommandQuery] = useState('');
     const [commandResults, setCommandResults] = useState([]);
     const languageOptions = [
@@ -208,6 +211,7 @@ export default function App() {
         }
         setActiveTab(tabName);
         setCommandOpen(false);
+        setMobileMenuOpen(false);
         const basePath = tabToPath[tabName] || '/dashboard';
         const path = `${basePath}${options.query ? `?${options.query}` : ''}`;
         const currentPath = `${window.location.pathname}${window.location.search}`;
@@ -293,7 +297,8 @@ export default function App() {
         switch (activeTab) {
             case 'dashboard': return <DashboardPage {...pageProps} onNavigate={navigateTo} />;
             case 'tutor': return <AITutorPage {...pageProps} />;
-            case 'scholarship': return <ScholarshipFinderPage {...pageProps} />;
+            case 'scholarship': return <ScholarshipFinderPage {...pageProps} onNavigate={navigateTo} />;
+            case 'scholarshipDetail': return <ScholarshipDetailPage {...pageProps} onNavigate={navigateTo} />;
             case 'library': return <LibraryPage {...pageProps} onNavigate={navigateTo} />;
             case 'stage': return <RoadmapStagePage {...pageProps} onNavigate={navigateTo} />;
             case 'profile': return <ProfilePage {...pageProps} />;
@@ -400,7 +405,7 @@ export default function App() {
                         <div className="hidden max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 md:block">
                             {currentUser?.email || currentUser?.name || 'Signed in'}
                         </div>
-                        <div className="grid grid-cols-3 rounded-md border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950" aria-label={t('sidebar_language')}>
+                        <div className="hidden grid-cols-3 rounded-md border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950 md:grid" aria-label={t('sidebar_language')}>
                             {languageOptions.map((option) => (
                                 <button
                                     key={option.value}
@@ -416,16 +421,81 @@ export default function App() {
                                 </button>
                             ))}
                         </div>
-                        <ThemeToggle theme={theme} setTheme={setTheme} />
+                        <div className="block">
+                            <ThemeToggle theme={theme} setTheme={setTheme} />
+                        </div>
                         <button
                             onClick={handleLogout}
-                            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white"
+                            className="hidden h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white md:flex"
                             title={currentUser?.is_guest ? 'Exit guest mode' : (t('logout_button') || 'Logout')}
                         >
                             <LogOut className="h-4 w-4" />
                         </button>
+                        <button
+                            onClick={() => setMobileMenuOpen((value) => !value)}
+                            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white lg:hidden"
+                            title="Open menu"
+                            type="button"
+                        >
+                            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                        </button>
                     </div>
                 </div>
+                {mobileMenuOpen && (
+                    <div className="border-t border-slate-200 bg-white px-3 py-3 shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-950 lg:hidden">
+                        <div className="mb-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                            <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{currentUser?.email || currentUser?.name || 'Active user'}</p>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{currentUser?.is_guest ? 'Guest preview workspace' : 'Signed in workspace'}</p>
+                        </div>
+                        <nav className="grid gap-1">
+                            {dashboardNavItems.map((item) => {
+                                const IconComponent = item.icon;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => navigateTo(item.id)}
+                                        className={`flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${
+                                            activeTab === item.id
+                                                ? 'bg-slate-100 text-slate-950 dark:bg-slate-900 dark:text-white'
+                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+                                        }`}
+                                        type="button"
+                                    >
+                                        <IconComponent className="h-4 w-4 shrink-0" />
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                        <div className="mt-3">
+                            <div className="grid grid-cols-3 rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950" aria-label={t('sidebar_language')}>
+                                {languageOptions.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        onClick={() => changeLanguage(option.value)}
+                                        className={`h-9 rounded-md px-2 text-xs font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${
+                                            i18n.language === option.value
+                                                ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                                                : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+                                        }`}
+                                        type="button"
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            {currentUser?.is_guest && (
+                                <button onClick={() => showAuth('signup')} className="pp-button flex items-center justify-center">Save workspace</button>
+                            )}
+                            <button onClick={handleLogout} className="pp-button-secondary flex items-center justify-center gap-2">
+                                <LogOut className="h-4 w-4" />
+                                {currentUser?.is_guest ? 'Exit guest mode' : (t('logout_button') || 'Logout')}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </header>
 
             <div className="mx-auto flex max-w-screen-2xl">

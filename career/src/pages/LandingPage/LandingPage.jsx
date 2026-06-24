@@ -5,6 +5,8 @@ import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageC
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
 import SplitText from '../../components/effects/SplitText';
 
+const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+
 const quickAskKeys = [
     'landing_ask_quick_1',
     'landing_ask_quick_2',
@@ -30,6 +32,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const [chatHistory, setChatHistory] = useState([
         { role: 'bot', text: t('landing_ask_intro') }
     ]);
+    const [isAskThinking, setIsAskThinking] = useState(false);
     const chatEndRef = useRef(null);
 
     const languages = [
@@ -138,26 +141,45 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
         },
     };
 
-    const ask = (question = askQuestion) => {
+    const localLandingAnswer = (value) => {
+        const lower = value.toLowerCase();
+        if (lower.includes('guest') || lower.includes('try')) return t('landing_ask_answer_guest');
+        if (lower.includes('scholar')) return t('landing_ask_answer_scholarship');
+        if (lower.includes('mock') || lower.includes('exam') || lower.includes('practice')) return t('landing_ask_answer_practice');
+        if (lower.includes('road') || lower.includes('career') || lower.includes('plan')) return t('landing_ask_answer_roadmap');
+        return t('landing_ask_answer_default');
+    };
+
+    const ask = async (question = askQuestion) => {
         const value = String(question || '').trim();
         setAskOpen(true);
-        if (!value) return;
+        if (!value || isAskThinking) return;
 
         setAskQuestion('');
-
-        let answer = '';
-        const lower = value.toLowerCase();
-        if (lower.includes('guest') || lower.includes('try')) answer = t('landing_ask_answer_guest');
-        else if (lower.includes('scholar')) answer = t('landing_ask_answer_scholarship');
-        else if (lower.includes('mock') || lower.includes('exam') || lower.includes('practice')) answer = t('landing_ask_answer_practice');
-        else if (lower.includes('road') || lower.includes('career') || lower.includes('plan')) answer = t('landing_ask_answer_roadmap');
-        else answer = t('landing_ask_answer_default');
-
         setChatHistory(prev => [
             ...prev,
             { role: 'user', text: value },
-            { role: 'bot', text: answer }
         ]);
+        setIsAskThinking(true);
+
+        try {
+            const response = await fetch(`${API_URL}/landing-ai`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: value,
+                    language: i18n.language,
+                }),
+            });
+            if (!response.ok) throw new Error('Landing AI failed');
+            const data = await response.json();
+            setChatHistory(prev => [...prev, { role: 'bot', text: data.answer || localLandingAnswer(value) }]);
+        } catch (error) {
+            console.error('Landing AI fallback:', error);
+            setChatHistory(prev => [...prev, { role: 'bot', text: localLandingAnswer(value) }]);
+        } finally {
+            setIsAskThinking(false);
+        }
     };
 
     const audiences = ['CIL aspirants', 'Final year students', 'JEE / NEET', 'Scholarship seekers', 'Career switchers'];
@@ -414,12 +436,17 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                     {msg.text}
                                 </div>
                             ))}
+                            {isAskThinking && (
+                                <div className="max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed bg-black/5 dark:bg-white/10 self-start rounded-bl-sm">
+                                    QA AI is thinking...
+                                </div>
+                            )}
                             <div ref={chatEndRef} />
                         </div>
 
                         <div className="flex gap-2 overflow-x-auto p-4 md:px-5 pb-5 scrollbar-hide">
                             {quickAskKeys.map((key) => (
-                                <button key={key} onClick={() => ask(t(key))} className="whitespace-nowrap px-4 py-2 text-sm font-bold bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm hover:shadow-md transition-all">
+                                <button key={key} disabled={isAskThinking} onClick={() => ask(t(key))} className="whitespace-nowrap px-4 py-2 text-sm font-bold bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm hover:shadow-md transition-all disabled:opacity-50">
                                     {t(key)}
                                 </button>
                             ))}
@@ -436,7 +463,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                         placeholder={t('landing_ask_placeholder')} 
                         className="flex-1 bg-transparent border-none outline-none text-base font-medium placeholder-black/40 dark:placeholder-white/40"
                     />
-                    <button type="submit" aria-label={t('landing_ask_submit')} className="w-12 h-12 shrink-0 bg-black/5 dark:bg-white/10 hover:bg-[#f1b017] hover:text-black dark:hover:bg-[#f1b017] dark:hover:text-black rounded-full flex items-center justify-center transition-colors">
+                    <button type="submit" disabled={isAskThinking} aria-label={t('landing_ask_submit')} className="w-12 h-12 shrink-0 bg-black/5 dark:bg-white/10 hover:bg-[#f1b017] hover:text-black dark:hover:bg-[#f1b017] dark:hover:text-black rounded-full flex items-center justify-center transition-colors disabled:opacity-50">
                         <ArrowUp className="h-5 w-5" />
                     </button>
                 </form>

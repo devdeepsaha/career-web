@@ -12,7 +12,38 @@ const emptyProfile = {
     target_companies: '',
     target_exams: '',
     preferred_language: 'en',
+    student_type: '',
+    course_stream: '',
+    institution_name: '',
+    study_level: '',
+    gender: 'Not specified',
+    caste_category: 'General',
+    disability_status: 'No',
+    region: '',
+    study_destination: 'India',
+    annual_family_income: '',
+    scholarship_marks: '',
+    scholarship_religion: '',
+    documents_json: {},
 };
+
+const documentOptions = [
+    ['aadhaar', 'Aadhaar'],
+    ['pan', 'PAN'],
+    ['bank', 'Bank account'],
+    ['marksheet', 'Marksheet'],
+    ['income_certificate', 'Income certificate'],
+    ['caste_certificate', 'Caste certificate'],
+    ['domicile_certificate', 'Domicile'],
+    ['bonafide', 'Bonafide'],
+    ['admission_receipt', 'Fee receipt'],
+    ['photo', 'Photo'],
+];
+
+const emptyDocuments = documentOptions.reduce((acc, [key]) => ({ ...acc, [key]: false }), {});
+const studentTypes = ['Engineering student', 'Medical student', 'School student', 'College student', 'Dropper', 'Diploma student', 'Postgraduate', 'Working aspirant'];
+const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
+const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
 
 const branchOptions = [
     'Systems / EDP',
@@ -45,11 +76,14 @@ const stripTags = (text = '') => (
 const normalizeProfile = (data) => ({
     ...emptyProfile,
     ...data,
+    annual_income: data?.annual_family_income || readTag(data?.target_exams || '', 'Annual family income'),
+    scholarship_marks: data?.scholarship_marks || data?.scholarship_preferences_json?.marks || '',
+    religion: data?.religion || data?.scholarship_preferences_json?.religion || '',
+    documents_json: { ...emptyDocuments, ...(data?.documents_json || {}) },
     target_exams: stripTags(data?.target_exams || ''),
     exam_branch: readTag(data?.target_exams || '', 'Branch'),
     preferred_subjects: readTag(data?.target_exams || '', 'Preferred subjects'),
     region: readTag(data?.target_exams || '', 'Region'),
-    annual_income: readTag(data?.target_exams || '', 'Annual family income'),
 });
 
 const serializeProfile = (profile) => {
@@ -62,6 +96,24 @@ const serializeProfile = (profile) => {
 
     return {
         ...profile,
+        annual_family_income: profile.annual_income || profile.annual_family_income || null,
+        documents_json: profile.documents_json || {},
+        scholarship_preferences_json: {
+            last_search: {
+                marks: profile.scholarship_marks || '',
+                income: profile.annual_income || profile.annual_family_income || '',
+                region: profile.region || '',
+                destination: profile.study_destination || 'India',
+                religion: profile.religion || '',
+                student_type: profile.student_type || '',
+                course_stream: profile.course_stream || profile.education || '',
+                institution: profile.institution_name || profile.target_companies || '',
+                gender: profile.gender || 'Not specified',
+                caste: profile.caste_category || 'General',
+                disability: profile.disability_status || 'No',
+                documents: profile.documents_json || {},
+            },
+        },
         target_exams: [stripTags(profile.target_exams || ''), ...tags].filter(Boolean).join('\n'),
     };
 };
@@ -95,6 +147,20 @@ const ProfilePage = ({ currentUser }) => {
         setProfile((prev) => ({ ...prev, [field]: value }));
         setSaveState('idle');
     };
+
+    const toggleDocument = (key) => {
+        setProfile((prev) => ({
+            ...prev,
+            documents_json: {
+                ...emptyDocuments,
+                ...(prev.documents_json || {}),
+                [key]: !prev.documents_json?.[key],
+            },
+        }));
+        setSaveState('idle');
+    };
+
+    const documentReadyCount = Object.values(profile.documents_json || {}).filter(Boolean).length;
 
     const saveProfile = async (event) => {
         event.preventDefault();
@@ -175,6 +241,85 @@ const ProfilePage = ({ currentUser }) => {
                         <div>
                             <label className="pp-label">Annual family income</label>
                             <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" placeholder="e.g. 350000" />
+                        </div>
+                    </div>
+
+                    <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                                <h2 className="saas-section-title">Scholarship eligibility profile</h2>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Used by the scholarship match desk so students do not re-enter the same details.</p>
+                            </div>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-950 dark:text-slate-300">{documentReadyCount}/{documentOptions.length} docs</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div>
+                                <label className="pp-label">Studying as</label>
+                                <select value={profile.student_type || ''} onChange={(event) => updateField('student_type', event.target.value)} className="pp-input">
+                                    <option value="">Select student type</option>
+                                    {studentTypes.map((type) => <option key={type}>{type}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="pp-label">Course / stream</label>
+                                <input value={profile.course_stream || ''} onChange={(event) => updateField('course_stream', event.target.value)} className="pp-input" placeholder="B.Tech CSE, MBBS, Class 12 Science..." />
+                            </div>
+                            <div>
+                                <label className="pp-label">Institution / college</label>
+                                <input value={profile.institution_name || ''} onChange={(event) => updateField('institution_name', event.target.value)} className="pp-input" placeholder="College, school, university..." />
+                            </div>
+                            <div>
+                                <label className="pp-label">Study destination</label>
+                                <input value={profile.study_destination || ''} onChange={(event) => updateField('study_destination', event.target.value)} className="pp-input" placeholder="India" />
+                            </div>
+                            <div>
+                                <label className="pp-label">Marks</label>
+                                <input value={profile.scholarship_marks || ''} onChange={(event) => updateField('scholarship_marks', event.target.value)} className="pp-input" placeholder="85%" />
+                            </div>
+                            <div>
+                                <label className="pp-label">Religion / minority status</label>
+                                <input value={profile.religion || ''} onChange={(event) => updateField('religion', event.target.value)} className="pp-input" placeholder="Optional" />
+                            </div>
+                            <div>
+                                <label className="pp-label">Gender</label>
+                                <select value={profile.gender || 'Not specified'} onChange={(event) => updateField('gender', event.target.value)} className="pp-input">
+                                    {genderOptions.map((item) => <option key={item}>{item}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="pp-label">Category</label>
+                                <select value={profile.caste_category || 'General'} onChange={(event) => updateField('caste_category', event.target.value)} className="pp-input">
+                                    {casteOptions.map((item) => <option key={item}>{item}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="pp-label">Disability status</label>
+                                <select value={profile.disability_status || 'No'} onChange={(event) => updateField('disability_status', event.target.value)} className="pp-input">
+                                    <option>No</option>
+                                    <option>Yes</option>
+                                    <option>Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="pp-label">Study level</label>
+                                <input value={profile.study_level || ''} onChange={(event) => updateField('study_level', event.target.value)} className="pp-input" placeholder="1st year, final year, postgraduate..." />
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <label className="pp-label">Documents ready</label>
+                            <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3">
+                                {documentOptions.map(([key, label]) => (
+                                    <button
+                                        type="button"
+                                        key={key}
+                                        onClick={() => toggleDocument(key)}
+                                        className={`flex min-h-10 items-center justify-between rounded-lg px-3 text-left text-xs font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${profile.documents_json?.[key] ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200' : 'bg-white text-slate-600 dark:bg-slate-950 dark:text-slate-400'}`}
+                                    >
+                                        {label}
+                                        {profile.documents_json?.[key] && <Check className="h-3.5 w-3.5" />}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

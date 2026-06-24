@@ -23,6 +23,7 @@ const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
 const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
 
 const emptyDocuments = documentOptions.reduce((acc, [key]) => ({ ...acc, [key]: false }), {});
+const scholarshipFormStorageKey = 'scholarship_finder_profile_v1';
 
 const readTag = (text = '', label) => {
     const match = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, 'i'));
@@ -62,6 +63,15 @@ const getReadiness = (scholarship) => {
     return Math.max(0, Math.round(((required.length - missing.length) / required.length) * 100));
 };
 
+const scholarshipStorageKey = (scholarship, index) => `scholarship_detail_${index}_${encodeURIComponent((scholarship?.name || 'scholarship').slice(0, 64))}`;
+
+const storeScholarshipDetail = (scholarship, index = 0) => {
+    const key = scholarshipStorageKey(scholarship, index);
+    sessionStorage.setItem(key, JSON.stringify(scholarship));
+    sessionStorage.setItem('last_scholarship_detail', JSON.stringify(scholarship));
+    return key;
+};
+
 const answerScholarshipQuestion = (scholarship, question) => {
     const text = question.toLowerCase();
     const answers = scholarship.smart_answers || {};
@@ -73,7 +83,7 @@ const answerScholarshipQuestion = (scholarship, question) => {
     return answers.am_i_eligible || scholarship.description || 'Use the official link and verify eligibility before submitting.';
 };
 
-const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
+const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const { t, i18n } = useTranslation();
     const [form, setForm] = useState({
         marks: '',
@@ -102,18 +112,29 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
 
     useEffect(() => {
         const loadProfileDefaults = async () => {
+            const localDraft = JSON.parse(localStorage.getItem(scholarshipFormStorageKey) || '{}');
+            if (Object.keys(localDraft).length) {
+                setForm((prev) => ({
+                    ...prev,
+                    ...localDraft,
+                    documents: { ...prev.documents, ...(localDraft.documents || {}) },
+                }));
+            }
             if (!currentUser) return;
             try {
                 const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
                 if (!response.ok) return;
                 const profile = await response.json();
                 if (!profile) return;
+                const preferences = profile.scholarship_preferences_json || {};
                 setStudentProfile(profile);
                 setForm((prev) => ({
                     ...prev,
-                    income: profile.annual_family_income || readTag(profile.target_exams || '', 'Annual family income') || prev.income,
+                    marks: profile.scholarship_marks || preferences.marks || prev.marks,
+                    income: profile.annual_family_income || preferences.income || readTag(profile.target_exams || '', 'Annual family income') || prev.income,
                     region: profile.region || readTag(profile.target_exams || '', 'Region') || prev.region,
                     destination: profile.study_destination || prev.destination,
+                    religion: profile.religion || preferences.religion || prev.religion,
                     student_type: profile.student_type || prev.student_type,
                     course_stream: profile.course_stream || profile.education || prev.course_stream,
                     institution: profile.institution_name || profile.target_companies || prev.institution,
@@ -144,6 +165,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
     };
 
     const persistScholarshipProfile = async () => {
+        localStorage.setItem(scholarshipFormStorageKey, JSON.stringify(form));
         if (!currentUser) return;
         await fetch(`${API_URL}/student-profile`, {
             method: 'PUT',
@@ -156,10 +178,15 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                 gender: form.gender,
                 caste_category: form.caste,
                 disability_status: form.disability,
+                scholarship_marks: form.marks,
+                religion: form.religion,
                 annual_family_income: form.income,
                 region: form.region,
                 study_destination: form.destination,
                 documents_json: form.documents,
+                scholarship_preferences_json: {
+                    last_search: form,
+                },
             }),
         });
     };
@@ -194,6 +221,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
             const data = await response.json();
             setScholarships(data);
             setActiveScholarship(data[0] || null);
+            data.slice(0, 2).forEach((scholarship, index) => storeScholarshipDetail(scholarship, index));
             setFiltersCollapsed(true);
         } catch (err) {
             console.error('Failed to fetch scholarships:', err);
@@ -235,6 +263,12 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
         setChatAnswer(answerScholarshipQuestion(activeScholarship, chatQuestion || 'Am I eligible?'));
     };
 
+    const openScholarshipDetail = (scholarship, index) => {
+        setActiveScholarship(scholarship);
+        const key = storeScholarshipDetail(scholarship, index);
+        onNavigate?.('scholarshipDetail', { query: `key=${encodeURIComponent(key)}` });
+    };
+
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             <title>Scholarship Eligibility Finder | Potho-Prodorshok</title>
@@ -263,14 +297,14 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                             <button
                                 type="button"
                                 onClick={() => setFiltersCollapsed((value) => !value)}
-                                className="mt-4 flex min-h-10 w-full items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 xl:hidden"
+                                className="mt-4 flex min-h-10 w-full items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300"
                             >
                                 {filtersCollapsed ? 'Edit eligibility filters' : 'Hide filters and focus results'}
                                 <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${filtersCollapsed ? '' : 'rotate-180'}`} />
                             </button>
                         )}
 
-                        <div className={`${filtersCollapsed ? 'hidden xl:grid' : 'grid'} mt-4 gap-3`}>
+                        <div className={`${filtersCollapsed ? 'hidden' : 'grid'} mt-4 gap-3`}>
                             <div>
                                 <label className="pp-label">Studying as</label>
                                 <select value={form.student_type} onChange={(event) => updateForm('student_type', event.target.value)} className="pp-input">
@@ -326,7 +360,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                             </div>
                         </div>
 
-                        <div className={`${filtersCollapsed ? 'hidden xl:block' : 'block'} mt-4`}>
+                        <div className={`${filtersCollapsed ? 'hidden' : 'block'} mt-4`}>
                             <div className="mb-2 flex items-center justify-between">
                                 <label className="pp-label">Documents ready</label>
                                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{documentReadyCount} ready</span>
@@ -346,7 +380,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                             </div>
                         </div>
 
-                        <button type="submit" disabled={isLoading} className={`${filtersCollapsed ? 'hidden xl:flex' : 'flex'} pp-button mt-4 w-full items-center justify-center gap-2`}>
+                        <button type="submit" disabled={isLoading} className={`${filtersCollapsed ? 'hidden' : 'flex'} pp-button mt-4 w-full items-center justify-center gap-2`}>
                             <Search className="h-4 w-4" />
                             {isLoading ? 'Checking eligibility...' : 'Find eligible scholarships'}
                         </button>
@@ -380,7 +414,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                                     const readiness = getReadiness(scholarship);
                                     const deadlineClass = deadlineToneClass[scholarship.deadline_signal?.tone] || deadlineToneClass.neutral;
                                     return (
-                                        <article key={`${scholarship.name}-${index}`} className={`saas-card cursor-pointer p-4 transition-[box-shadow,transform,border-color] duration-150 active:scale-[0.96] ${activeScholarship === scholarship ? 'border-blue-300 shadow-[0_18px_50px_rgba(37,99,235,0.12)] dark:border-blue-700' : ''}`} onClick={() => setActiveScholarship(scholarship)}>
+                                        <article key={`${scholarship.name}-${index}`} className={`saas-card cursor-pointer p-4 transition-[box-shadow,transform,border-color] duration-150 active:scale-[0.96] ${activeScholarship === scholarship ? 'border-blue-300 shadow-[0_18px_50px_rgba(37,99,235,0.12)] dark:border-blue-700' : ''}`} onClick={() => openScholarshipDetail(scholarship, index)}>
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
                                                     <div className="flex flex-wrap items-center gap-2">
@@ -444,58 +478,21 @@ const ScholarshipFinderPage = ({ currentUser, showAuth }) => {
                                             <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-200">{activeScholarship.match_score || 0}%</span>
                                         </div>
 
-                                        <div className="mt-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Amount</p>
-                                            <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{activeScholarship.amount || 'Amount not confirmed'}</p>
-                                            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{activeScholarship.amount_basis || activeScholarship.source_note || 'Verify exact amount from the official notice before applying.'}</p>
-                                        </div>
-
-                                        <div className="mt-3">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Match breakdown</p>
-                                            <div className="mt-2 grid gap-2">
-                                                {(activeScholarship.matched_reasons || []).length ? activeScholarship.matched_reasons.map((reason) => (
-                                                    <p key={reason} className="rounded-lg bg-emerald-50 p-2 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">{reason}</p>
-                                                )) : <p className="rounded-lg bg-slate-50 p-2 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">No detailed match breakdown returned. Regenerate after adding more profile details.</p>}
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Amount</p>
+                                                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{activeScholarship.amount || 'Amount not confirmed'}</p>
+                                            </div>
+                                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Docs ready</p>
+                                                <p className="mt-1 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{getReadiness(activeScholarship)}%</p>
                                             </div>
                                         </div>
 
-                                        {!!(activeScholarship.not_eligible_reasons || []).length && (
-                                            <div className="mt-3">
-                                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Eligibility blockers</p>
-                                                <div className="mt-2 grid gap-2">
-                                                    {activeScholarship.not_eligible_reasons.map((reason) => (
-                                                        <p key={reason} className="rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-200">{reason}</p>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="mt-3">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Documents</p>
-                                            <div className="mt-2 grid gap-2">
-                                                {(activeScholarship.documents_required || []).map((document) => {
-                                                    const missing = (activeScholarship.missing_documents || []).some((item) => item.toLowerCase() === document.toLowerCase());
-                                                    return (
-                                                        <p key={document} className={`rounded-lg p-2 text-xs font-semibold ${missing ? 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'}`}>
-                                                            {missing ? 'Missing' : 'Ready'}: {document}
-                                                        </p>
-                                                    );
-                                                })}
-                                                {!(activeScholarship.documents_required || []).length && <p className="rounded-lg bg-slate-50 p-2 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">Document list not returned. Check official notice.</p>}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">How to apply</p>
-                                            <ol className="mt-2 grid gap-2">
-                                                {(activeScholarship.application_steps || []).map((step, stepIndex) => (
-                                                    <li key={`${step}-${stepIndex}`} className="rounded-lg bg-slate-50 p-2 text-xs leading-5 text-slate-700 dark:bg-slate-900 dark:text-slate-300">{stepIndex + 1}. {step}</li>
-                                                ))}
-                                                {!(activeScholarship.application_steps || []).length && <li className="rounded-lg bg-slate-50 p-2 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">Open the official link, check scheme notice, collect documents, register/login, fill form, submit before deadline.</li>}
-                                            </ol>
-                                        </div>
-
-                                        <p className="mt-3 rounded-lg bg-blue-50 p-2 text-xs leading-5 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200">{activeScholarship.source_note || 'Always verify eligibility, amount, and date from the official portal before applying.'}</p>
+                                        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Open the full page for amount basis, document checklist, eligibility blockers, and clickable portal steps.</p>
+                                        <button onClick={() => openScholarshipDetail(activeScholarship, scholarships.indexOf(activeScholarship))} className="pp-button mt-3 flex w-full items-center justify-center gap-2">
+                                            Open eligibility report <ExternalLink className="h-4 w-4" />
+                                        </button>
                                     </div>
                                 )}
 

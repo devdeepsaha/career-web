@@ -93,6 +93,8 @@ class StudentProfile(db.Model):
     gender = db.Column(db.String(60), nullable=True)
     caste_category = db.Column(db.String(80), nullable=True)
     disability_status = db.Column(db.String(80), nullable=True)
+    scholarship_marks = db.Column(db.String(40), nullable=True)
+    religion = db.Column(db.String(120), nullable=True)
     annual_family_income = db.Column(db.Numeric, nullable=True)
     region = db.Column(db.String(160), nullable=True)
     study_destination = db.Column(db.String(160), nullable=True)
@@ -120,6 +122,8 @@ class StudentProfile(db.Model):
             'gender': self.gender,
             'caste_category': self.caste_category,
             'disability_status': self.disability_status,
+            'scholarship_marks': self.scholarship_marks,
+            'religion': self.religion,
             'annual_family_income': float(self.annual_family_income) if self.annual_family_income is not None else None,
             'region': self.region,
             'study_destination': self.study_destination,
