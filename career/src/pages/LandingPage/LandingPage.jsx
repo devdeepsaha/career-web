@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, MessageCircle, Moon, Route, Search, Sparkles, Sun } from 'lucide-react';
+import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
 
 const quickAskKeys = [
@@ -9,12 +9,14 @@ const quickAskKeys = [
     'landing_ask_quick_3',
 ];
 
-const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLanguage = 'en', onLanguageChange }) => {
+const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const { t } = useTranslation();
     const [heroActive, setHeroActive] = useState(false);
     const [askOpen, setAskOpen] = useState(false);
     const [askQuestion, setAskQuestion] = useState('');
     const [askAnswer, setAskAnswer] = useState(t('landing_ask_intro'));
+    const [lastAsked, setLastAsked] = useState('');
+    const [showQa, setShowQa] = useState(false);
 
     const activeHero = heroActive ? t('landing_hero_cta_phrase') : t('landing_hero_phrase');
     const hyperspeedOptions = {
@@ -57,11 +59,13 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLangu
         const value = String(question || '').trim();
         setAskOpen(true);
         if (!value) {
+            setLastAsked('');
             setAskAnswer(t('landing_ask_intro'));
             return;
         }
 
         setAskQuestion('');
+        setLastAsked(value);
         const lower = value.toLowerCase();
         if (lower.includes('guest') || lower.includes('try')) setAskAnswer(t('landing_ask_answer_guest'));
         else if (lower.includes('scholar')) setAskAnswer(t('landing_ask_answer_scholarship'));
@@ -82,6 +86,19 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLangu
         { icon: Library, label: t('landing_stack_label_4'), title: t('landing_stack_title_4'), body: t('landing_stack_body_4') },
     ];
 
+    useEffect(() => {
+        const updateQaVisibility = () => {
+            setShowQa(window.scrollY > Math.max(360, window.innerHeight * 0.58));
+        };
+        updateQaVisibility();
+        window.addEventListener('scroll', updateQaVisibility, { passive: true });
+        window.addEventListener('resize', updateQaVisibility);
+        return () => {
+            window.removeEventListener('scroll', updateQaVisibility);
+            window.removeEventListener('resize', updateQaVisibility);
+        };
+    }, []);
+
     return (
         <div className="landing-page min-h-screen bg-[#f7f7f4] text-[#15120f] antialiased dark:bg-[#07080d] dark:text-white">
             <header className="landing-pill-nav">
@@ -92,7 +109,6 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLangu
                 </button>
 
                 <nav className="landing-nav-links" aria-label="Landing navigation">
-                    <a href="#platform">{t('landing_nav_platform')}</a>
                     <a href="#how">{t('landing_nav_how')}</a>
                     <a href="#features">{t('landing_nav_features')}</a>
                     <a href="#guest">{t('landing_nav_guest')}</a>
@@ -100,24 +116,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLangu
 
                 <div className="landing-nav-actions">
                     <button onClick={onLogin} className="landing-login-link">{t('landing_nav_login')}</button>
-                    <button onClick={onSignup} className="landing-start-button">{t('landing_getStarted')}</button>
-                    <button onClick={onGuest} className="landing-guest-pill">{t('landing_guest_cta')}</button>
-                    <div className="landing-language-switch" aria-label={t('sidebar_language')}>
-                        {[
-                            ['en', 'EN'],
-                            ['hi', 'HI'],
-                            ['bn', 'BN'],
-                        ].map(([value, label]) => (
-                            <button
-                                key={value}
-                                onClick={() => onLanguageChange?.(value)}
-                                className={currentLanguage === value ? 'is-active' : ''}
-                                type="button"
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
+                    <button onClick={onSignup} className="landing-start-button">{t('landing_join')}</button>
                     <button onClick={toggleTheme} className="landing-theme-button" aria-label="Toggle theme">
                         {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                     </button>
@@ -225,18 +224,21 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme, currentLangu
                 </section>
             </main>
 
-            <div className={`landing-qa-ai ${askOpen ? 'is-open' : ''}`}>
+            <div className={`landing-qa-ai ${askOpen ? 'is-open' : ''} ${showQa ? 'is-visible' : ''}`} aria-hidden={!showQa}>
                 {askOpen && (
                     <div className="landing-qa-panel">
                         <div className="landing-qa-header">
-                            <span><MessageCircle className="h-4 w-4" /></span>
+                            <span className="landing-qa-avatar"><MessageCircle className="h-4 w-4" /></span>
                             <div>
                                 <strong>{t('landing_ask_title')}</strong>
                                 <small>{t('landing_ask_subtitle')}</small>
                             </div>
-                            <button onClick={() => setAskOpen(false)} aria-label="Close QA Ai">×</button>
+                            <button onClick={() => setAskOpen(false)} aria-label="Close QA Ai"><X className="h-4 w-4" /></button>
                         </div>
-                        <p className="landing-qa-answer">{askAnswer}</p>
+                        <div className="landing-qa-messages">
+                            <p className="landing-qa-message is-bot">{askAnswer}</p>
+                            {lastAsked && <p className="landing-qa-message is-user">{lastAsked}</p>}
+                        </div>
                         <div className="landing-qa-chips">
                             {quickAskKeys.map((key) => (
                                 <button key={key} onClick={() => ask(t(key))}>{t(key)}</button>
