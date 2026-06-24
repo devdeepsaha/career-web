@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
 import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
-import SplitText from '../../components/effects/SplitText'; 
+import SplitText from '../../components/effects/SplitText';
 
 const quickAskKeys = [
     'landing_ask_quick_1',
@@ -13,47 +13,95 @@ const quickAskKeys = [
 
 const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const { t, i18n } = useTranslation();
+    
+    // UI State
     const [heroActive, setHeroActive] = useState(false);
     const [askOpen, setAskOpen] = useState(false);
     const [askQuestion, setAskQuestion] = useState('');
-    const [askAnswer, setAskAnswer] = useState(t('landing_ask_intro'));
-    const [lastAsked, setLastAsked] = useState('');
     const [showQa, setShowQa] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [activeWorkflowTab, setActiveWorkflowTab] = useState(0);
     
+    // Animation State
     const [loopKey, setLoopKey] = useState(0);
     const [isTextExiting, setIsTextExiting] = useState(false);
+    
+    // Chat State
+    const [chatHistory, setChatHistory] = useState([
+        { role: 'bot', text: t('landing_ask_intro') }
+    ]);
+    const chatEndRef = useRef(null);
 
     const languages = [
         { code: 'en', label: 'EN' },
         { code: 'hi', label: 'HI' },
         { code: 'bn', label: 'BN' }
     ];
-    
+
     const currentLangCode = i18n.language?.substring(0, 2).toLowerCase() || 'en';
 
-    // Default to English on load
+    // CHANGED: Smart Language Persistence using localStorage
     useEffect(() => {
-        i18n.changeLanguage('en');
+        // Check if the user has a saved language from a previous visit
+        const savedLang = localStorage.getItem('potho_preferred_lang');
+        
+        if (savedLang) {
+            // If they have a saved language, respect it (don't force English)
+            if (i18n.language !== savedLang) {
+                i18n.changeLanguage(savedLang);
+            }
+        } else {
+            // If it's their very first time here, default to English
+            i18n.changeLanguage('en');
+            localStorage.setItem('potho_preferred_lang', 'en');
+        }
     }, [i18n]);
 
-    // Loop animation logic
+    // Handle Text Animation Loop
     useEffect(() => {
         const interval = setInterval(() => {
             setIsTextExiting(true);
             setTimeout(() => {
                 setLoopKey(prev => prev + 1);
                 setIsTextExiting(false);
-            }, 1000); // Wait for exit animation
+            }, 1000);
         }, 6000);
         return () => clearInterval(interval);
     }, []);
 
+    // Auto-scroll AI chat
+    useEffect(() => {
+        if (chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatHistory, askOpen]);
+
+    // Handle Scrolling for QA AI bubble visibility
+    useEffect(() => {
+        const updateQaVisibility = () => {
+            setShowQa(window.scrollY > Math.max(360, window.innerHeight * 0.58));
+        };
+        updateQaVisibility();
+        window.addEventListener('scroll', updateQaVisibility, { passive: true });
+        window.addEventListener('resize', updateQaVisibility);
+        return () => {
+            window.removeEventListener('scroll', updateQaVisibility);
+            window.removeEventListener('resize', updateQaVisibility);
+        };
+    }, []);
+
+    // CHANGED: Update i18n AND save the choice to localStorage so it survives a refresh
     const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
+        localStorage.setItem('potho_preferred_lang', langCode);
+    };
+
+    const toggleTheme = () => {
+        setTheme(theme === 'light' ? 'dark' : 'light');
     };
 
     const activeHero = heroActive ? t('landing_hero_cta_phrase') : t('landing_hero_phrase');
+    
     const hyperspeedOptions = {
         distortion: 'xyDistortion',
         length: 400,
@@ -93,26 +141,34 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const ask = (question = askQuestion) => {
         const value = String(question || '').trim();
         setAskOpen(true);
-        if (!value) {
-            setLastAsked('');
-            setAskAnswer(t('landing_ask_intro'));
-            return;
-        }
-        setAskQuestion('');
-        setLastAsked(value);
-        const lower = value.toLowerCase();
-        if (lower.includes('guest') || lower.includes('try')) setAskAnswer(t('landing_ask_answer_guest'));
-        else if (lower.includes('scholar')) setAskAnswer(t('landing_ask_answer_scholarship'));
-        else if (lower.includes('mock') || lower.includes('exam') || lower.includes('practice')) setAskAnswer(t('landing_ask_answer_practice'));
-        else if (lower.includes('road') || lower.includes('career') || lower.includes('plan')) setAskAnswer(t('landing_ask_answer_roadmap'));
-        else setAskAnswer(t('landing_ask_answer_default'));
-    };
+        if (!value) return;
 
-    const toggleTheme = () => {
-        setTheme(theme === 'light' ? 'dark' : 'light');
+        setAskQuestion('');
+
+        let answer = '';
+        const lower = value.toLowerCase();
+        if (lower.includes('guest') || lower.includes('try')) answer = t('landing_ask_answer_guest');
+        else if (lower.includes('scholar')) answer = t('landing_ask_answer_scholarship');
+        else if (lower.includes('mock') || lower.includes('exam') || lower.includes('practice')) answer = t('landing_ask_answer_practice');
+        else if (lower.includes('road') || lower.includes('career') || lower.includes('plan')) answer = t('landing_ask_answer_roadmap');
+        else answer = t('landing_ask_answer_default');
+
+        setChatHistory(prev => [
+            ...prev,
+            { role: 'user', text: value },
+            { role: 'bot', text: answer }
+        ]);
     };
 
     const audiences = ['CIL aspirants', 'Final year students', 'JEE / NEET', 'Scholarship seekers', 'Career switchers'];
+    
+    const workflowSteps = [
+        { id: 'roadmap', title: t('landing_workflow_card_1_title'), body: t('landing_workflow_card_1_body'), icon: Route },
+        { id: 'practice', title: t('landing_workflow_card_2_title'), body: t('landing_workflow_card_2_body'), icon: Sparkles },
+        { id: 'measure', title: t('landing_stack_title_3'), body: t('landing_stack_body_3'), icon: Brain },
+        { id: 'library', title: t('landing_stack_title_4'), body: t('landing_stack_body_4'), icon: Library },
+    ];
+
     const featureCards = [
         { icon: Map, label: t('landing_stack_label_1'), title: t('landing_feature_planner_title'), body: t('landing_feature_planner_text') },
         { icon: Brain, label: t('landing_stack_label_2'), title: t('landing_feature_tutor_title'), body: t('landing_feature_tutor_text') },
@@ -120,42 +176,33 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
         { icon: Library, label: t('landing_stack_label_4'), title: t('landing_stack_title_4'), body: t('landing_stack_body_4') },
     ];
 
-    useEffect(() => {
-        const updateQaVisibility = () => {
-            setShowQa(window.scrollY > Math.max(360, window.innerHeight * 0.58));
-        };
-        updateQaVisibility();
-        window.addEventListener('scroll', updateQaVisibility, { passive: true });
-        window.addEventListener('resize', updateQaVisibility);
-        return () => {
-            window.removeEventListener('scroll', updateQaVisibility);
-            window.removeEventListener('resize', updateQaVisibility);
-        };
-    }, []);
-
     return (
         <div className="landing-page min-h-screen bg-[#f7f7f4] text-[#15120f] antialiased dark:bg-[#07080d] dark:text-white">
+            
+            {/* Nav Header */}
             <div className="fixed top-4 left-0 right-0 z-[100] mx-auto px-4 w-full max-w-7xl">
-                <nav className={`relative flex items-center justify-between p-3 pl-5 pr-3 rounded-full border shadow-sm backdrop-blur-md transition-all duration-300 ${theme === 'dark' ? 'bg-[#0a0c12]/80 border-white/10 shadow-black/50' : 'bg-white/80 border-black/5 shadow-black/5'}`}>
-                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 shrink-0 cursor-pointer group">
-                        <div className="relative flex items-center justify-center h-8 w-8 group-hover:scale-105 transition-transform">
-                            <img src="/logo-dark.png" alt="Potho Prodorshok" className="absolute h-full w-auto dark:hidden" />
-                            <img src="/logo-light.png" alt="Potho Prodorshok" className="absolute hidden h-full w-auto dark:block" />
-                        </div>
+                <nav className={`flex items-center justify-between p-3 pl-5 pr-3 rounded-full border shadow-sm backdrop-blur-md transition-all duration-300 ${theme === 'dark' ? 'bg-[#0a0c12]/80 border-white/10' : 'bg-white/80 border-black/5'}`}>
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3">
+                        <img src="/logo-dark.png" alt="Logo" className="h-8 w-auto dark:hidden" />
+                        <img src="/logo-light.png" alt="Logo" className="hidden h-8 w-auto dark:block" />
                         <span className="font-bold text-[17px] tracking-tight">{t('landing_brand')}</span>
                     </button>
-                    <div className="hidden lg:flex items-center justify-center gap-1 mx-4">
+
+                    <div className="hidden lg:flex items-center gap-1">
                         {[{ label: t('landing_nav_how'), href: '#how' }, { label: t('landing_nav_features'), href: '#features' }, { label: t('landing_nav_guest'), href: '#guest' }].map((link) => (
-                            <a key={link.href} href={link.href} className={`relative px-4 py-2 text-sm font-medium rounded-full transition-colors group ${theme === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#15120f]/70 hover:text-[#15120f]'}`}>
-                                {link.label}
-                                <span className={`absolute left-4 right-4 bottom-1 h-0.5 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform origin-left ${theme === 'dark' ? 'bg-white' : 'bg-[#15120f]'}`} />
-                            </a>
+                            <a key={link.href} href={link.href} className="px-4 py-2 text-sm font-medium rounded-full opacity-70 hover:opacity-100 transition-opacity">{link.label}</a>
                         ))}
                     </div>
-                    <div className="hidden lg:flex items-center gap-3 shrink-0">
-                        <button onClick={onLogin} className={`text-sm font-semibold px-2 hover:opacity-70 transition-opacity ${theme === 'dark' ? 'text-white' : 'text-[#15120f]'}`}>{t('landing_nav_login')}</button>
-                        <button onClick={onSignup} className="px-5 py-2.5 text-sm font-bold text-[#15120f] bg-[#f1b017] hover:bg-[#dca010] rounded-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0">{t('landing_join')}</button>
-                        <button onClick={onGuest} className={`px-4 py-2.5 text-sm font-medium rounded-full transition-colors ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-black/5 hover:bg-black/10 text-[#15120f]'}`}>{t('landing_guest_cta')}</button>
+
+                    <div className="hidden lg:flex items-center gap-2">
+                        <button onClick={onLogin} className="text-sm font-semibold px-3">{t('landing_nav_login')}</button>
+                        <button onClick={onSignup} className="px-5 py-2.5 text-sm font-bold bg-[#f1b017] text-[#15120f] rounded-full min-w-[140px] h-[45px]">
+                            {t('landing_join')}
+                        </button>
+                        <button onClick={onGuest} className="px-4 py-2.5 text-sm font-medium bg-black/5 dark:bg-white/10 rounded-full min-w-[140px] h-[45px]">
+                            {t('landing_guest_cta')}
+                        </button>
+                        
                         <div className={`flex items-center p-1 rounded-full ${theme === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
                             {languages.map((lang) => (
                                 <button key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-colors z-10 ${currentLangCode === lang.code ? 'text-[#15120f]' : (theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-[#15120f]/60 hover:text-[#15120f]')}`}>
@@ -164,32 +211,68 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 </button>
                             ))}
                         </div>
-                        <button onClick={toggleTheme} className={`p-2.5 rounded-full transition-colors flex items-center justify-center ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-[#f1eece]' : 'bg-black/5 hover:bg-black/10 text-[#15120f]'}`} aria-label="Toggle theme">
-                            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                        </button>
+
+                        <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10">{theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}</button>
                     </div>
+
+                    <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-2 rounded-full bg-black/5 dark:bg-white/10">
+                        {mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}
+                    </button>
                 </nav>
+
+                <AnimatePresence>
+                    {mobileNavOpen && (
+                        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-20 left-4 right-4 mt-2 p-4 rounded-3xl bg-white dark:bg-[#0c101c] border border-black/5 dark:border-white/10 shadow-xl lg:hidden z-50">
+                            <div className="flex flex-col gap-2">
+                                {[{ label: t('landing_nav_how'), href: '#how' }, { label: t('landing_nav_features'), href: '#features' }, { label: t('landing_nav_guest'), href: '#guest' }].map((link) => (
+                                    <a key={link.href} href={link.href} onClick={() => setMobileNavOpen(false)} className="px-4 py-3 text-base font-medium rounded-xl opacity-80 hover:bg-black/5 dark:hover:bg-white/10">
+                                        {link.label}
+                                    </a>
+                                ))}
+                                
+                                <div className="h-px w-full my-2 bg-black/5 dark:bg-white/10" />
+                                
+                                <div className="flex justify-between items-center px-4 py-2">
+                                    <span className="text-sm font-medium opacity-60">Language</span>
+                                    <div className="flex gap-2 p-1 rounded-full bg-black/5 dark:bg-white/10">
+                                        {languages.map(lang => (
+                                            <button key={`mob-${lang.code}`} onClick={() => handleLanguageChange(lang.code)} className={`px-3 py-1 text-xs font-bold rounded-full ${currentLangCode === lang.code ? 'bg-white text-black shadow-sm' : 'opacity-60'}`}>
+                                                {lang.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="h-px w-full my-2 bg-black/5 dark:bg-white/10" />
+
+                                <button onClick={onLogin} className="w-full py-3 font-semibold hover:bg-black/5 dark:hover:bg-white/10 rounded-xl">{t('landing_nav_login')}</button>
+                                <button onClick={onSignup} className="w-full py-3 font-bold bg-[#f1b017] text-black rounded-xl">{t('landing_join')}</button>
+                                <button onClick={onGuest} className="w-full py-3 font-medium bg-black/5 dark:bg-white/10 rounded-xl">{t('landing_guest_cta')}</button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <main>
-                <section id="platform" className="landing-hero-simple !p-0 !h-screen !min-h-[600px] w-full flex flex-col justify-center items-center relative overflow-hidden">
-                    <div className="landing-road-stage absolute inset-0 z-0" aria-label="Career road light visual">
+                {/* Hero Section */}
+                <section id="platform" className="landing-hero-simple !p-0 !h-[100svh] !min-h-[600px] w-full flex flex-col justify-center items-center relative overflow-hidden">
+                    <div className="landing-road-stage absolute inset-0 z-0">
                         <Hyperspeed effectOptions={hyperspeedOptions} />
                         <div className="landing-road-fade" />
                     </div>
-                    <div className="landing-hero-copy relative z-10 flex flex-col items-center text-center px-4 w-full max-w-4xl -mt-[10vh]">
-                        <button onClick={onSignup} onPointerEnter={() => setHeroActive(true)} onPointerLeave={() => setHeroActive(false)} className="group cursor-pointer mb-2" aria-label={t('landing_hero_cta_phrase')}>
+                    
+                    <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl -mt-[10vh] w-full">
+                        <button onClick={onSignup} onPointerEnter={() => setHeroActive(true)} onPointerLeave={() => setHeroActive(false)} className="group cursor-pointer mb-6" aria-label={t('landing_hero_cta_phrase')}>
                             <div className="min-h-[120px] flex items-center justify-center">
                                 <SplitText
                                     key={`${activeHero}-${loopKey}`}
                                     text={activeHero}
                                     isExiting={isTextExiting}
-                                    className="font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-[300] tracking-[-0.055em] leading-none text-white text-balance"
+                                    className="font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-light tracking-[-0.055em] text-white text-balance"
                                     delay={40}
                                     duration={0.8}
-                                    ease="power3.out"
-                                    splitType="chars,words"
-                                    from={{ opacity: 0, y: 30 }}
+                                    from={{ opacity: 0, y: 40 }} 
                                     to={{ opacity: 1, y: 0 }}
                                 />
                             </div>
@@ -197,15 +280,167 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 {t('landing_hero_cta_hint')}
                             </small>
                         </button>
-                        <p className="landing-hero-subtitle">{t('landing_subtitle')}</p>
-                        <div className="landing-hero-actions">
-                            <button onClick={onSignup} className="landing-primary-action">{t('landing_primaryCta')}</button>
-                            <button onClick={onGuest} className="landing-secondary-action">{t('landing_guest_cta')}</button>
+                        
+                        <p className="max-w-2xl text-[clamp(1rem,1.45vw,1.35rem)] text-white/70 mb-8 px-4 text-balance">{t('landing_subtitle')}</p>
+                        
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-6">
+                            <button onClick={onSignup} className="landing-primary-action w-full sm:w-auto flex items-center justify-center min-w-[200px] !min-h-[56px] m-0 !transform-none">
+                                {t('landing_primaryCta')}
+                            </button>
+                            <button onClick={onGuest} className="landing-secondary-action w-full sm:w-auto flex items-center justify-center min-w-[200px] !min-h-[56px] m-0 !transform-none bg-white/10 text-white dark:bg-white/10 dark:text-white border border-white/10">
+                                {t('landing_guest_cta')}
+                            </button>
                         </div>
                     </div>
                 </section>
-                {/* Remaining sections omitted for brevity but should remain the same */}
+
+                <section className="flex overflow-x-auto gap-8 md:gap-16 px-6 py-8 border-y border-black/5 dark:border-white/10 whitespace-nowrap scrollbar-hide items-center justify-start md:justify-center">
+                    <span className="text-[#15120f]/60 dark:text-white/60 font-medium">{t('landing_audience_label')}</span>
+                    {audiences.map((item) => <strong key={item} className="text-xl md:text-2xl font-bold">{item}</strong>)}
+                </section>
+
+                {/* Workflow Section */}
+                <section id="how" className="w-full max-w-6xl mx-auto px-4 py-20 text-center">
+                    <p className="text-[#8a4e00] dark:text-[#f1eece] text-xs font-black tracking-widest uppercase mb-4">{t('landing_pathway_eyebrow')}</p>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance mb-12">{t('landing_workflow_title')}</h2>
+
+                    <div className="hidden md:flex flex-col items-center">
+                        <div className="flex bg-[#15120f] dark:bg-white p-2 rounded-2xl w-full max-w-3xl mb-6">
+                            {workflowSteps.map((step, idx) => (
+                                <button
+                                    key={step.id}
+                                    onClick={() => setActiveWorkflowTab(idx)}
+                                    className={`flex-1 py-4 px-6 text-sm font-bold rounded-xl transition-colors ${activeWorkflowTab === idx ? 'bg-white text-black dark:bg-[#07080d] dark:text-white' : 'text-white/60 dark:text-black/60 hover:text-white dark:hover:text-black'}`}
+                                >
+                                    {t(`landing_workflow_tab_${idx + 1}`)}
+                                </button>
+                            ))}
+                        </div>
+                        <motion.div
+                            key={activeWorkflowTab}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-8 max-w-3xl w-full text-left shadow-xl"
+                        >
+                            {React.createElement(workflowSteps[activeWorkflowTab].icon, { className: 'h-8 w-8 mb-4' })}
+                            <h3 className="text-2xl font-black tracking-tight mb-2">{workflowSteps[activeWorkflowTab].title}</h3>
+                            <p className="text-black/60 dark:text-white/60 leading-relaxed">{workflowSteps[activeWorkflowTab].body}</p>
+                        </motion.div>
+                    </div>
+
+                    <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 scrollbar-hide">
+                        {workflowSteps.map((step) => (
+                            <div key={step.id} className="min-w-[85vw] snap-center bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-6 text-left shadow-lg flex flex-col justify-start">
+                                {React.createElement(step.icon, { className: 'h-8 w-8 mb-4' })}
+                                <h3 className="text-xl font-black tracking-tight mb-2">{step.title}</h3>
+                                <p className="text-black/60 dark:text-white/60 leading-relaxed text-sm">{step.body}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Features Section */}
+                <section id="features" className="w-full max-w-6xl mx-auto px-4 py-20 pb-32">
+                    <div className="text-center mb-16">
+                        <p className="text-[#8a4e00] dark:text-[#f1eece] text-xs font-black tracking-widest uppercase mb-4">{t('landing_features_eyebrow')}</p>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance">{t('landing_features_title')}</h2>
+                    </div>
+                    <div className="flex flex-col gap-6">
+                        {featureCards.map((card, index) => (
+                            <article className="sticky flex flex-col md:flex-row gap-6 md:gap-12 items-start md:items-end min-h-[auto] md:min-h-[260px] p-6 md:p-12 bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl shadow-xl backdrop-blur-md" style={{ top: `calc(112px + ${index * 12}px)` }} key={card.title}>
+                                <div className="flex-1">
+                                    <span className="text-[#8a4e00] dark:text-[#f1eece] text-xs font-black tracking-widest uppercase mb-2 block">{card.label}</span>
+                                    <h3 className="text-2xl md:text-3xl font-black tracking-tight">{card.title}</h3>
+                                </div>
+                                <p className="flex-1 text-black/60 dark:text-white/60 leading-relaxed text-sm md:text-base">{card.body}</p>
+                                <div className="hidden md:block">
+                                    {React.createElement(card.icon, { className: 'h-8 w-8' })}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Guest Section */}
+                <section id="guest" className="w-full max-w-6xl mx-auto px-4 pb-32 flex flex-col md:flex-row gap-12 items-center md:items-end">
+                    <div className="flex-1 text-center md:text-left">
+                        <p className="text-[#8a4e00] dark:text-[#f1eece] text-xs font-black tracking-widest uppercase mb-4">{t('landing_guest_label')}</p>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance mb-6">{t('landing_guest_title')}</h2>
+                        <p className="text-black/60 dark:text-white/60 leading-relaxed max-w-xl mx-auto md:mx-0">{t('landing_guest_body')}</p>
+                    </div>
+                    <div className="w-full md:w-[400px] bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-8 shadow-xl">
+                        <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-6">
+                            <LockKeyhole className="h-6 w-6" />
+                        </div>
+                        <ul className="flex flex-col gap-4 mb-8 text-black/60 dark:text-white/60">
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-current"></span>{t('landing_guest_free_1')}</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-current"></span>{t('landing_guest_free_2')}</li>
+                            <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-current"></span>{t('landing_guest_locked_1')}</li>
+                        </ul>
+                        <button onClick={onGuest} className="w-full py-4 font-bold bg-[#15120f] text-white dark:bg-white dark:text-[#15120f] rounded-full transition-transform hover:scale-[0.98]">
+                            {t('landing_guest_cta')}
+                        </button>
+                    </div>
+                </section>
             </main>
+
+            {/* QA AI Container */}
+            <div className={`fixed left-1/2 bottom-4 z-50 w-[calc(100vw-24px)] md:w-full max-w-3xl -translate-x-1/2 transition-all duration-300 ${askOpen ? 'translate-y-0 opacity-100 visible' : showQa ? 'translate-y-0 opacity-100 visible' : 'translate-y-8 opacity-0 invisible'} pointer-events-auto`}>
+                {askOpen && (
+                    <div className="mb-4 bg-white/95 dark:bg-[#0f111a]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+                        <div className="flex items-center gap-4 p-4 md:p-5 border-b border-black/5 dark:border-white/10">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-200 to-amber-400 text-black shadow-inner">
+                                <MessageCircle className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                                <strong className="block text-base">{t('landing_ask_title')}</strong>
+                                <small className="block text-xs opacity-60">{t('landing_ask_subtitle')}</small>
+                            </div>
+                            <button onClick={() => setAskOpen(false)} className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex flex-col gap-4 p-4 md:p-5 max-h-[40vh] md:max-h-[300px] overflow-y-auto scrollbar-hide">
+                            {chatHistory.map((msg, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed
+                                        ${msg.role === 'bot' 
+                                            ? 'bg-black/5 dark:bg-white/10 self-start rounded-bl-sm' 
+                                            : 'bg-[#3f3f48] text-white self-end rounded-br-sm'
+                                        }`}
+                                >
+                                    {msg.text}
+                                </div>
+                            ))}
+                            <div ref={chatEndRef} />
+                        </div>
+
+                        <div className="flex gap-2 overflow-x-auto p-4 md:px-5 pb-5 scrollbar-hide">
+                            {quickAskKeys.map((key) => (
+                                <button key={key} onClick={() => ask(t(key))} className="whitespace-nowrap px-4 py-2 text-sm font-bold bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm hover:shadow-md transition-all">
+                                    {t(key)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <form className="flex items-center gap-3 p-2 pl-6 bg-white/95 dark:bg-[#0c101c]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-full shadow-2xl" onSubmit={(e) => { e.preventDefault(); ask(); }}>
+                    <Search className="h-5 w-5 opacity-50 shrink-0" />
+                    <input 
+                        value={askQuestion} 
+                        onFocus={() => setAskOpen(true)} 
+                        onChange={(e) => setAskQuestion(e.target.value)} 
+                        placeholder={t('landing_ask_placeholder')} 
+                        className="flex-1 bg-transparent border-none outline-none text-base font-medium placeholder-black/40 dark:placeholder-white/40"
+                    />
+                    <button type="submit" aria-label={t('landing_ask_submit')} className="w-12 h-12 shrink-0 bg-black/5 dark:bg-white/10 hover:bg-[#f1b017] hover:text-black dark:hover:bg-[#f1b017] dark:hover:text-black rounded-full flex items-center justify-center transition-colors">
+                        <ArrowUp className="h-5 w-5" />
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };
