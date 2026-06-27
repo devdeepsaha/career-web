@@ -23,17 +23,54 @@ const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
 const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
 
 const emptyDocuments = documentOptions.reduce((acc, [key]) => ({ ...acc, [key]: false }), {});
-const scholarshipFormStorageKey = 'scholarship_finder_profile_v1';
+const scholarshipFormStorageBaseKey = 'scholarship_finder_profile_v1';
+const scholarshipResultsStorageBaseKey = 'scholarship_finder_results_v1';
+const marksModeOptions = [
+    ['percent', 'Percentage'],
+    ['cgpa', 'CGPA'],
+];
 
 const readNumber = (value) => {
     const match = String(value || '').match(/\d+(?:\.\d+)?/);
     return match ? Number(match[0]) : null;
 };
 
-const normalizedMarks = (value) => {
+const normalizedMarksByMode = (value, mode) => {
     const number = readNumber(value);
     if (number === null) return null;
-    return number <= 10 ? number * 10 : number;
+    if (mode === 'cgpa') return number <= 10 ? number * 10 : null;
+    return number <= 100 ? number : null;
+};
+
+const marksInputWarning = (value, mode) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/[/%]|cgpa|percent|percentage|out of/i.test(text)) {
+        return mode === 'cgpa' ? 'Enter only the CGPA number, for example 7.6.' : 'Enter only the percentage number, for example 85.';
+    }
+    if (/[^0-9.\s]/.test(text)) return 'Only numbers and one decimal point are allowed here.';
+    if ((text.match(/\./g) || []).length > 1) return 'Use only one decimal point.';
+    const number = readNumber(text);
+    if (number === null) return 'Enter a number here.';
+    if (mode === 'cgpa' && number > 10) return 'CGPA must be between 0 and 10.';
+    if (mode === 'percent' && number > 100) return 'Percentage must be between 0 and 100.';
+    return '';
+};
+
+const incomeInputWarning = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/[^0-9,.\s]/.test(text)) return 'Use digits only. Do not add currency symbols or words.';
+    if ((text.match(/\./g) || []).length > 1) return 'Use only one decimal point.';
+    return '';
+};
+
+const wordInputWarning = (value, label) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/\d/.test(text)) return `${label} should use letters, not numbers.`;
+    if (/[!@#$%^*_=+{}[\]|\\<>?~`]/.test(text)) return `Remove special symbols from ${label.toLowerCase()}.`;
+    return '';
 };
 
 const readTag = (text = '', label) => {
@@ -83,6 +120,9 @@ const storeScholarshipDetail = (scholarship, index = 0) => {
     return key;
 };
 
+const getScholarshipResultsStorageKey = (user) => `${scholarshipResultsStorageBaseKey}_${user?.id || user?.email || user?.name || 'guest'}`;
+const getScholarshipFormStorageKey = (user) => `${scholarshipFormStorageBaseKey}_${user?.id || user?.email || user?.name || 'guest'}`;
+
 const answerScholarshipQuestion = (scholarship, question) => {
     const text = question.toLowerCase();
     const answers = scholarship.smart_answers || {};
@@ -97,6 +137,7 @@ const answerScholarshipQuestion = (scholarship, question) => {
 const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const { t, i18n } = useTranslation();
     const [form, setForm] = useState({
+        marks_mode: 'percent',
         marks: '',
         income: '',
         region: 'India',
@@ -120,6 +161,8 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const [chatQuestion, setChatQuestion] = useState('');
     const [chatAnswer, setChatAnswer] = useState('');
     const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+    const scholarshipFormStorageKey = useMemo(() => getScholarshipFormStorageKey(currentUser), [currentUser]);
+    const scholarshipResultsStorageKey = useMemo(() => getScholarshipResultsStorageKey(currentUser), [currentUser]);
 
     useEffect(() => {
         const loadProfileDefaults = async () => {
@@ -128,6 +171,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                 setForm((prev) => ({
                     ...prev,
                     ...localDraft,
+                    marks_mode: localDraft.marks_mode || prev.marks_mode,
                     documents: { ...prev.documents, ...(localDraft.documents || {}) },
                 }));
             }
@@ -138,14 +182,16 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                 const profile = await response.json();
                 if (!profile) return;
                 const preferences = profile.scholarship_preferences_json || {};
+                const lastSearch = preferences.last_search || {};
                 setStudentProfile(profile);
                 setForm((prev) => ({
                     ...prev,
-                    marks: profile.scholarship_marks || preferences.marks || prev.marks,
-                    income: profile.annual_family_income || preferences.income || readTag(profile.target_exams || '', 'Annual family income') || prev.income,
+                    marks_mode: preferences.marks_mode || lastSearch.marks_mode || prev.marks_mode,
+                    marks: profile.scholarship_marks || preferences.marks || lastSearch.marks || prev.marks,
+                    income: profile.annual_family_income || preferences.income || lastSearch.income || readTag(profile.target_exams || '', 'Annual family income') || prev.income,
                     region: profile.region || readTag(profile.target_exams || '', 'Region') || prev.region,
                     destination: profile.study_destination || prev.destination,
-                    religion: profile.religion || preferences.religion || prev.religion,
+                    religion: profile.religion || preferences.religion || lastSearch.religion || prev.religion,
                     student_type: profile.student_type || prev.student_type,
                     course_stream: profile.course_stream || profile.education || prev.course_stream,
                     institution: profile.institution_name || profile.target_companies || prev.institution,
@@ -159,13 +205,38 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
             }
         };
         loadProfileDefaults();
-    }, [currentUser]);
+    }, [currentUser, scholarshipFormStorageKey]);
+
+    useEffect(() => {
+        try {
+            const cached = JSON.parse(sessionStorage.getItem(scholarshipResultsStorageKey) || 'null');
+            if (!cached?.scholarships?.length) return;
+            const isFresh = Date.now() - Number(cached.savedAt || 0) < 60 * 60 * 1000;
+            if (!isFresh) return;
+            setScholarships(cached.scholarships);
+            setActiveScholarship(cached.scholarships[0] || null);
+            setHasSearched(true);
+            setFiltersCollapsed(true);
+        } catch (err) {
+            console.error('Cached scholarship results could not load:', err);
+        }
+    }, [scholarshipResultsStorageKey]);
 
     const profileContext = useMemo(() => buildProfileContext(studentProfile || {}), [studentProfile]);
     const documentReadyCount = Object.values(form.documents).filter(Boolean).length;
+    const marksWarning = marksInputWarning(form.marks, form.marks_mode);
+    const incomeWarning = incomeInputWarning(form.income);
+    const regionWarning = wordInputWarning(form.region, 'Region');
+    const destinationWarning = wordInputWarning(form.destination, 'Destination');
+    const religionWarning = wordInputWarning(form.religion, 'Religion');
 
     const updateForm = (field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const updateMarksMode = (value) => {
+        setForm((prev) => ({ ...prev, marks_mode: value, marks: '' }));
+        setError('');
     };
 
     const toggleDocument = (key) => {
@@ -196,6 +267,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                 study_destination: form.destination,
                 documents_json: form.documents,
                 scholarship_preferences_json: {
+                    marks_mode: form.marks_mode,
                     last_search: form,
                 },
             }),
@@ -209,22 +281,27 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
             return;
         }
 
-        const markValue = normalizedMarks(form.marks);
+        const markWarning = marksInputWarning(form.marks, form.marks_mode);
+        const incomeWarning = incomeInputWarning(form.income);
+        const textWarning = wordInputWarning(form.region, 'Region') || wordInputWarning(form.destination, 'Destination') || wordInputWarning(form.religion, 'Religion');
+        const markValue = normalizedMarksByMode(form.marks, form.marks_mode);
         const incomeValue = readNumber(form.income);
-        if (form.marks && (markValue === null || markValue < 0 || markValue > 100)) {
-            setError('Enter marks as a percentage or CGPA between 0 and 10.');
+        if (markWarning || (form.marks && markValue === null)) {
+            setError(markWarning || 'Check the selected marks type and enter a valid number.');
             return;
         }
-        if (form.income && (incomeValue === null || incomeValue < 0)) {
-            setError('Enter annual family income as a positive number.');
+        if (incomeWarning || (form.income && (incomeValue === null || incomeValue < 0))) {
+            setError(incomeWarning || 'Enter annual family income as a positive number.');
+            return;
+        }
+        if (textWarning) {
+            setError(textWarning);
             return;
         }
 
         setIsLoading(true);
         setError('');
-        setScholarships([]);
         setHasSearched(true);
-        setActiveScholarship(null);
         setFiltersCollapsed(false);
 
         try {
@@ -244,6 +321,10 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
             setScholarships(data);
             setActiveScholarship(data[0] || null);
             data.slice(0, 2).forEach((scholarship, index) => storeScholarshipDetail(scholarship, index));
+            sessionStorage.setItem(scholarshipResultsStorageKey, JSON.stringify({
+                scholarships: data,
+                savedAt: Date.now(),
+            }));
             setFiltersCollapsed(true);
         } catch (err) {
             console.error('Failed to fetch scholarships:', err);
@@ -343,12 +424,29 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                 <input value={form.institution} onChange={(event) => updateForm('institution', event.target.value)} className="pp-input" maxLength={180} placeholder="School, college, university..." />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="pp-label">Marks</label>
-                                    <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder="85% or 7.6 CGPA" />
+                                <div className="col-span-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <label className="pp-label">Marks</label>
+                                        <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-xs font-bold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                                            {marksModeOptions.map(([value, label]) => (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    onClick={() => updateMarksMode(value)}
+                                                    className={`min-h-9 rounded-md px-3 transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${form.marks_mode === value ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white' : ''}`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {marksWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{marksWarning}</p>}
+                                    <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder={form.marks_mode === 'cgpa' ? '7.6' : '85'} />
+                                    {!marksWarning && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Do not type %, /10, or words. Choose the mode above.</p>}
                                 </div>
-                                <div>
+                                <div className="col-span-2">
                                     <label className="pp-label">Income</label>
+                                    {incomeWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{incomeWarning}</p>}
                                     <input value={form.income} onChange={(event) => updateForm('income', event.target.value)} className="pp-input" inputMode="numeric" maxLength={12} placeholder="350000" />
                                 </div>
                             </div>
@@ -369,15 +467,18 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="pp-label">Region</label>
+                                    {regionWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{regionWarning}</p>}
                                     <input value={form.region} onChange={(event) => updateForm('region', event.target.value)} className="pp-input" maxLength={120} placeholder="West Bengal" />
                                 </div>
                                 <div>
                                     <label className="pp-label">Destination</label>
+                                    {destinationWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{destinationWarning}</p>}
                                     <input value={form.destination} onChange={(event) => updateForm('destination', event.target.value)} className="pp-input" maxLength={120} placeholder="India" />
                                 </div>
                             </div>
                             <div>
                                 <label className="pp-label">Religion / minority status</label>
+                                {religionWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{religionWarning}</p>}
                                 <input value={form.religion} onChange={(event) => updateForm('religion', event.target.value)} className="pp-input" maxLength={120} placeholder="Optional" />
                             </div>
                         </div>

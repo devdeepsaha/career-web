@@ -277,10 +277,19 @@ def parse_numeric_input(value):
     except ValueError:
         return None
 
-def normalized_marks_percent(value):
+def normalized_marks_percent(value, mode=None):
     number = parse_numeric_input(value)
     if number is None:
         return None
+    marks_mode = normalize_token(mode or "")
+    if marks_mode == "cgpa":
+        if number > 10:
+            return None
+        return min(100, round(number * 10, 2))
+    if marks_mode in {"percent", "percentage"}:
+        if number > 100:
+            return None
+        return min(100, number)
     if number <= 10:
         return min(100, round(number * 10, 2))
     return min(100, number)
@@ -1693,8 +1702,9 @@ def landing_ai():
 
 def fetch_real_scholarships(data):
     language = get_language_name(data)
+    marks_mode = clean_user_text(data.get("marks_mode", ""), 20)
     marks = clean_user_text(data.get("marks", ""), 40)
-    marks_percent = normalized_marks_percent(marks)
+    marks_percent = normalized_marks_percent(marks, marks_mode)
     income = clean_user_text(data.get("income", ""), 40)
     region = clean_user_text(data.get("region", ""), 120)
     destination = clean_user_text(data.get("destination", ""), 120)
@@ -1715,6 +1725,7 @@ def fetch_real_scholarships(data):
 
     Current date: {datetime.utcnow().date().isoformat()}
     Marks: {marks} {f"({marks_percent}% normalized estimate)" if marks_percent is not None else ""}
+    Marks input mode: {marks_mode or "auto"}
     Annual family income: {income}
     Region: {region}
     Destination: {destination}

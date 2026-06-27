@@ -22,6 +22,7 @@ const emptyProfile = {
     region: '',
     study_destination: 'India',
     annual_family_income: '',
+    scholarship_marks_mode: 'percent',
     scholarship_marks: '',
     scholarship_religion: '',
     documents_json: {},
@@ -41,6 +42,10 @@ const documentOptions = [
 ];
 
 const emptyDocuments = documentOptions.reduce((acc, [key]) => ({ ...acc, [key]: false }), {});
+const marksModeOptions = [
+    ['percent', 'Percentage'],
+    ['cgpa', 'CGPA'],
+];
 const studentTypes = ['Engineering student', 'Medical student', 'School student', 'College student', 'Dropper', 'Diploma student', 'Postgraduate', 'Working aspirant'];
 const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
 const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
@@ -50,10 +55,42 @@ const readNumber = (value) => {
     return match ? Number(match[0]) : null;
 };
 
-const normalizedMarks = (value) => {
+const normalizedMarks = (value, mode = 'percent') => {
     const number = readNumber(value);
     if (number === null) return null;
-    return number <= 10 ? number * 10 : number;
+    if (mode === 'cgpa') return number <= 10 ? number * 10 : null;
+    return number <= 100 ? number : null;
+};
+
+const marksInputWarning = (value, mode) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/[/%]|cgpa|percent|percentage|out of/i.test(text)) {
+        return mode === 'cgpa' ? 'Enter only the CGPA number, for example 7.6.' : 'Enter only the percentage number, for example 85.';
+    }
+    if (/[^0-9.\s]/.test(text)) return 'Only numbers and one decimal point are allowed here.';
+    if ((text.match(/\./g) || []).length > 1) return 'Use only one decimal point.';
+    const number = readNumber(text);
+    if (number === null) return 'Enter a number here.';
+    if (mode === 'cgpa' && number > 10) return 'CGPA must be between 0 and 10.';
+    if (mode === 'percent' && number > 100) return 'Percentage must be between 0 and 100.';
+    return '';
+};
+
+const incomeInputWarning = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/[^0-9,.\s]/.test(text)) return 'Use digits only. Do not add currency symbols or words.';
+    if ((text.match(/\./g) || []).length > 1) return 'Use only one decimal point.';
+    return '';
+};
+
+const wordInputWarning = (value, label) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    if (/\d/.test(text)) return `${label} should use letters, not numbers.`;
+    if (/[!@#$%^*_=+{}[\]|\\<>?~`]/.test(text)) return `Remove special symbols from ${label.toLowerCase()}.`;
+    return '';
 };
 
 const branchOptions = [
@@ -84,18 +121,23 @@ const stripTags = (text = '') => (
         .trim()
 );
 
-const normalizeProfile = (data) => ({
-    ...emptyProfile,
-    ...data,
-    annual_income: data?.annual_family_income || readTag(data?.target_exams || '', 'Annual family income'),
-    scholarship_marks: data?.scholarship_marks || data?.scholarship_preferences_json?.marks || '',
-    religion: data?.religion || data?.scholarship_preferences_json?.religion || '',
-    documents_json: { ...emptyDocuments, ...(data?.documents_json || {}) },
-    target_exams: stripTags(data?.target_exams || ''),
-    exam_branch: readTag(data?.target_exams || '', 'Branch'),
-    preferred_subjects: readTag(data?.target_exams || '', 'Preferred subjects'),
-    region: readTag(data?.target_exams || '', 'Region'),
-});
+const normalizeProfile = (data) => {
+    const preferences = data?.scholarship_preferences_json || {};
+    const lastSearch = preferences.last_search || {};
+    return {
+        ...emptyProfile,
+        ...data,
+        annual_income: data?.annual_family_income || lastSearch.income || readTag(data?.target_exams || '', 'Annual family income'),
+        scholarship_marks_mode: preferences.marks_mode || lastSearch.marks_mode || 'percent',
+        scholarship_marks: data?.scholarship_marks || preferences.marks || lastSearch.marks || '',
+        religion: data?.religion || preferences.religion || lastSearch.religion || '',
+        documents_json: { ...emptyDocuments, ...(data?.documents_json || lastSearch.documents || {}) },
+        target_exams: stripTags(data?.target_exams || ''),
+        exam_branch: readTag(data?.target_exams || '', 'Branch'),
+        preferred_subjects: readTag(data?.target_exams || '', 'Preferred subjects'),
+        region: data?.region || lastSearch.region || readTag(data?.target_exams || '', 'Region'),
+    };
+};
 
 const serializeProfile = (profile) => {
     const tags = [
@@ -110,8 +152,10 @@ const serializeProfile = (profile) => {
         annual_family_income: profile.annual_income || profile.annual_family_income || null,
         documents_json: profile.documents_json || {},
         scholarship_preferences_json: {
+            marks_mode: profile.scholarship_marks_mode || 'percent',
             last_search: {
                 marks: profile.scholarship_marks || '',
+                marks_mode: profile.scholarship_marks_mode || 'percent',
                 income: profile.annual_income || profile.annual_family_income || '',
                 region: profile.region || '',
                 destination: profile.study_destination || 'India',
@@ -172,17 +216,26 @@ const ProfilePage = ({ currentUser }) => {
     };
 
     const documentReadyCount = Object.values(profile.documents_json || {}).filter(Boolean).length;
+    const marksWarning = marksInputWarning(profile.scholarship_marks, profile.scholarship_marks_mode);
+    const incomeWarning = incomeInputWarning(profile.annual_income);
+    const regionWarning = wordInputWarning(profile.region, 'Region');
+    const destinationWarning = wordInputWarning(profile.study_destination, 'Study destination');
+    const religionWarning = wordInputWarning(profile.religion, 'Religion');
 
     const saveProfile = async (event) => {
         event.preventDefault();
-        const markValue = normalizedMarks(profile.scholarship_marks);
+        const markValue = normalizedMarks(profile.scholarship_marks, profile.scholarship_marks_mode);
         const incomeValue = readNumber(profile.annual_income);
-        if (profile.scholarship_marks && (markValue === null || markValue < 0 || markValue > 100)) {
-            setMessage('Enter marks as a percentage or CGPA between 0 and 10.');
+        if (marksWarning || (profile.scholarship_marks && markValue === null)) {
+            setMessage(marksWarning || 'Check the selected marks type and enter a valid number.');
             return;
         }
-        if (profile.annual_income && (incomeValue === null || incomeValue < 0)) {
-            setMessage('Enter annual family income as a positive number.');
+        if (incomeWarning || (profile.annual_income && (incomeValue === null || incomeValue < 0))) {
+            setMessage(incomeWarning || 'Enter annual family income as a positive number.');
+            return;
+        }
+        if (regionWarning || destinationWarning || religionWarning) {
+            setMessage(regionWarning || destinationWarning || religionWarning);
             return;
         }
         setIsSaving(true);
@@ -257,10 +310,12 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                         <div>
                             <label className="pp-label">Region</label>
+                            {regionWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{regionWarning}</p>}
                             <input value={profile.region || ''} onChange={(event) => updateField('region', event.target.value)} className="pp-input" maxLength={120} placeholder="West Bengal, India" />
                         </div>
                         <div>
                             <label className="pp-label">Annual family income</label>
+                            {incomeWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{incomeWarning}</p>}
                             <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" inputMode="numeric" maxLength={12} placeholder="e.g. 350000" />
                         </div>
                     </div>
@@ -291,14 +346,35 @@ const ProfilePage = ({ currentUser }) => {
                             </div>
                             <div>
                                 <label className="pp-label">Study destination</label>
+                                {destinationWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{destinationWarning}</p>}
                                 <input value={profile.study_destination || ''} onChange={(event) => updateField('study_destination', event.target.value)} className="pp-input" maxLength={120} placeholder="India" />
                             </div>
-                            <div>
-                                <label className="pp-label">Marks</label>
-                                <input value={profile.scholarship_marks || ''} onChange={(event) => updateField('scholarship_marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder="85% or 7.6 CGPA" />
+                            <div className="md:col-span-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <label className="pp-label">Marks</label>
+                                    <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-xs font-bold text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                                        {marksModeOptions.map(([value, label]) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => {
+                                                    updateField('scholarship_marks_mode', value);
+                                                    updateField('scholarship_marks', '');
+                                                }}
+                                                className={`min-h-9 rounded-md px-3 transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${profile.scholarship_marks_mode === value ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white' : ''}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {marksWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{marksWarning}</p>}
+                                <input value={profile.scholarship_marks || ''} onChange={(event) => updateField('scholarship_marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder={profile.scholarship_marks_mode === 'cgpa' ? '7.6' : '85'} />
+                                {!marksWarning && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Do not type %, /10, or words. Choose the mode above.</p>}
                             </div>
                             <div>
                                 <label className="pp-label">Religion / minority status</label>
+                                {religionWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{religionWarning}</p>}
                                 <input value={profile.religion || ''} onChange={(event) => updateField('religion', event.target.value)} className="pp-input" maxLength={120} placeholder="Optional" />
                             </div>
                             <div>
