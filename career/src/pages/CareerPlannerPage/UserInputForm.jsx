@@ -46,15 +46,15 @@ const UserInputForm = ({
                     <div className="space-y-3">
                         <div>
                             <label htmlFor="skills" className={labelClass}>{t('userInput_skillsLabel')} <Info className="h-3.5 w-3.5 text-slate-400" /></label>
-                            <textarea id="skills" rows="2" value={skills} onChange={(e) => setSkills(e.target.value)} className={fieldClass} placeholder={t('userInput_skillsPlaceholder')}></textarea>
+                            <textarea id="skills" rows="2" value={skills} onChange={(e) => setSkills(e.target.value)} className={fieldClass} maxLength={800} placeholder={t('userInput_skillsPlaceholder')}></textarea>
                         </div>
                         <div>
                             <label htmlFor="interests" className={labelClass}>{t('userInput_interestsLabel')}</label>
-                            <textarea id="interests" rows="2" value={interests} onChange={(e) => setInterests(e.target.value)} className={fieldClass} placeholder={t('userInput_interestsPlaceholder')}></textarea>
+                            <textarea id="interests" rows="2" value={interests} onChange={(e) => setInterests(e.target.value)} className={fieldClass} maxLength={800} placeholder={t('userInput_interestsPlaceholder')}></textarea>
                         </div>
                         <div>
                             <label htmlFor="goals" className={labelClass}>{t('userInput_goalsLabel')}</label>
-                            <textarea id="goals" rows="2" value={goals} onChange={(e) => setGoals(e.target.value)} className={fieldClass} placeholder={t('userInput_goalsPlaceholder')}></textarea>
+                            <textarea id="goals" rows="2" value={goals} onChange={(e) => setGoals(e.target.value)} className={fieldClass} maxLength={500} placeholder={t('userInput_goalsPlaceholder')}></textarea>
                         </div>
                         
                         <div>
@@ -78,13 +78,14 @@ const UserInputForm = ({
                                 value={education}
                                 onChange={(e) => setEducation(e.target.value)}
                                 className={fieldClass}
+                                maxLength={240}
                                 placeholder={t('userInput_educationPlaceholder')}
                             />
                         </div>
 
                         <div>
                             <label htmlFor="target" className={labelClass}>{t('userInput_targetLabel')}</label>
-                            <textarea id="target" rows="1" value={targetCompanies} onChange={(e) => setTargetCompanies(e.target.value)} className={fieldClass} placeholder={t('userInput_targetPlaceholder')}></textarea>
+                            <textarea id="target" rows="1" value={targetCompanies} onChange={(e) => setTargetCompanies(e.target.value)} className={fieldClass} maxLength={500} placeholder={t('userInput_targetPlaceholder')}></textarea>
                         </div>
                         <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                             <input

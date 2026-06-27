@@ -213,7 +213,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                         </div>
                     </div>
                 ) : (
-                    <RoadmapDisplay isLoading={isLoading} roadmap={roadmap} savedRoadmapMeta={savedRoadmapMeta} />
+                    <RoadmapDisplay isLoading={isLoading} roadmap={roadmap} savedRoadmapMeta={savedRoadmapMeta} currentUser={currentUser} />
                 )}
                     {savedRoadmaps.length > 0 && (
                         <div className="saas-card p-4">

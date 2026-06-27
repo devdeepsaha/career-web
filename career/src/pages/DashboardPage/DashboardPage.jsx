@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookMarked, BriefcaseBusiness, Clock3, ExternalLink, Map, MessageSquare, Sparkles, Target, Timer, TrendingUp } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
@@ -419,7 +419,7 @@ const DashboardPage = ({ onNavigate, currentUser, showAuth }) => {
                     </InsightCard>
 
                     <InsightCard title="Study timer" icon={Timer}>
-                        <StudyTimer />
+                        <StudyTimer currentUser={currentUser} />
                     </InsightCard>
                 </div>
 
@@ -467,13 +467,15 @@ const DashboardPage = ({ onNavigate, currentUser, showAuth }) => {
     );
 };
 
-const StudyTimer = () => {
-    const [seconds, setSeconds] = useState(() => Number(localStorage.getItem('study_timer_seconds') || 25 * 60));
-    const [durationMinutes, setDurationMinutes] = useState(() => Number(localStorage.getItem('study_timer_duration') || 25));
-    const [topic, setTopic] = useState(() => localStorage.getItem('study_timer_topic') || '');
+const StudyTimer = ({ currentUser }) => {
+    const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
+    const storageKey = useCallback((name) => `study_timer_${storageOwner}_${name}`, [storageOwner]);
+    const [seconds, setSeconds] = useState(() => Number(localStorage.getItem(storageKey('seconds')) || 25 * 60));
+    const [durationMinutes, setDurationMinutes] = useState(() => Number(localStorage.getItem(storageKey('duration')) || 25));
+    const [topic, setTopic] = useState(() => localStorage.getItem(storageKey('topic')) || '');
     const [sessions, setSessions] = useState(() => {
         try {
-            return JSON.parse(localStorage.getItem('study_sessions') || '[]');
+            return JSON.parse(localStorage.getItem(storageKey('sessions')) || '[]');
         } catch {
             return [];
         }
@@ -481,16 +483,27 @@ const StudyTimer = () => {
     const [running, setRunning] = useState(false);
 
     useEffect(() => {
+        setSeconds(Number(localStorage.getItem(storageKey('seconds')) || 25 * 60));
+        setDurationMinutes(Number(localStorage.getItem(storageKey('duration')) || 25));
+        setTopic(localStorage.getItem(storageKey('topic')) || '');
+        try {
+            setSessions(JSON.parse(localStorage.getItem(storageKey('sessions')) || '[]'));
+        } catch {
+            setSessions([]);
+        }
+    }, [storageKey]);
+
+    useEffect(() => {
         if (!running) return undefined;
         const id = window.setInterval(() => {
             setSeconds((prev) => {
                 const next = Math.max(0, prev - 1);
-                localStorage.setItem('study_timer_seconds', String(next));
+                localStorage.setItem(storageKey('seconds'), String(next));
                 return next;
             });
         }, 1000);
         return () => window.clearInterval(id);
-    }, [running]);
+    }, [running, storageKey]);
 
     const minutes = Math.floor(seconds / 60);
     const rest = String(seconds % 60).padStart(2, '0');
@@ -503,19 +516,19 @@ const StudyTimer = () => {
         const next = Math.max(5, Math.min(180, Number(value) || 25));
         setDurationMinutes(next);
         setSeconds(next * 60);
-        localStorage.setItem('study_timer_duration', String(next));
-        localStorage.setItem('study_timer_seconds', String(next * 60));
+        localStorage.setItem(storageKey('duration'), String(next));
+        localStorage.setItem(storageKey('seconds'), String(next * 60));
     };
 
     const saveSession = () => {
         const studied = Math.max(1, Math.round((durationMinutes * 60 - seconds) / 60));
         const nextSessions = [{ topic: topic || 'General study', minutes: studied, createdAt: new Date().toISOString() }, ...sessions].slice(0, 60);
         setSessions(nextSessions);
-        localStorage.setItem('study_sessions', JSON.stringify(nextSessions));
-        localStorage.setItem('study_timer_topic', topic || '');
+        localStorage.setItem(storageKey('sessions'), JSON.stringify(nextSessions));
+        localStorage.setItem(storageKey('topic'), topic || '');
         setRunning(false);
         setSeconds(durationMinutes * 60);
-        localStorage.setItem('study_timer_seconds', String(durationMinutes * 60));
+        localStorage.setItem(storageKey('seconds'), String(durationMinutes * 60));
     };
 
     return (
@@ -523,13 +536,13 @@ const StudyTimer = () => {
             <p className="text-4xl font-semibold tabular-nums text-slate-950 dark:text-white">{minutes}:{rest}</p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Today studied: <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-200">{studiedToday} min</span></p>
             <div className="mt-3 grid grid-cols-1 gap-2">
-                <input value={topic} onChange={(event) => setTopic(event.target.value)} className="pp-input" placeholder="Topic or roadmap step" />
+                <input value={topic} onChange={(event) => setTopic(event.target.value)} className="pp-input" maxLength={120} placeholder="Topic or roadmap step" />
                 <input type="number" min="5" max="180" value={durationMinutes} onChange={(event) => updateDuration(event.target.value)} className="pp-input tabular-nums" aria-label="Timer minutes" />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1 2xl:grid-cols-3">
                 <button onClick={() => setRunning((value) => !value)} className="pp-button">{running ? 'Pause' : 'Start'}</button>
                 <button onClick={saveSession} className="pp-button-secondary">Save time</button>
-                <button onClick={() => { setRunning(false); setSeconds(durationMinutes * 60); localStorage.setItem('study_timer_seconds', String(durationMinutes * 60)); }} className="pp-button-secondary">Reset</button>
+                <button onClick={() => { setRunning(false); setSeconds(durationMinutes * 60); localStorage.setItem(storageKey('seconds'), String(durationMinutes * 60)); }} className="pp-button-secondary">Reset</button>
             </div>
         </div>
     );

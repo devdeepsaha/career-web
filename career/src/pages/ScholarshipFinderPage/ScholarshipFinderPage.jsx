@@ -25,6 +25,17 @@ const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
 const emptyDocuments = documentOptions.reduce((acc, [key]) => ({ ...acc, [key]: false }), {});
 const scholarshipFormStorageKey = 'scholarship_finder_profile_v1';
 
+const readNumber = (value) => {
+    const match = String(value || '').match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+};
+
+const normalizedMarks = (value) => {
+    const number = readNumber(value);
+    if (number === null) return null;
+    return number <= 10 ? number * 10 : number;
+};
+
 const readTag = (text = '', label) => {
     const match = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, 'i'));
     return match?.[1]?.trim() || '';
@@ -198,6 +209,17 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
             return;
         }
 
+        const markValue = normalizedMarks(form.marks);
+        const incomeValue = readNumber(form.income);
+        if (form.marks && (markValue === null || markValue < 0 || markValue > 100)) {
+            setError('Enter marks as a percentage or CGPA between 0 and 10.');
+            return;
+        }
+        if (form.income && (incomeValue === null || incomeValue < 0)) {
+            setError('Enter annual family income as a positive number.');
+            return;
+        }
+
         setIsLoading(true);
         setError('');
         setScholarships([]);
@@ -314,20 +336,20 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                             </div>
                             <div>
                                 <label className="pp-label">Course / stream</label>
-                                <input value={form.course_stream} onChange={(event) => updateForm('course_stream', event.target.value)} className="pp-input" placeholder="B.Tech CSE, MBBS, Class 12 Science..." />
+                                <input value={form.course_stream} onChange={(event) => updateForm('course_stream', event.target.value)} className="pp-input" maxLength={160} placeholder="B.Tech CSE, MBBS, Class 12 Science..." />
                             </div>
                             <div>
                                 <label className="pp-label">Institute / college</label>
-                                <input value={form.institution} onChange={(event) => updateForm('institution', event.target.value)} className="pp-input" placeholder="School, college, university..." />
+                                <input value={form.institution} onChange={(event) => updateForm('institution', event.target.value)} className="pp-input" maxLength={180} placeholder="School, college, university..." />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="pp-label">Marks</label>
-                                    <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="pp-input" placeholder="85%" />
+                                    <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder="85% or 7.6 CGPA" />
                                 </div>
                                 <div>
                                     <label className="pp-label">Income</label>
-                                    <input value={form.income} onChange={(event) => updateForm('income', event.target.value)} className="pp-input" placeholder="350000" />
+                                    <input value={form.income} onChange={(event) => updateForm('income', event.target.value)} className="pp-input" inputMode="numeric" maxLength={12} placeholder="350000" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -347,16 +369,16 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="pp-label">Region</label>
-                                    <input value={form.region} onChange={(event) => updateForm('region', event.target.value)} className="pp-input" placeholder="West Bengal" />
+                                    <input value={form.region} onChange={(event) => updateForm('region', event.target.value)} className="pp-input" maxLength={120} placeholder="West Bengal" />
                                 </div>
                                 <div>
                                     <label className="pp-label">Destination</label>
-                                    <input value={form.destination} onChange={(event) => updateForm('destination', event.target.value)} className="pp-input" placeholder="India" />
+                                    <input value={form.destination} onChange={(event) => updateForm('destination', event.target.value)} className="pp-input" maxLength={120} placeholder="India" />
                                 </div>
                             </div>
                             <div>
                                 <label className="pp-label">Religion / minority status</label>
-                                <input value={form.religion} onChange={(event) => updateForm('religion', event.target.value)} className="pp-input" placeholder="Optional" />
+                                <input value={form.religion} onChange={(event) => updateForm('religion', event.target.value)} className="pp-input" maxLength={120} placeholder="Optional" />
                             </div>
                         </div>
 
@@ -505,7 +527,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                         <>
                                             <p className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">{activeScholarship.name}</p>
                                             <form onSubmit={askScholarshipBot} className="mt-3 space-y-2">
-                                                <input value={chatQuestion} onChange={(event) => setChatQuestion(event.target.value)} className="pp-input" placeholder="Am I eligible? Why not? Deadline?" />
+                                                <input value={chatQuestion} onChange={(event) => setChatQuestion(event.target.value)} className="pp-input" maxLength={240} placeholder="Am I eligible? Why not? Deadline?" />
                                                 <button className="pp-button flex w-full items-center justify-center gap-2"><CircleHelp className="h-4 w-4" /> Ask</button>
                                             </form>
                                             <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700 dark:bg-slate-900 dark:text-slate-300">

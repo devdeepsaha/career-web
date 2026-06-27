@@ -45,6 +45,17 @@ const studentTypes = ['Engineering student', 'Medical student', 'School student'
 const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
 const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
 
+const readNumber = (value) => {
+    const match = String(value || '').match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+};
+
+const normalizedMarks = (value) => {
+    const number = readNumber(value);
+    if (number === null) return null;
+    return number <= 10 ? number * 10 : number;
+};
+
 const branchOptions = [
     'Systems / EDP',
     'Mining',
@@ -164,6 +175,16 @@ const ProfilePage = ({ currentUser }) => {
 
     const saveProfile = async (event) => {
         event.preventDefault();
+        const markValue = normalizedMarks(profile.scholarship_marks);
+        const incomeValue = readNumber(profile.annual_income);
+        if (profile.scholarship_marks && (markValue === null || markValue < 0 || markValue > 100)) {
+            setMessage('Enter marks as a percentage or CGPA between 0 and 10.');
+            return;
+        }
+        if (profile.annual_income && (incomeValue === null || incomeValue < 0)) {
+            setMessage('Enter annual family income as a positive number.');
+            return;
+        }
         setIsSaving(true);
         setSaveState('saving');
         setMessage('');
@@ -205,11 +226,11 @@ const ProfilePage = ({ currentUser }) => {
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <label className="pp-label">Current status</label>
-                            <input value={profile.status || ''} onChange={(event) => updateField('status', event.target.value)} className="pp-input" placeholder="Class 12th student, graduate, dropper..." />
+                            <input value={profile.status || ''} onChange={(event) => updateField('status', event.target.value)} className="pp-input" maxLength={100} placeholder="Class 12th student, graduate, dropper..." />
                         </div>
                         <div>
                             <label className="pp-label">Education</label>
-                            <input value={profile.education || ''} onChange={(event) => updateField('education', event.target.value)} className="pp-input" placeholder="Science, commerce, B.Tech, BA..." />
+                            <input value={profile.education || ''} onChange={(event) => updateField('education', event.target.value)} className="pp-input" maxLength={200} placeholder="Science, commerce, B.Tech, BA..." />
                         </div>
                         <div>
                             <label className="pp-label">Preferred language</label>
@@ -221,7 +242,7 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                         <div>
                             <label className="pp-label">Target exams</label>
-                            <input value={profile.target_exams || ''} onChange={(event) => updateField('target_exams', event.target.value)} className="pp-input" placeholder="CIL, GATE, JEE, NEET, UPSC..." />
+                            <input value={profile.target_exams || ''} onChange={(event) => updateField('target_exams', event.target.value)} className="pp-input" maxLength={240} placeholder="CIL, GATE, JEE, NEET, UPSC..." />
                         </div>
                         <div>
                             <label className="pp-label">Exam branch or department</label>
@@ -232,15 +253,15 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                         <div>
                             <label className="pp-label">Preferred subjects</label>
-                            <input value={profile.preferred_subjects || ''} onChange={(event) => updateField('preferred_subjects', event.target.value)} className="pp-input" placeholder="Computer networks, DBMS, aptitude..." />
+                            <input value={profile.preferred_subjects || ''} onChange={(event) => updateField('preferred_subjects', event.target.value)} className="pp-input" maxLength={240} placeholder="Computer networks, DBMS, aptitude..." />
                         </div>
                         <div>
                             <label className="pp-label">Region</label>
-                            <input value={profile.region || ''} onChange={(event) => updateField('region', event.target.value)} className="pp-input" placeholder="West Bengal, India" />
+                            <input value={profile.region || ''} onChange={(event) => updateField('region', event.target.value)} className="pp-input" maxLength={120} placeholder="West Bengal, India" />
                         </div>
                         <div>
                             <label className="pp-label">Annual family income</label>
-                            <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" placeholder="e.g. 350000" />
+                            <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" inputMode="numeric" maxLength={12} placeholder="e.g. 350000" />
                         </div>
                     </div>
 
@@ -262,23 +283,23 @@ const ProfilePage = ({ currentUser }) => {
                             </div>
                             <div>
                                 <label className="pp-label">Course / stream</label>
-                                <input value={profile.course_stream || ''} onChange={(event) => updateField('course_stream', event.target.value)} className="pp-input" placeholder="B.Tech CSE, MBBS, Class 12 Science..." />
+                                <input value={profile.course_stream || ''} onChange={(event) => updateField('course_stream', event.target.value)} className="pp-input" maxLength={160} placeholder="B.Tech CSE, MBBS, Class 12 Science..." />
                             </div>
                             <div>
                                 <label className="pp-label">Institution / college</label>
-                                <input value={profile.institution_name || ''} onChange={(event) => updateField('institution_name', event.target.value)} className="pp-input" placeholder="College, school, university..." />
+                                <input value={profile.institution_name || ''} onChange={(event) => updateField('institution_name', event.target.value)} className="pp-input" maxLength={180} placeholder="College, school, university..." />
                             </div>
                             <div>
                                 <label className="pp-label">Study destination</label>
-                                <input value={profile.study_destination || ''} onChange={(event) => updateField('study_destination', event.target.value)} className="pp-input" placeholder="India" />
+                                <input value={profile.study_destination || ''} onChange={(event) => updateField('study_destination', event.target.value)} className="pp-input" maxLength={120} placeholder="India" />
                             </div>
                             <div>
                                 <label className="pp-label">Marks</label>
-                                <input value={profile.scholarship_marks || ''} onChange={(event) => updateField('scholarship_marks', event.target.value)} className="pp-input" placeholder="85%" />
+                                <input value={profile.scholarship_marks || ''} onChange={(event) => updateField('scholarship_marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder="85% or 7.6 CGPA" />
                             </div>
                             <div>
                                 <label className="pp-label">Religion / minority status</label>
-                                <input value={profile.religion || ''} onChange={(event) => updateField('religion', event.target.value)} className="pp-input" placeholder="Optional" />
+                                <input value={profile.religion || ''} onChange={(event) => updateField('religion', event.target.value)} className="pp-input" maxLength={120} placeholder="Optional" />
                             </div>
                             <div>
                                 <label className="pp-label">Gender</label>
@@ -302,7 +323,7 @@ const ProfilePage = ({ currentUser }) => {
                             </div>
                             <div>
                                 <label className="pp-label">Study level</label>
-                                <input value={profile.study_level || ''} onChange={(event) => updateField('study_level', event.target.value)} className="pp-input" placeholder="1st year, final year, postgraduate..." />
+                                <input value={profile.study_level || ''} onChange={(event) => updateField('study_level', event.target.value)} className="pp-input" maxLength={120} placeholder="1st year, final year, postgraduate..." />
                             </div>
                         </div>
                         <div className="mt-4">
@@ -326,19 +347,19 @@ const ProfilePage = ({ currentUser }) => {
                     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
                         <div>
                             <label className="pp-label">Skills</label>
-                            <textarea rows="4" value={profile.skills || ''} onChange={(event) => updateField('skills', event.target.value)} className="pp-input" placeholder="Python, communication, lab research..." />
+                            <textarea rows="4" value={profile.skills || ''} onChange={(event) => updateField('skills', event.target.value)} className="pp-input" maxLength={1200} placeholder="Python, communication, lab research..." />
                         </div>
                         <div>
                             <label className="pp-label">Interests</label>
-                            <textarea rows="4" value={profile.interests || ''} onChange={(event) => updateField('interests', event.target.value)} className="pp-input" placeholder="Machine learning, biology, design..." />
+                            <textarea rows="4" value={profile.interests || ''} onChange={(event) => updateField('interests', event.target.value)} className="pp-input" maxLength={1200} placeholder="Machine learning, biology, design..." />
                         </div>
                         <div>
                             <label className="pp-label">Career goals</label>
-                            <textarea rows="4" value={profile.goals || ''} onChange={(event) => updateField('goals', event.target.value)} className="pp-input" placeholder="Doctor, IAS officer, software engineer..." />
+                            <textarea rows="4" value={profile.goals || ''} onChange={(event) => updateField('goals', event.target.value)} className="pp-input" maxLength={1200} placeholder="Doctor, IAS officer, software engineer..." />
                         </div>
                         <div>
                             <label className="pp-label">Target companies or institutions</label>
-                            <textarea rows="4" value={profile.target_companies || ''} onChange={(event) => updateField('target_companies', event.target.value)} className="pp-input" placeholder="IIT, Google, government service..." />
+                            <textarea rows="4" value={profile.target_companies || ''} onChange={(event) => updateField('target_companies', event.target.value)} className="pp-input" maxLength={1200} placeholder="IIT, Google, government service..." />
                         </div>
                     </div>
 

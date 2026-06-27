@@ -41,7 +41,9 @@ const getInitialView = () => {
     return tabs.some((tab) => tab.id === view) ? view : 'roadmaps';
 };
 
-const LibraryPage = () => {
+const LibraryPage = ({ currentUser }) => {
+    const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
+    const resourceStorageKey = `resource_vault_${storageOwner}`;
     const [activeTab, setActiveTab] = useState(getInitialView);
     const [data, setData] = useState({ roadmaps: [], questions: [], mocks: [], scholarships: [], chats: [] });
     const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +52,7 @@ const LibraryPage = () => {
     const [query, setQuery] = useState('');
     const [resources, setResources] = useState(() => {
         try {
-            return JSON.parse(localStorage.getItem('resource_vault') || '[]');
+            return JSON.parse(localStorage.getItem(resourceStorageKey) || '[]');
         } catch {
             return [];
         }
@@ -117,6 +119,14 @@ const LibraryPage = () => {
     }, [loadAll]);
 
     useEffect(() => {
+        try {
+            setResources(JSON.parse(localStorage.getItem(resourceStorageKey) || '[]'));
+        } catch {
+            setResources([]);
+        }
+    }, [resourceStorageKey]);
+
+    useEffect(() => {
         const syncView = () => setActiveTab(getInitialView());
         window.addEventListener('popstate', syncView);
         return () => window.removeEventListener('popstate', syncView);
@@ -164,14 +174,14 @@ const LibraryPage = () => {
         if (!resourceDraft.title.trim()) return;
         const next = [{ ...resourceDraft, id: crypto.randomUUID?.() || String(Date.now()), created_at: new Date().toISOString() }, ...resources];
         setResources(next);
-        localStorage.setItem('resource_vault', JSON.stringify(next));
+        localStorage.setItem(resourceStorageKey, JSON.stringify(next));
         setResourceDraft({ title: '', url: '', tag: '' });
     };
 
     const deleteResource = (id) => {
         const next = resources.filter((item) => item.id !== id);
         setResources(next);
-        localStorage.setItem('resource_vault', JSON.stringify(next));
+        localStorage.setItem(resourceStorageKey, JSON.stringify(next));
     };
 
     const renderItems = () => {

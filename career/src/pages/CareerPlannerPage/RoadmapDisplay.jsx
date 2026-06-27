@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import RoadmapStepCard from './RoadmapStepCard';
 import EmptyStateGraphic from './EmptyStateGraphic';
 
-const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, sendMessageToChatbot }) => {
+const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, sendMessageToChatbot, currentUser }) => {
     const { t } = useTranslation();
     const [visibleCards, setVisibleCards] = useState([]);
 
@@ -86,6 +86,7 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
                                     <div className="ml-3 flex-1">
                                         <RoadmapStepCard
                                             step={step}
+                                            currentUser={currentUser}
                                             openChatWithQuery={handleChatTrigger}
                                         />
                                     </div>

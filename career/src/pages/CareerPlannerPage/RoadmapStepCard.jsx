@@ -10,10 +10,11 @@ const iconByType = {
     mentor: UsersRound,
 };
 
-const RoadmapStepCard = ({ step, openChatWithQuery }) => {
+const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
     const { t } = useTranslation();
+    const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
 
-    const progressKey = useMemo(() => `roadmap_step_progress_${step?.title || step?.source || step?.description || 'step'}`, [step]);
+    const progressKey = useMemo(() => `roadmap_step_progress_${storageOwner}_${step?.title || step?.source || step?.description || 'step'}`, [step, storageOwner]);
     const [progress, setProgress] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem(progressKey) || '{"status":"not started","note":""}');
@@ -79,6 +80,7 @@ const RoadmapStepCard = ({ step, openChatWithQuery }) => {
                             value={progress.note}
                             onChange={(event) => setProgress((prev) => ({ ...prev, note: event.target.value }))}
                             className="pp-input py-2 text-xs"
+                            maxLength={240}
                             placeholder="Add a note, link, or next action"
                         />
                     </div>

@@ -253,6 +253,85 @@ DOCUMENT_LABELS = {
     "photo": "Passport photo",
 }
 
+MINORITY_RELIGIONS = {"muslim", "christian", "sikh", "buddhist", "jain", "parsi", "zoroastrian"}
+CATEGORY_VALUES = {"sc", "st", "obc", "ews", "general", "minority", "pwd"}
+
+def clean_user_text(value, max_length=500):
+    if value is None:
+        return ""
+    text = str(value)
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:max_length]
+
+def normalize_token(value):
+    return re.sub(r"[^a-z0-9]+", " ", clean_user_text(value, 120).lower()).strip()
+
+def parse_numeric_input(value):
+    text = clean_user_text(value, 40)
+    match = re.search(r"\d+(?:\.\d+)?", text)
+    if not match:
+        return None
+    try:
+        return float(match.group(0))
+    except ValueError:
+        return None
+
+def normalized_marks_percent(value):
+    number = parse_numeric_input(value)
+    if number is None:
+        return None
+    if number <= 10:
+        return min(100, round(number * 10, 2))
+    return min(100, number)
+
+def scholarship_text(item):
+    parts = [
+        item.get("name", ""),
+        item.get("description", ""),
+        item.get("eligibility", ""),
+        " ".join(item.get("matched_reasons") or []),
+        " ".join(item.get("not_eligible_reasons") or []),
+    ]
+    return normalize_token(" ".join(str(part) for part in parts))
+
+def hard_scholarship_blockers(item, data):
+    text = scholarship_text(item)
+    gender = normalize_token(data.get("gender", ""))
+    caste = normalize_token(data.get("caste", ""))
+    religion = normalize_token(data.get("religion", ""))
+    disability = normalize_token(data.get("disability", ""))
+    blockers = []
+
+    female_only = any(term in text for term in ["girl", "girls", "female", "women", "woman", "pragati"])
+    male_only = any(term in text for term in ["boys only", "male only"])
+    if gender == "male" and female_only:
+        blockers.append("Gender mismatch: this scholarship is for female/girl candidates.")
+    if gender == "female" and male_only:
+        blockers.append("Gender mismatch: this scholarship is for male candidates.")
+
+    if "pwd" in text or "disability" in text or "disabled" in text or "differently abled" in text:
+        if disability in {"no", "not specified", ""}:
+            blockers.append("Disability mismatch: this scholarship appears to require PwD/disability status.")
+
+    category_requirements = {
+        "sc": [" sc ", "scheduled caste"],
+        "st": [" st ", "scheduled tribe"],
+        "obc": [" obc ", "other backward"],
+        "ews": [" ews ", "economically weaker"],
+    }
+    padded_text = f" {text} "
+    for category, terms in category_requirements.items():
+        if any(term in padded_text for term in terms) and caste != category:
+            blockers.append(f"Category mismatch: this scholarship appears to require {category.upper()} category.")
+
+    minority_only = "minority" in text or "minorities" in text
+    is_minority = religion in MINORITY_RELIGIONS or caste == "minority"
+    if minority_only and religion and not is_minority:
+        blockers.append("Minority status mismatch: this scholarship appears to require minority community eligibility.")
+
+    return blockers
+
 def normalize_student_documents(data):
     raw = data.get("documents") or {}
     return {key: bool(raw.get(key)) for key in DOCUMENT_LABELS}
@@ -277,6 +356,10 @@ def apply_scholarship_quality_fields(scholarships, data):
     normalized = []
     for item in scholarships:
         if not isinstance(item, dict):
+            continue
+        hard_blockers = hard_scholarship_blockers(item, data)
+        if hard_blockers:
+            print(f"Dropping hard-ineligible scholarship: {item.get('name')} | {hard_blockers}")
             continue
         required_documents = item.get("documents_required") or item.get("required_documents") or []
         if isinstance(required_documents, str):
@@ -1245,12 +1328,12 @@ def save_message(session_id):
 def generate_roadmap():
     data = request.get_json()
     language = get_language_name(data)
-    skills = data.get('skills', '')
-    interests = data.get('interests', '')
-    goals = data.get('goals', '')
-    status = data.get('status', '')
-    education = data.get('education', '')
-    target = data.get('targetCompanies', '')
+    skills = clean_user_text(data.get('skills', ''), 800)
+    interests = clean_user_text(data.get('interests', ''), 800)
+    goals = clean_user_text(data.get('goals', ''), 500)
+    status = clean_user_text(data.get('status', ''), 200)
+    education = clean_user_text(data.get('education', ''), 240)
+    target = clean_user_text(data.get('targetCompanies', ''), 500)
 
     prompt = f"""
     You are a career coach. Output JSON array of 8-10 steps in {language}:
@@ -1317,16 +1400,16 @@ def generate_roadmap():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.get_json()
+    data = request.get_json() or {}
     language = get_language_name(data)
-    history = data.get('history', [])
+    history = (data.get('history', []) or [])[-12:]
     session_id = data.get('session_id')
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
     messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}"]}]
     for msg in history:
-        role = 'user' if msg['sender'] == 'user' else 'model'
-        messages.append({'role': role, 'parts': [msg['text']]})
+        role = 'user' if msg.get('sender') == 'user' else 'model'
+        messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})
     
     current_user_message = messages[-1]['parts'][0] if messages else ""
     
@@ -1372,16 +1455,16 @@ def chat():
 @app.route('/solve-doubt-chat', methods=['POST'])
 def solve_doubt_chat():
     """Handle doubt solver chat with history support and session storage"""
-    data = request.get_json()
+    data = request.get_json() or {}
     language = get_language_name(data)
-    history = data.get('history', [])
+    history = (data.get('history', []) or [])[-12:]
     session_id = data.get('session_id')
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
     messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory for personalization when relevant: {mentor_context}"]}]
     for msg in history:
-        role = 'user' if msg['sender'] == 'user' else 'model'
-        messages.append({'role': role, 'parts': [msg['text']]})
+        role = 'user' if msg.get('sender') == 'user' else 'model'
+        messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})
     
     current_user_message = messages[-1]['parts'][0] if messages else ""
     
@@ -1426,14 +1509,14 @@ def solve_doubt_chat():
 
 @app.route('/get-question', methods=['POST'])
 def get_question():
-    data = request.get_json()
+    data = request.get_json() or {}
     language_name = get_language_name(data)
     
-    exam = data.get('exam', '')
-    subject = data.get('subject', '')
-    topic = data.get('topic', '')
-    difficulty = data.get('difficulty', '')
-    profile_context = data.get('profile_context', '')
+    exam = clean_user_text(data.get('exam', ''), 120)
+    subject = clean_user_text(data.get('subject', ''), 120)
+    topic = clean_user_text(data.get('topic', ''), 160)
+    difficulty = clean_user_text(data.get('difficulty', ''), 80)
+    profile_context = clean_user_text(data.get('profile_context', ''), 1200)
     seen = read_history()
 
     prompt = f"""
@@ -1469,9 +1552,9 @@ def get_question():
 
 @app.route('/solve-doubt', methods=['POST'])
 def solve_doubt():
-    data = request.get_json()
+    data = request.get_json() or {}
     language = get_language_name(data)
-    question = data.get('question', '')
+    question = clean_user_text(data.get('question', ''), 3000)
     session_id = data.get('session_id')
     
     prompt = f"Explain clearly in {language}: {question}"
@@ -1516,13 +1599,14 @@ def solve_doubt():
 
 @app.route('/generate-mock-test', methods=['POST'])
 def generate_mock_test():
-    data = request.get_json()
+    data = request.get_json() or {}
     language = get_language_name(data)
-    exam = data.get('exam', '')
-    subject = data.get('subject', '')
-    topic = data.get('topic', '')
-    num_q = data.get('num_questions', 5)
-    profile_context = data.get('profile_context', '')
+    exam = clean_user_text(data.get('exam', ''), 120)
+    subject = clean_user_text(data.get('subject', ''), 120)
+    topic = clean_user_text(data.get('topic', ''), 160)
+    raw_num_q = parse_numeric_input(data.get('num_questions', 5))
+    num_q = max(1, min(30, int(raw_num_q or 5)))
+    profile_context = clean_user_text(data.get('profile_context', ''), 1200)
 
     prompt = f"""
 Generate {num_q} MCQs in JSON format for:
@@ -1571,7 +1655,7 @@ def find_scholarships():
 @app.route('/landing-ai', methods=['POST'])
 def landing_ai():
     data = request.get_json() or {}
-    question = (data.get("question") or "").strip()
+    question = clean_user_text(data.get("question") or "", 600)
     language = get_language_name(data)
     if not question:
         return jsonify({"answer": "Ask me about roadmaps, mock tests, scholarships, AI tutor, saved library, guest mode, or how the platform uses your profile."}), 200
@@ -1609,19 +1693,20 @@ def landing_ai():
 
 def fetch_real_scholarships(data):
     language = get_language_name(data)
-    marks = data.get("marks", "")
-    income = data.get("income", "")
-    region = data.get("region", "")
-    destination = data.get("destination", "")
-    religion = data.get("religion", "")
-    student_type = data.get("student_type", "")
-    course_stream = data.get("course_stream", "")
-    institution = data.get("institution", "")
-    gender = data.get("gender", "")
-    caste = data.get("caste", "")
-    disability = data.get("disability", "")
+    marks = clean_user_text(data.get("marks", ""), 40)
+    marks_percent = normalized_marks_percent(marks)
+    income = clean_user_text(data.get("income", ""), 40)
+    region = clean_user_text(data.get("region", ""), 120)
+    destination = clean_user_text(data.get("destination", ""), 120)
+    religion = clean_user_text(data.get("religion", ""), 120)
+    student_type = clean_user_text(data.get("student_type", ""), 120)
+    course_stream = clean_user_text(data.get("course_stream", ""), 160)
+    institution = clean_user_text(data.get("institution", ""), 180)
+    gender = clean_user_text(data.get("gender", ""), 60)
+    caste = clean_user_text(data.get("caste", ""), 80)
+    disability = clean_user_text(data.get("disability", ""), 80)
     documents = {DOCUMENT_LABELS.get(key, key): value for key, value in normalize_student_documents(data).items()}
-    profile_context = data.get("profile_context", "")
+    profile_context = clean_user_text(data.get("profile_context", ""), 1600)
 
     prompt = f"""
     You are an expert Indian scholarship advisor and application-readiness analyst.
@@ -1629,7 +1714,7 @@ def fetch_real_scholarships(data):
     Use official Indian scholarship sources when possible, especially National Scholarship Portal schemes, AICTE schemes, UGC schemes, state schemes, and credible private scholarship portals.
 
     Current date: {datetime.utcnow().date().isoformat()}
-    Marks: {marks}
+    Marks: {marks} {f"({marks_percent}% normalized estimate)" if marks_percent is not None else ""}
     Annual family income: {income}
     Region: {region}
     Destination: {destination}
@@ -1649,6 +1734,14 @@ def fetch_real_scholarships(data):
     - NSP examples currently show many central schemes opened from 2026-06-01 with student application deadlines such as 2026-10-31 or 2026-08-31; some schemes are "NOT YET OPENED".
     - Common scholarship documents include Aadhaar/EID, bank account details, latest marksheet, income certificate, caste/category certificate where applicable, domicile certificate where applicable, bonafide/institute certificate, admission/fee receipt, and photograph.
     - Treat the institution/college/school field as student context only. Do not claim that the institute itself issues a scholarship document unless the official scheme explicitly requires an institute/bonafide certificate.
+
+    Hard filtering instructions:
+    - Do NOT return female/girl/women-only scholarships when Gender is Male.
+    - Do NOT return male-only scholarships when Gender is Female.
+    - Do NOT return SC/ST/OBC/EWS-specific scholarships unless the Caste/category matches.
+    - Do NOT return PwD/disability-only scholarships unless Disability status says Yes/PwD.
+    - Do NOT return minority-only scholarships unless Religion/category indicates a minority community.
+    - If a scheme is generally relevant but the student is not eligible, do not include it as a result.
 
     Each scholarship object must have these keys:
       "name" - the scholarship name

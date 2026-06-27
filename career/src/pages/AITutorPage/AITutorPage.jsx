@@ -430,11 +430,11 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_subject')}</label>
-                                <input type="text" value={practiceSubject} onChange={e => setPracticeSubject(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_subject_placeholder')} />
+                                <input type="text" value={practiceSubject} onChange={e => setPracticeSubject(e.target.value)} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_topic')}</label>
-                                <input type="text" value={practiceTopic} onChange={e => setPracticeTopic(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_topic_placeholder')} />
+                                <input type="text" value={practiceTopic} onChange={e => setPracticeTopic(e.target.value)} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_difficulty')}</label>
@@ -462,11 +462,11 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_subject')}</label>
-                                <input type="text" value={mockSubject} onChange={e => setMockSubject(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_subject_placeholder')} />
+                                <input type="text" value={mockSubject} onChange={e => setMockSubject(e.target.value)} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_topic')}</label>
-                                <input type="text" value={mockTopic} onChange={e => setMockTopic(e.target.value)} className="pp-input" placeholder={t('aiTutor_form_topic_placeholder')} />
+                                <input type="text" value={mockTopic} onChange={e => setMockTopic(e.target.value)} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
