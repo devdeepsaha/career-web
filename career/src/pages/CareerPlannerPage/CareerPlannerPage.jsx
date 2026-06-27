@@ -7,6 +7,24 @@ import CareerPlannerChatbot from '../../components/chat/CareerPlannerChatbot';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
+const hasLetters = (value = '') => /\p{L}/u.test(String(value));
+const isControlCharacter = (char) => {
+    const code = char.charCodeAt(0);
+    return code === 127 || (code < 32 && code !== 9 && code !== 10 && code !== 13);
+};
+const hasControlCharacters = (value = '') => Array.from(String(value)).some(isControlCharacter);
+const hasUnsafeMarkup = (value = '') => /[<>]/.test(String(value));
+const cleanInput = (value = '') => Array.from(String(value)).map((char) => (isControlCharacter(char) ? ' ' : char)).join('').replace(/\s+/g, ' ').trim();
+
+const roadmapInputWarning = (value, label) => {
+    const text = cleanInput(value);
+    if (!text) return '';
+    if (hasControlCharacters(value)) return `Remove hidden characters from ${label.toLowerCase()}.`;
+    if (hasUnsafeMarkup(text)) return `Remove < or > from ${label.toLowerCase()}.`;
+    if (!hasLetters(text)) return `${label} should include words, not only numbers or symbols.`;
+    return '';
+};
+
 const CareerPlannerPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
 
@@ -25,6 +43,13 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
     const [savedRoadmapMeta, setSavedRoadmapMeta] = useState(null);
     const [syncProfile, setSyncProfile] = useState(true);
     const [inputsCollapsed, setInputsCollapsed] = useState(false);
+    const inputWarnings = {
+        skills: roadmapInputWarning(skills, 'Skills'),
+        interests: roadmapInputWarning(interests, 'Interests'),
+        goals: roadmapInputWarning(goals, 'Career goal'),
+        education: roadmapInputWarning(education, 'Education'),
+        targetCompanies: roadmapInputWarning(targetCompanies, 'Target companies or institutions'),
+    };
 
     const loadSavedRoadmaps = useCallback(async () => {
         if (!currentUser) return;
@@ -96,8 +121,13 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
             return;
         }
 
-        // Validate fields
-        if (!skills || !interests || !goals) {
+        const blockingWarning = inputWarnings.skills || inputWarnings.interests || inputWarnings.goals || inputWarnings.education || inputWarnings.targetCompanies;
+        if (blockingWarning) {
+            setError(blockingWarning || t('careerPlanner_error_fillFields'));
+            return;
+        }
+
+        if (!cleanInput(skills) || !cleanInput(interests) || !cleanInput(goals)) {
             setError(t('careerPlanner_error_fillFields'));
             return;
         }
@@ -112,12 +142,12 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    skills,
-                    interests,
-                    goals,
+                    skills: cleanInput(skills),
+                    interests: cleanInput(interests),
+                    goals: cleanInput(goals),
                     status,
-                    targetCompanies,
-                    education,
+                    targetCompanies: cleanInput(targetCompanies),
+                    education: cleanInput(education),
                     language: i18n.language,
                     save: !currentUser?.is_guest,
                     update_profile: !currentUser?.is_guest && syncProfile,
@@ -194,6 +224,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                     generateRoadmap={generateRoadmap}
                     isLoading={isLoading}
                     error={error}
+                    inputWarnings={inputWarnings}
                     isCollapsed={inputsCollapsed}
                     onToggleCollapsed={() => setInputsCollapsed((value) => !value)}
                     hasOutput={isRoadmapVisible && roadmap.length > 0}

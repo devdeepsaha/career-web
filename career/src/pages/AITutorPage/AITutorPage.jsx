@@ -77,6 +77,26 @@ const buildProfileContext = (profile = {}) => (
     ].join('\n')
 );
 
+const hasLetters = (value = '') => /\p{L}/u.test(String(value));
+const isControlCharacter = (char) => {
+    const code = char.charCodeAt(0);
+    return code === 127 || (code < 32 && code !== 9 && code !== 10 && code !== 13);
+};
+const hasControlCharacters = (value = '') => Array.from(String(value)).some(isControlCharacter);
+const hasUnsafeMarkup = (value = '') => /[<>]/.test(String(value));
+
+const cleanInput = (value = '') => Array.from(String(value)).map((char) => (isControlCharacter(char) ? ' ' : char)).join('').replace(/\s+/g, ' ').trim();
+
+const academicInputWarning = (value, label, { allowAll = false } = {}) => {
+    const text = cleanInput(value);
+    if (allowAll && text.toLowerCase() === 'all') return '';
+    if (!text) return `${label} is required.`;
+    if (hasControlCharacters(value)) return `Remove hidden characters from ${label.toLowerCase()}.`;
+    if (hasUnsafeMarkup(text)) return `Remove < or > from ${label.toLowerCase()}.`;
+    if (!hasLetters(text)) return `${label} should include a topic or subject name, not only numbers or symbols.`;
+    return '';
+};
+
 const AITutorPage = ({ currentUser, showAuth }) => {
     const { t, i18n } = useTranslation();
     const [tutorView, setTutorView] = useState('practice');
@@ -108,6 +128,10 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const [numQuestions, setNumQuestions] = useState(5);
     const [weakQueue, setWeakQueue] = useState([]);
     const [studentProfile, setStudentProfile] = useState(null);
+    const practiceSubjectWarning = academicInputWarning(practiceSubject, 'Subject', { allowAll: true });
+    const practiceTopicWarning = academicInputWarning(practiceTopic, 'Topic', { allowAll: true });
+    const mockSubjectWarning = academicInputWarning(mockSubject, 'Subject', { allowAll: true });
+    const mockTopicWarning = academicInputWarning(mockTopic, 'Topic', { allowAll: true });
 
     React.useEffect(() => {
         const loadProfileDefaults = async () => {
@@ -153,6 +177,14 @@ const AITutorPage = ({ currentUser, showAuth }) => {
         }
 
         const safeOverrides = overrides && Object.getPrototypeOf(overrides) === Object.prototype ? overrides : {};
+        const requestedSubject = safeOverrides.subject || practiceSubject;
+        const requestedTopic = safeOverrides.topic || practiceTopic;
+        const subjectWarning = academicInputWarning(requestedSubject, 'Subject', { allowAll: true });
+        const topicWarning = academicInputWarning(requestedTopic, 'Topic', { allowAll: true });
+        if (subjectWarning || topicWarning) {
+            setQuestionError(subjectWarning || topicWarning);
+            return;
+        }
 
         setIsLoadingQuestion(true);
         setQuestion(null);
@@ -164,11 +196,10 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    exam: practiceExam,
-                    subject: practiceSubject,
-                    topic: practiceTopic,
-                    difficulty: practiceDifficulty,
-                    ...safeOverrides,
+                    exam: safeOverrides.exam || practiceExam,
+                    subject: cleanInput(requestedSubject),
+                    topic: cleanInput(requestedTopic),
+                    difficulty: safeOverrides.difficulty || practiceDifficulty,
                     language: i18n.language,
                     profile_context: buildProfileContext(studentProfile || {}),
                 })
@@ -221,8 +252,8 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                     is_correct: isCorrect,
                     time_taken_seconds: questionStartedAt ? Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)) : null,
                     exam: practiceExam,
-                    subject: practiceSubject,
-                    topic: practiceTopic,
+                    subject: cleanInput(practiceSubject),
+                    topic: cleanInput(practiceTopic),
                     difficulty: practiceDifficulty,
                 }),
             });
@@ -307,16 +338,21 @@ const AITutorPage = ({ currentUser, showAuth }) => {
             showAuth('login');
             return;
         }
+        if (mockSubjectWarning || mockTopicWarning) {
+            setQuestionError(mockSubjectWarning || mockTopicWarning);
+            return;
+        }
 
         setTestState('loading');
+        setQuestionError('');
         try {
             const response = await fetch(`${API_URL}/generate-mock-test`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     exam: mockExam,
-                    subject: mockSubject,
-                    topic: mockTopic,
+                    subject: cleanInput(mockSubject),
+                    topic: cleanInput(mockTopic),
                     difficulty: mockDifficulty,
                     num_questions: numQuestions,
                     language: i18n.language,
@@ -419,6 +455,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                         <button onClick={() => setTutorView('practice')} className={`min-h-10 rounded-md px-3 py-2 text-sm font-semibold transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'practice' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_practice')}</button>
                         <button onClick={() => setTutorView('test')} className={`min-h-10 rounded-md px-3 py-2 text-sm font-semibold transition-[color,background-color,transform] duration-150 active:scale-[0.96] ${tutorView === 'test' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>{t('aiTutor_tab_mockTests')}</button>
                     </div>
+                    {questionError && <p className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{questionError}</p>}
 
                     {tutorView === 'practice' ? (
                         <div className="grid gap-3">
@@ -430,11 +467,13 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_subject')}</label>
-                                <input type="text" value={practiceSubject} onChange={e => setPracticeSubject(e.target.value)} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
+                                {practiceSubjectWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{practiceSubjectWarning}</p>}
+                                <input type="text" value={practiceSubject} onChange={e => { setPracticeSubject(e.target.value); setQuestionError(''); }} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_topic')}</label>
-                                <input type="text" value={practiceTopic} onChange={e => setPracticeTopic(e.target.value)} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
+                                {practiceTopicWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{practiceTopicWarning}</p>}
+                                <input type="text" value={practiceTopic} onChange={e => { setPracticeTopic(e.target.value); setQuestionError(''); }} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_difficulty')}</label>
@@ -462,11 +501,13 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_subject')}</label>
-                                <input type="text" value={mockSubject} onChange={e => setMockSubject(e.target.value)} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
+                                {mockSubjectWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{mockSubjectWarning}</p>}
+                                <input type="text" value={mockSubject} onChange={e => { setMockSubject(e.target.value); setQuestionError(''); }} className="pp-input" maxLength={120} placeholder={t('aiTutor_form_subject_placeholder')} />
                             </div>
                             <div>
                                 <label className="pp-label">{t('aiTutor_form_topic')}</label>
-                                <input type="text" value={mockTopic} onChange={e => setMockTopic(e.target.value)} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
+                                {mockTopicWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{mockTopicWarning}</p>}
+                                <input type="text" value={mockTopic} onChange={e => { setMockTopic(e.target.value); setQuestionError(''); }} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -508,7 +549,6 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                             </div>
                             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-900 dark:text-slate-400">{question ? t('aiTutor_status_questionReady') : t('aiTutor_status_awaitingGeneration')}</span>
                         </div>
-                        {questionError && <p className="text-red-500 text-sm mt-4 text-center">{questionError}</p>}
                         {question && (
                             <div className="pp-subpanel mt-4 p-4">
                                 <p className="mb-3 text-sm font-semibold leading-6 text-slate-950 text-pretty dark:text-white"><Latex>{formatMathText(question.question)}</Latex></p>

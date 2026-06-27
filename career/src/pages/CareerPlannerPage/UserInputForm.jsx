@@ -11,6 +11,7 @@ const UserInputForm = ({
     education, setEducation,
     syncProfile, setSyncProfile,
     generateRoadmap, isLoading, error,
+    inputWarnings = {},
     isCollapsed = false,
     onToggleCollapsed,
     hasOutput = false,
@@ -46,14 +47,17 @@ const UserInputForm = ({
                     <div className="space-y-3">
                         <div>
                             <label htmlFor="skills" className={labelClass}>{t('userInput_skillsLabel')} <Info className="h-3.5 w-3.5 text-slate-400" /></label>
+                            {inputWarnings.skills && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{inputWarnings.skills}</p>}
                             <textarea id="skills" rows="2" value={skills} onChange={(e) => setSkills(e.target.value)} className={fieldClass} maxLength={800} placeholder={t('userInput_skillsPlaceholder')}></textarea>
                         </div>
                         <div>
                             <label htmlFor="interests" className={labelClass}>{t('userInput_interestsLabel')}</label>
+                            {inputWarnings.interests && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{inputWarnings.interests}</p>}
                             <textarea id="interests" rows="2" value={interests} onChange={(e) => setInterests(e.target.value)} className={fieldClass} maxLength={800} placeholder={t('userInput_interestsPlaceholder')}></textarea>
                         </div>
                         <div>
                             <label htmlFor="goals" className={labelClass}>{t('userInput_goalsLabel')}</label>
+                            {inputWarnings.goals && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{inputWarnings.goals}</p>}
                             <textarea id="goals" rows="2" value={goals} onChange={(e) => setGoals(e.target.value)} className={fieldClass} maxLength={500} placeholder={t('userInput_goalsPlaceholder')}></textarea>
                         </div>
                         
@@ -72,6 +76,7 @@ const UserInputForm = ({
                         
                         <div>
                             <label htmlFor="education" className={labelClass}>{t('userInput_educationLabel')}</label>
+                            {inputWarnings.education && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{inputWarnings.education}</p>}
                             <input
                                 type="text"
                                 id="education"
@@ -85,6 +90,7 @@ const UserInputForm = ({
 
                         <div>
                             <label htmlFor="target" className={labelClass}>{t('userInput_targetLabel')}</label>
+                            {inputWarnings.targetCompanies && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{inputWarnings.targetCompanies}</p>}
                             <textarea id="target" rows="1" value={targetCompanies} onChange={(e) => setTargetCompanies(e.target.value)} className={fieldClass} maxLength={500} placeholder={t('userInput_targetPlaceholder')}></textarea>
                         </div>
                         <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">

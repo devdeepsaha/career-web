@@ -264,6 +264,18 @@ def clean_user_text(value, max_length=500):
     text = re.sub(r"\s+", " ", text).strip()
     return text[:max_length]
 
+def has_letter(value):
+    return any(char.isalpha() for char in str(value or ""))
+
+def input_has_markup(value):
+    return bool(re.search(r"[<>]", str(value or "")))
+
+def valid_prompt_text(value, allow_all=False):
+    text = clean_user_text(value, 1000)
+    if allow_all and text.lower() == "all":
+        return True
+    return bool(text and has_letter(text) and not input_has_markup(text))
+
 def normalize_token(value):
     return re.sub(r"[^a-z0-9]+", " ", clean_user_text(value, 120).lower()).strip()
 
@@ -1343,6 +1355,12 @@ def generate_roadmap():
     status = clean_user_text(data.get('status', ''), 200)
     education = clean_user_text(data.get('education', ''), 240)
     target = clean_user_text(data.get('targetCompanies', ''), 500)
+    if not all(valid_prompt_text(value) for value in [skills, interests, goals]):
+        return jsonify({"error": "Skills, interests, and career goal must include meaningful words."}), 400
+    if education and not valid_prompt_text(education):
+        return jsonify({"error": "Education contains invalid characters."}), 400
+    if target and not valid_prompt_text(target):
+        return jsonify({"error": "Target companies or institutions contains invalid characters."}), 400
 
     prompt = f"""
     You are a career coach. Output JSON array of 8-10 steps in {language}:
@@ -1526,6 +1544,8 @@ def get_question():
     topic = clean_user_text(data.get('topic', ''), 160)
     difficulty = clean_user_text(data.get('difficulty', ''), 80)
     profile_context = clean_user_text(data.get('profile_context', ''), 1200)
+    if not valid_prompt_text(exam) or not valid_prompt_text(subject, allow_all=True) or not valid_prompt_text(topic, allow_all=True):
+        return jsonify({"error": "Exam, subject, and topic must include meaningful words."}), 400
     seen = read_history()
 
     prompt = f"""
@@ -1616,6 +1636,8 @@ def generate_mock_test():
     raw_num_q = parse_numeric_input(data.get('num_questions', 5))
     num_q = max(1, min(30, int(raw_num_q or 5)))
     profile_context = clean_user_text(data.get('profile_context', ''), 1200)
+    if not valid_prompt_text(exam) or not valid_prompt_text(subject, allow_all=True) or not valid_prompt_text(topic, allow_all=True):
+        return jsonify({"error": "Exam, subject, and topic must include meaningful words."}), 400
 
     prompt = f"""
 Generate {num_q} MCQs in JSON format for:
