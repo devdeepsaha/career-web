@@ -15,6 +15,7 @@ import threading
 from datetime import datetime, timedelta
 import re
 import random
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -44,6 +45,9 @@ app.config['SESSION_COOKIE_NAME'] = 'pothoprodorshok_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['REMEMBER_COOKIE_SAMESITE'] = 'None'
+app.config['REMEMBER_COOKIE_SECURE'] = True
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 # OAuth-specific settings
@@ -62,6 +66,8 @@ mail = Mail(app)
 
 # Initialize login manager
 login_manager.init_app(app)
+login_manager.login_view = None
+auth_serializer = URLSafeTimedSerializer(app.secret_key, salt="pothoprodorshok-auth-v1")
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -79,6 +85,26 @@ CORS(app,
     expose_headers=["Set-Cookie"],
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 )
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://p-g2ec.onrender.com https://pothoprodorshok.onrender.com https://www.google-analytics.com https://region1.google-analytics.com; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    return response
 
 # Register blueprints
 from auth import auth_bp, google_bp
@@ -109,6 +135,31 @@ with app.app_context():
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@login_manager.request_loader
+def load_user_from_request(req):
+    auth_header = req.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.removeprefix("Bearer ").strip()
+    if not token:
+        return None
+    try:
+        payload = auth_serializer.loads(token, max_age=60 * 60 * 24 * 14)
+        user_id = int(payload.get("user_id"))
+    except (BadSignature, SignatureExpired, TypeError, ValueError):
+        return None
+    return User.query.get(user_id)
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({"error": "Unauthorized"}), 401
+
+def user_payload(user):
+    return {"id": user.id, "email": user.email}
+
+def issue_auth_token(user):
+    return auth_serializer.dumps({"user_id": user.id, "email": user.email})
 
 # Basic public AI rate limiting. This protects API quota; persistent per-user limits can be added later.
 RATE_LIMIT_WINDOW_SECONDS = 600
@@ -1830,9 +1881,11 @@ def signup():
     db.session.add(new_user)
     db.session.commit()
     login_user(new_user)
+    session.permanent = True
     return jsonify({
         "message": "Signup successful",
-        "user": {"id": new_user.id, "email": new_user.email}
+        "user": user_payload(new_user),
+        "auth_token": issue_auth_token(new_user)
     }), 201
 
 @app.route('/login', methods=['POST'])
@@ -1845,8 +1898,9 @@ def login():
     if user is None or not user.check_password(password):
         return jsonify({"message": "Invalid email or password"}), 401
         
-    login_user(user)
-    return jsonify({"message": "Login successful", "user": {"id": user.id, "email": user.email}}), 200
+    login_user(user, remember=True)
+    session.permanent = True
+    return jsonify({"message": "Login successful", "user": user_payload(user), "auth_token": issue_auth_token(user)}), 200
 
 @app.route('/logout', methods=['POST'])
 @login_required
@@ -1857,7 +1911,7 @@ def logout():
 @app.route('/check_session')
 def check_session():
     if current_user.is_authenticated:
-        return jsonify({"is_logged_in": True, "user": {"id": current_user.id, "email": current_user.email}}), 200
+        return jsonify({"is_logged_in": True, "user": user_payload(current_user), "auth_token": issue_auth_token(current_user)}), 200
     else:
         return jsonify({"is_logged_in": False}), 200
 

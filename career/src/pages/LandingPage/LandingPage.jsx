@@ -1,17 +1,35 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
-import Hyperspeed from '../../components/effects/Hyperspeed/Hyperspeed';
-import SplitText from '../../components/effects/SplitText';
+import LogoMark from '../../components/shared/LogoMark';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+const Hyperspeed = React.lazy(() => import('../../components/effects/Hyperspeed/Hyperspeed'));
 
 const quickAskKeys = [
     'landing_ask_quick_1',
     'landing_ask_quick_2',
     'landing_ask_quick_3',
 ];
+
+const HeroPhrase = ({ text }) => (
+    <span className="font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-light tracking-[-0.055em] text-white text-balance">
+        {text.split('').map((char, index) => (
+            <span
+                key={`${char}-${index}`}
+                aria-hidden="true"
+                className="inline-block motion-reduce:animate-none"
+                style={{
+                    animation: 'landingWordIn 520ms ease-out both',
+                    animationDelay: `${Math.min(index * 18, 720)}ms`,
+                }}
+            >
+                {char === ' ' ? '\u00A0' : char}
+            </span>
+        ))}
+        <span className="sr-only">{text}</span>
+    </span>
+);
 
 const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const { t, i18n } = useTranslation();
@@ -21,12 +39,9 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const [askOpen, setAskOpen] = useState(false);
     const [askQuestion, setAskQuestion] = useState('');
     const [showQa, setShowQa] = useState(false);
+    const [showRoad, setShowRoad] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [activeWorkflowTab, setActiveWorkflowTab] = useState(0);
-    
-    // Animation State
-    const [loopKey, setLoopKey] = useState(0);
-    const [isTextExiting, setIsTextExiting] = useState(false);
     
     // Chat State
     const [chatHistory, setChatHistory] = useState([
@@ -60,16 +75,20 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
         }
     }, [i18n]);
 
-    // Handle Text Animation Loop
     useEffect(() => {
-        const interval = setInterval(() => {
-            setIsTextExiting(true);
-            setTimeout(() => {
-                setLoopKey(prev => prev + 1);
-                setIsTextExiting(false);
-            }, 1000);
-        }, 6000);
-        return () => clearInterval(interval);
+        const show = () => setShowRoad(true);
+        let idleId;
+        const timer = window.setTimeout(() => {
+            if ('requestIdleCallback' in window) {
+                idleId = window.requestIdleCallback(show, { timeout: 2500 });
+            } else {
+                show();
+            }
+        }, 9000);
+        return () => {
+            window.clearTimeout(timer);
+            if (idleId) window.cancelIdleCallback?.(idleId);
+        };
     }, []);
 
     // Auto-scroll AI chat
@@ -203,10 +222,9 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
             
             {/* Nav Header */}
             <div className="fixed top-4 left-0 right-0 z-[100] mx-auto px-4 w-full max-w-7xl">
-                <nav className={`flex items-center justify-between p-3 pl-5 pr-3 rounded-full border shadow-sm backdrop-blur-md transition-all duration-300 ${theme === 'dark' ? 'bg-[#0a0c12]/80 border-white/10' : 'bg-white/80 border-black/5'}`}>
-                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3">
-                        <img src="/logo-dark.png" alt="Logo" className="h-8 w-auto dark:hidden" />
-                        <img src="/logo-light.png" alt="Logo" className="hidden h-8 w-auto dark:block" />
+                <nav className={`flex items-center justify-between p-3 pl-5 pr-3 rounded-full border shadow-sm backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 ${theme === 'dark' ? 'bg-[#0a0c12]/80 border-white/10' : 'bg-white/80 border-black/5'}`}>
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3" aria-label="Back to top">
+                        <LogoMark />
                         <span className="font-bold text-[17px] tracking-tight">{t('landing_brand')}</span>
                     </button>
 
@@ -228,23 +246,22 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                         <div className={`flex items-center p-1 rounded-full ${theme === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
                             {languages.map((lang) => (
                                 <button key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-colors z-10 ${currentLangCode === lang.code ? 'text-[#15120f]' : (theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-[#15120f]/60 hover:text-[#15120f]')}`}>
-                                    {currentLangCode === lang.code && <Motion.div layoutId="active-lang-pill" className="absolute inset-0 bg-white rounded-full -z-10 shadow-sm" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                                    {currentLangCode === lang.code && <span className="absolute inset-0 rounded-full bg-white shadow-sm -z-10" />}
                                     {lang.label}
                                 </button>
                             ))}
                         </div>
 
-                        <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10">{theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}</button>
+                        <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10" aria-label="Toggle theme">{theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}</button>
                     </div>
 
-                    <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-2 rounded-full bg-black/5 dark:bg-white/10">
+                    <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-2 rounded-full bg-black/5 dark:bg-white/10" aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}>
                         {mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}
                     </button>
                 </nav>
 
-                <AnimatePresence>
-                    {mobileNavOpen && (
-                        <Motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-20 left-4 right-4 mt-2 p-4 rounded-3xl bg-white dark:bg-[#0c101c] border border-black/5 dark:border-white/10 shadow-xl lg:hidden z-50">
+                {mobileNavOpen && (
+                        <div className="absolute top-20 left-4 right-4 z-50 mt-2 rounded-3xl border border-black/5 bg-white p-4 shadow-xl transition-[opacity,transform] duration-200 dark:border-white/10 dark:bg-[#0c101c] lg:hidden">
                             <div className="flex flex-col gap-2">
                                 {[{ label: t('landing_nav_how'), href: '#how' }, { label: t('landing_nav_features'), href: '#features' }, { label: t('landing_nav_guest'), href: '#guest' }].map((link) => (
                                     <a key={link.href} href={link.href} onClick={() => setMobileNavOpen(false)} className="px-4 py-3 text-base font-medium rounded-xl opacity-80 hover:bg-black/5 dark:hover:bg-white/10">
@@ -271,34 +288,28 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 <button onClick={onSignup} className="w-full py-3 font-bold bg-[#f1b017] text-black rounded-xl">{t('landing_join')}</button>
                                 <button onClick={onGuest} className="w-full py-3 font-medium bg-black/5 dark:bg-white/10 rounded-xl">{t('landing_guest_cta')}</button>
                             </div>
-                        </Motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
             </div>
 
             <main>
                 {/* Hero Section */}
                 <section id="platform" className="landing-hero-simple !p-0 !h-[100svh] !min-h-[600px] w-full flex flex-col justify-center items-center relative overflow-hidden">
                     <div className="landing-road-stage absolute inset-0 z-0">
-                        <Hyperspeed effectOptions={hyperspeedOptions} />
+                        {showRoad && (
+                            <React.Suspense fallback={null}>
+                                <Hyperspeed effectOptions={hyperspeedOptions} />
+                            </React.Suspense>
+                        )}
                         <div className="landing-road-fade" />
                     </div>
                     
                     <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl -mt-[10vh] w-full">
                         <button onClick={onSignup} onPointerEnter={() => setHeroActive(true)} onPointerLeave={() => setHeroActive(false)} className="group cursor-pointer mb-6" aria-label={t('landing_hero_cta_phrase')}>
                             <div className="min-h-[120px] flex items-center justify-center">
-                                <SplitText
-                                    key={`${activeHero}-${loopKey}`}
-                                    text={activeHero}
-                                    isExiting={isTextExiting}
-                                    className="font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-light tracking-[-0.055em] text-white text-balance"
-                                    delay={40}
-                                    duration={0.8}
-                                    from={{ opacity: 0, y: 40 }} 
-                                    to={{ opacity: 1, y: 0 }}
-                                />
+                                <HeroPhrase key={activeHero} text={activeHero} />
                             </div>
-                            <small className="block mt-6 text-[#f1eece]/70 text-xs font-black tracking-[0.18em] uppercase opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                            <small className="block mt-6 text-[#f1eece]/70 text-xs font-black tracking-[0.18em] uppercase opacity-0 translate-y-2 transition-[opacity,transform] duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                                 {t('landing_hero_cta_hint')}
                             </small>
                         </button>
@@ -338,16 +349,14 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 </button>
                             ))}
                         </div>
-                        <Motion.div
+                        <div
                             key={activeWorkflowTab}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-8 max-w-3xl w-full text-left shadow-xl"
+                            className="w-full max-w-3xl rounded-3xl border border-black/5 bg-white/90 p-8 text-left shadow-xl transition-[opacity,transform] duration-200 dark:border-white/10 dark:bg-white/5"
                         >
                             {React.createElement(workflowSteps[activeWorkflowTab].icon, { className: 'h-8 w-8 mb-4' })}
                             <h3 className="text-2xl font-black tracking-tight mb-2">{workflowSteps[activeWorkflowTab].title}</h3>
                             <p className="text-black/60 dark:text-white/60 leading-relaxed">{workflowSteps[activeWorkflowTab].body}</p>
-                        </Motion.div>
+                        </div>
                     </div>
 
                     <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 scrollbar-hide">
@@ -407,7 +416,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
             </main>
 
             {/* QA AI Container */}
-            <div className={`fixed left-1/2 bottom-4 z-50 w-[calc(100vw-24px)] md:w-full max-w-3xl -translate-x-1/2 transition-all duration-300 ${askOpen ? 'translate-y-0 opacity-100 visible' : showQa ? 'translate-y-0 opacity-100 visible' : 'translate-y-8 opacity-0 invisible'} pointer-events-auto`}>
+            <div className={`fixed left-1/2 bottom-4 z-50 w-[calc(100vw-24px)] md:w-full max-w-3xl -translate-x-1/2 transition-[opacity,transform,visibility] duration-300 ${askOpen ? 'translate-y-0 opacity-100 visible' : showQa ? 'translate-y-0 opacity-100 visible' : 'translate-y-8 opacity-0 invisible'} pointer-events-auto`}>
                 {askOpen && (
                     <div className="mb-4 bg-white/95 dark:bg-[#0f111a]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
                         <div className="flex items-center gap-4 p-4 md:p-5 border-b border-black/5 dark:border-white/10">
@@ -418,7 +427,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 <strong className="block text-base">{t('landing_ask_title')}</strong>
                                 <small className="block text-xs opacity-60">{t('landing_ask_subtitle')}</small>
                             </div>
-                            <button onClick={() => setAskOpen(false)} className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors">
+                            <button onClick={() => setAskOpen(false)} className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors" aria-label="Close QA AI">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
@@ -446,7 +455,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
 
                         <div className="flex gap-2 overflow-x-auto p-4 md:px-5 pb-5 scrollbar-hide">
                             {quickAskKeys.map((key) => (
-                                <button key={key} disabled={isAskThinking} onClick={() => ask(t(key))} className="whitespace-nowrap px-4 py-2 text-sm font-bold bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm hover:shadow-md transition-all disabled:opacity-50">
+                                <button key={key} disabled={isAskThinking} onClick={() => ask(t(key))} className="whitespace-nowrap px-4 py-2 text-sm font-bold bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm hover:shadow-md transition-[box-shadow,opacity,transform] disabled:opacity-50">
                                     {t(key)}
                                 </button>
                             ))}

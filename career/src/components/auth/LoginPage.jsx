@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Compass, LogIn } from 'lucide-react';
+import { ArrowLeft, Compass, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import LogoMark from '../shared/LogoMark';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -8,6 +9,7 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
     const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -43,7 +45,7 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
             const data = await response.json();
 
             if (!response.ok) throw new Error(data.message || 'Login failed');
-            onLoginSuccess(data.user);
+            onLoginSuccess(data.user, data.auth_token);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -65,7 +67,7 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
                             Back to landing
                         </button>
                         <div className="flex items-center gap-3">
-                            <img src="/logo-light.png" alt="Potho Prodorshok" className="h-10 w-auto" />
+                            <LogoMark className="h-10 w-10" />
                             <span className="text-2xl font-extrabold">Potho Prodorshok</span>
                         </div>
                         <h1 className="mt-8 max-w-md text-3xl font-semibold leading-tight tracking-[-0.01em]">
@@ -116,14 +118,24 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
                             <label className="pp-label">
                                 Password
                             </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
-                                className="pp-input"
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    autoComplete="current-password"
+                                    className="pp-input pr-12"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((value) => !value)}
+                                    className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition-[background-color,color,transform] duration-150 hover:bg-slate-100 hover:text-slate-950 active:scale-[0.96] dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
                         </div>
 
                         {error && (
@@ -153,7 +165,7 @@ const LoginPage = ({ onLoginSuccess, showSignup, onClose }) => {
                         onClick={handleGoogleSignIn}
                         className="pp-button-secondary flex w-full items-center justify-center gap-3"
                     >
-                        <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
+                        <img src="/google-icon.svg" alt="" width="20" height="20" className="h-5 w-5" />
                         Sign in with Google
                     </button>
 

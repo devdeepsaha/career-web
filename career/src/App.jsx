@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactGA from 'react-ga4';
 import { ArrowRight, Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Menu, Route, Search, UserRound, Users, X } from 'lucide-react';
 
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage/DashboardPage'));
@@ -15,14 +14,72 @@ const TeamProfile = React.lazy(() => import('./components/TeamProfile/TeamProfil
 const SupportPage = React.lazy(() => import('./pages/extra/Support'));
 const PoliciesPage = React.lazy(() => import('./pages/extra/Policies'));
 const ThankYouPage = React.lazy(() => import('./pages/extra/ThankYouPage'));
+const LandingPage = React.lazy(() => import('./pages/LandingPage/LandingPage'));
 
-import LandingPage from './pages/LandingPage/LandingPage';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
+import LogoMark from './components/shared/LogoMark';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
+const AUTH_TOKEN_KEY = 'potho_auth_token';
+let analyticsReady = null;
+const GOOGLE_FONT_HREF = 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:opsz,wght@14..32,100..900&display=swap';
+
+const loadDeferredFonts = () => {
+    if (document.getElementById('potho-deferred-fonts')) return;
+    const preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = 'https://fonts.gstatic.com';
+    preconnect.crossOrigin = '';
+    document.head.appendChild(preconnect);
+    const stylesheet = document.createElement('link');
+    stylesheet.id = 'potho-deferred-fonts';
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = GOOGLE_FONT_HREF;
+    document.head.appendChild(stylesheet);
+};
+
+if (typeof window !== 'undefined' && !window.__pothoFetchPatched) {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (resource, options = {}) => {
+        const url = typeof resource === 'string' ? resource : resource?.url;
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        if (!url?.startsWith(API_URL)) return nativeFetch(resource, options);
+        if (!token) {
+            return nativeFetch(resource, options).then((response) => {
+                if (response.status === 401) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
+                return response;
+            });
+        }
+        const headers = new Headers(options.headers || {});
+        if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+        return nativeFetch(resource, { ...options, headers }).then((response) => {
+            if (response.status === 401) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
+            return response;
+        });
+    };
+    window.__pothoFetchPatched = true;
+}
+
+const sendAnalyticsPageview = (page, title) => {
+    const loadAnalytics = () => {
+        analyticsReady = analyticsReady || import('react-ga4').then((module) => {
+            module.default.initialize('G-54RKL82Q5C');
+            return module.default;
+        });
+        analyticsReady.then((ReactGA) => ReactGA.send({ hitType: 'pageview', page, title })).catch(() => {});
+    };
+
+    window.setTimeout(() => {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(loadAnalytics, { timeout: 8000 });
+        } else {
+            loadAnalytics();
+        }
+    }, 12000);
+};
 const tabToPath = {
     dashboard: '/dashboard',
     planner: '/planner',
@@ -36,6 +93,57 @@ const tabToPath = {
     support: '/support',
     policies: '/policies',
     thankyou: '/thank-you',
+};
+
+const pageMeta = {
+    dashboard: {
+        title: 'Student Career Dashboard | Potho Prodorshok',
+        description: 'Track roadmaps, mock tests, weak topics, saved questions, scholarships, and next actions in your AI career workspace.',
+    },
+    planner: {
+        title: 'AI Career Roadmap Planner | Potho Prodorshok',
+        description: 'Generate and save personalized career roadmaps from your skills, interests, exam goals, and student profile.',
+    },
+    tutor: {
+        title: 'AI Tutor and Mock Tests | Potho Prodorshok',
+        description: 'Practice exam questions, review mistakes, take mock tests, and get AI explanations for competitive exam preparation.',
+    },
+    scholarship: {
+        title: 'Scholarship Eligibility Finder | Potho Prodorshok',
+        description: 'Match scholarships by course, income, marks, gender, category, documents, deadlines, and application readiness.',
+    },
+    library: {
+        title: 'Saved Learning Library | Potho Prodorshok',
+        description: 'Open saved roadmaps, questions, mock tests, scholarships, chats, mistakes, and study resources in one place.',
+    },
+    profile: {
+        title: 'Student Profile Settings | Potho Prodorshok',
+        description: 'Manage the profile context used for AI roadmaps, tutoring, scholarships, recommendations, and saved progress.',
+    },
+};
+
+const setDocumentMeta = (tabName) => {
+    const meta = pageMeta[tabName] || {
+        title: 'Potho Prodorshok | AI Career OS for Students',
+        description: 'Plan careers, practice exams, find scholarships, save progress, and get AI-guided next actions for students in India.',
+    };
+    document.title = meta.title;
+    const canonicalPath = tabToPath[tabName] || window.location.pathname || '/';
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+    }
+    canonical.href = `${window.location.origin}${canonicalPath}`;
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.setAttribute('content', meta.description);
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogTitle) ogTitle.setAttribute('content', meta.title);
+    if (ogDescription) ogDescription.setAttribute('content', meta.description);
+    if (ogUrl) ogUrl.setAttribute('content', `${window.location.origin}${canonicalPath}`);
 };
 
 const pathToTab = Object.fromEntries(Object.entries(tabToPath).map(([tab, path]) => [path, tab]));
@@ -76,7 +184,7 @@ export default function App() {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [currentUser, setCurrentUser] = useState(null);
     const [authView, setAuthView] = useState(null);
-    const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(() => Boolean(localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem('guest_mode') === 'true'));
     const [commandOpen, setCommandOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [commandQuery, setCommandQuery] = useState('');
@@ -93,8 +201,21 @@ export default function App() {
     };
 
     useEffect(() => {
-        ReactGA.send({ hitType: 'pageview', page: `/${activeTab}`, title: activeTab });
+        setDocumentMeta(activeTab);
+        sendAnalyticsPageview(`/${activeTab}`, activeTab);
     }, [activeTab]);
+
+    useEffect(() => {
+        const load = () => loadDeferredFonts();
+        const timer = window.setTimeout(load, 10000);
+        window.addEventListener('pointerdown', load, { once: true, passive: true });
+        window.addEventListener('keydown', load, { once: true });
+        return () => {
+            window.clearTimeout(timer);
+            window.removeEventListener('pointerdown', load);
+            window.removeEventListener('keydown', load);
+        };
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -107,6 +228,16 @@ export default function App() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentUser]);
+
+    useEffect(() => {
+        const handleAuthLost = () => {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem('guest_mode');
+            setCurrentUser(null);
+        };
+        window.addEventListener('potho-auth-lost', handleAuthLost);
+        return () => window.removeEventListener('potho-auth-lost', handleAuthLost);
+    }, []);
 
     useEffect(() => {
         if (!commandOpen || commandQuery.trim().length < 2) {
@@ -158,13 +289,20 @@ export default function App() {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.is_logged_in) {
+                        if (data.auth_token) localStorage.setItem(AUTH_TOKEN_KEY, data.auth_token);
                         setCurrentUser(data.user);
                         localStorage.removeItem('guest_mode');
                     } else if (localStorage.getItem('guest_mode') === 'true') {
                         setCurrentUser(guestUser);
+                    } else {
+                        localStorage.removeItem(AUTH_TOKEN_KEY);
+                        setCurrentUser(null);
                     }
                 } else if (localStorage.getItem('guest_mode') === 'true') {
                     setCurrentUser(guestUser);
+                } else {
+                    localStorage.removeItem(AUTH_TOKEN_KEY);
+                    setCurrentUser(null);
                 }
             } catch (error) {
                 console.error('Could not check session:', error);
@@ -177,15 +315,23 @@ export default function App() {
         };
 
         const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
         const loginParam = urlParams.get('login');
+        const tokenParam = urlParams.get('token') || hashParams.get('token');
         const errorParam = urlParams.get('error');
+        const hasStoredAuth = Boolean(localStorage.getItem(AUTH_TOKEN_KEY));
+        const hasGuestMode = localStorage.getItem('guest_mode') === 'true';
 
         if (loginParam === 'success') {
+            if (tokenParam) localStorage.setItem(AUTH_TOKEN_KEY, tokenParam);
             window.history.replaceState({}, '', window.location.pathname);
-            setTimeout(() => checkUserSession(), 500);
+            checkUserSession();
         } else if (errorParam) {
             console.error('OAuth error:', errorParam);
             window.history.replaceState({}, '', window.location.pathname);
+            setIsLoadingAuth(false);
+        } else if (!hasStoredAuth && !hasGuestMode) {
+            setCurrentUser(null);
             setIsLoadingAuth(false);
         } else {
             checkUserSession();
@@ -233,7 +379,8 @@ export default function App() {
         navigateTo(routeByType[result.type] || 'dashboard');
     };
 
-    const handleLoginSuccess = (user) => {
+    const handleLoginSuccess = (user, authToken) => {
+        if (authToken) localStorage.setItem(AUTH_TOKEN_KEY, authToken);
         setCurrentUser(user);
         localStorage.removeItem('guest_mode');
         setAuthView(null);
@@ -248,6 +395,7 @@ export default function App() {
             }
         }
         localStorage.removeItem('guest_mode');
+        localStorage.removeItem(AUTH_TOKEN_KEY);
         setCurrentUser(null);
     };
 
@@ -336,15 +484,17 @@ export default function App() {
         if (authScreen) return authScreen;
 
         return (
-            <LandingPage
-                onLogin={() => showAuth('login')}
-                onSignup={() => showAuth('signup')}
-                onGuest={continueAsGuest}
-                theme={theme}
-                setTheme={setTheme}
-                currentLanguage={i18n.language}
-                onLanguageChange={changeLanguage}
-            />
+            <Suspense fallback={<div className="min-h-screen bg-[#050506]" />}>
+                <LandingPage
+                    onLogin={() => showAuth('login')}
+                    onSignup={() => showAuth('signup')}
+                    onGuest={continueAsGuest}
+                    theme={theme}
+                    setTheme={setTheme}
+                    currentLanguage={i18n.language}
+                    onLanguageChange={changeLanguage}
+                />
+            </Suspense>
         );
     }
 
@@ -353,9 +503,8 @@ export default function App() {
             <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-white">
                 <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
                     <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
-                        <button onClick={() => { setActiveTab('dashboard'); window.history.pushState({}, '', '/'); }} className="flex items-center gap-2 text-sm font-semibold">
-                            <img src="/logo-dark.png" alt="Logo" className="block h-8 w-auto dark:hidden" />
-                            <img src="/logo-light.png" alt="Logo" className="hidden h-8 w-auto dark:block" />
+                        <button onClick={() => { setActiveTab('dashboard'); window.history.pushState({}, '', '/'); }} className="flex items-center gap-2 text-sm font-semibold" aria-label="Go to landing page">
+                            <LogoMark />
                             {t('header_title')}
                         </button>
                         <div className="flex items-center gap-2">
@@ -375,9 +524,8 @@ export default function App() {
         <div className="saas-shell">
             <header className="saas-topbar">
                 <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
-                    <button onClick={() => navigateTo('dashboard')} className="flex min-w-0 items-center gap-2 text-left">
-                        <img src="/logo-dark.png" alt="Logo" className="block h-8 w-auto dark:hidden" />
-                        <img src="/logo-light.png" alt="Logo" className="hidden h-8 w-auto dark:block" />
+                    <button onClick={() => navigateTo('dashboard')} className="flex min-w-0 items-center gap-2 text-left" aria-label="Open dashboard">
+                        <LogoMark />
                         <div className="min-w-0">
                             <p className="truncate text-sm font-semibold leading-4 text-slate-950 dark:text-white">{t('header_title')}</p>
                             <p className="hidden truncate text-xs text-slate-500 dark:text-slate-400 sm:block">Career OS</p>
@@ -385,7 +533,7 @@ export default function App() {
                     </button>
 
                     <div className="hidden min-w-0 flex-1 justify-center px-4 lg:flex">
-                        <button onClick={() => setCommandOpen(true)} className="flex h-9 w-full max-w-xl items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-500 transition-[background-color,border-color] duration-150 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700">
+                        <button onClick={() => setCommandOpen(true)} className="flex h-9 w-full max-w-xl items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm text-slate-500 transition-[background-color,border-color] duration-150 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-700" aria-label="Open command search">
                             <span className="flex items-center gap-2">
                                 <Search className="h-4 w-4" />
                                 Search roadmaps, topics, scholarships...
@@ -428,6 +576,7 @@ export default function App() {
                             onClick={handleLogout}
                             className="hidden h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white md:flex"
                             title={currentUser?.is_guest ? 'Exit guest mode' : (t('logout_button') || 'Logout')}
+                            aria-label={currentUser?.is_guest ? 'Exit guest mode' : (t('logout_button') || 'Logout')}
                         >
                             <LogOut className="h-4 w-4" />
                         </button>
@@ -435,6 +584,7 @@ export default function App() {
                             onClick={() => setMobileMenuOpen((value) => !value)}
                             className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,transform] duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white lg:hidden"
                             title="Open menu"
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                             type="button"
                         >
                             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -558,7 +708,7 @@ export default function App() {
                                 className="h-9 min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400 dark:text-white"
                                 placeholder="Search roadmaps, saved questions, chats, scholarships..."
                             />
-                            <button onClick={() => setCommandOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:hover:bg-slate-900">
+                            <button onClick={() => setCommandOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:hover:bg-slate-900" aria-label="Close command search">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>

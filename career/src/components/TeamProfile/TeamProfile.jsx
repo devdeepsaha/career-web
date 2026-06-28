@@ -63,6 +63,8 @@ const ProfileCard = ({ member }) => {
                         <img
                             src={member.image}
                             alt={member.name}
+                            width="128"
+                            height="128"
                             className={`h-20 w-20 shrink-0 rounded-full object-cover outline outline-1 outline-black/10 ring-4 ${accent.ring} dark:outline-white/10 xl:h-32 xl:w-32`}
                         />
                         <div className="min-w-0 xl:mt-4">
@@ -164,7 +166,7 @@ const TeamProfile = () => {
                                         isActive ? 'bg-slate-100 dark:bg-slate-900' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'
                                     }`}
                                 >
-                                    <img src={member.image} alt="" className={`h-10 w-10 rounded-full object-cover ring-2 ${isActive ? accent.ring : 'ring-transparent'}`} />
+                                    <img src={member.image} alt="" width="40" height="40" className={`h-10 w-10 rounded-full object-cover ring-2 ${isActive ? accent.ring : 'ring-transparent'}`} />
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{member.name}</p>
                                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{member.role}</p>

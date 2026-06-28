@@ -4,8 +4,10 @@ from flask_login import login_user, logout_user, current_user
 import os
 import logging
 from datetime import datetime
+from urllib.parse import quote
 from extensions import db
 from models import User
+from itsdangerous import URLSafeTimedSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,11 @@ def get_frontend_url():
     if os.getenv("FLASK_ENV") == "production":
         return "https://pothoprodorshok.onrender.com"
     return "http://localhost:5173"
+
+
+def issue_auth_token(user):
+    serializer = URLSafeTimedSerializer(os.getenv("FLASK_SECRET_KEY"), salt="pothoprodorshok-auth-v1")
+    return serializer.dumps({"user_id": user.id, "email": user.email})
 
 
 google_bp = make_google_blueprint(
@@ -112,11 +119,13 @@ def google_callback():
             logger.info(f"Found existing user. User ID: {user.id}")
 
         login_success = login_user(user, remember=True, force=True)
+        session.permanent = True
         logger.info(f"Login result: {login_success}")
         logger.info(f"Current user authenticated: {current_user.is_authenticated}")
         logger.info(f"Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
+        token = issue_auth_token(user)
         logger.info(f"Redirecting to frontend: {frontend_url}?login=success")
-        return redirect(f"{frontend_url}?login=success")
+        return redirect(f"{frontend_url}?login=success#token={quote(token)}")
 
     except Exception as e:
         logger.error(f"OAuth callback error: {str(e)}", exc_info=True)
