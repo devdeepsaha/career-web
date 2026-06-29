@@ -22,6 +22,7 @@ import BrandLogo from './components/shared/BrandLogo';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
 import { migrateGuestWorkspaceToAccount } from './utils/guestWorkspace';
+import { applyDomTranslations, startDomTranslations } from './utils/domTranslations';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const AUTH_TOKEN_KEY = 'potho_auth_token';
@@ -293,6 +294,15 @@ export default function App() {
             i18n.changeLanguage(savedLanguage);
         }
     }, [i18n]);
+
+    useEffect(() => {
+        const stop = startDomTranslations(() => i18n.language);
+        return stop;
+    }, [i18n]);
+
+    useEffect(() => {
+        applyDomTranslations(i18n.language);
+    }, [i18n.language, activeTab, authView, mobileMenuOpen, commandOpen]);
 
     useEffect(() => {
         const checkUserSession = async () => {
