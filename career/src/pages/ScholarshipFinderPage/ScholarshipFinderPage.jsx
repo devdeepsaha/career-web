@@ -175,7 +175,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                     documents: { ...prev.documents, ...(localDraft.documents || {}) },
                 }));
             }
-            if (!currentUser) return;
+            if (!currentUser || currentUser?.is_guest) return;
             try {
                 const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
                 if (!response.ok) return;

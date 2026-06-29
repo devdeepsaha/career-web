@@ -135,7 +135,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
 
     React.useEffect(() => {
         const loadProfileDefaults = async () => {
-            if (!currentUser) return;
+            if (!currentUser || currentUser?.is_guest) return;
             try {
                 const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
                 if (!response.ok) return;
@@ -159,7 +159,7 @@ const AITutorPage = ({ currentUser, showAuth }) => {
 
     React.useEffect(() => {
         const loadWeakQueue = async () => {
-            if (!currentUser) return;
+            if (!currentUser || currentUser?.is_guest) return;
             try {
                 const response = await fetch(`${API_URL}/question-attempts?wrong_only=true`, { credentials: 'include' });
                 if (response.ok) setWeakQueue(await response.json());

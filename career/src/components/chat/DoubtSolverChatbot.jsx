@@ -56,6 +56,10 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     }, [isLoggedIn, currentSessionId, localMessages]); // Add dependencies
 
     const checkLoginStatus = async () => {
+        if (localStorage.getItem('guest_mode') === 'true') {
+            setIsLoggedIn(false);
+            return;
+        }
         try {
             const response = await fetch(`${API_URL}/check_session`, {
                 credentials: 'include'

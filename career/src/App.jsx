@@ -46,17 +46,18 @@ if (typeof window !== 'undefined' && !window.__pothoFetchPatched) {
     window.fetch = (resource, options = {}) => {
         const url = typeof resource === 'string' ? resource : resource?.url;
         const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        const isGuestMode = localStorage.getItem('guest_mode') === 'true';
         if (!url?.startsWith(API_URL)) return nativeFetch(resource, options);
         if (!token) {
             return nativeFetch(resource, options).then((response) => {
-                if (response.status === 401) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
+                if (response.status === 401 && !isGuestMode) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
                 return response;
             });
         }
         const headers = new Headers(options.headers || {});
         if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
         return nativeFetch(resource, { ...options, headers }).then((response) => {
-            if (response.status === 401) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
+            if (response.status === 401 && !isGuestMode) window.dispatchEvent(new CustomEvent('potho-auth-lost'));
             return response;
         });
     };
@@ -240,6 +241,10 @@ export default function App() {
     }, []);
 
     useEffect(() => {
+        if (currentUser?.is_guest) {
+            setCommandResults([]);
+            return undefined;
+        }
         if (!commandOpen || commandQuery.trim().length < 2) {
             setCommandResults([]);
             return undefined;
@@ -262,7 +267,7 @@ export default function App() {
             controller.abort();
             window.clearTimeout(timer);
         };
-    }, [commandOpen, commandQuery]);
+    }, [commandOpen, commandQuery, currentUser?.is_guest]);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -332,6 +337,9 @@ export default function App() {
             setIsLoadingAuth(false);
         } else if (!hasStoredAuth && !hasGuestMode) {
             setCurrentUser(null);
+            setIsLoadingAuth(false);
+        } else if (hasGuestMode && !hasStoredAuth) {
+            setCurrentUser(guestUser);
             setIsLoadingAuth(false);
         } else {
             checkUserSession();

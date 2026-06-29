@@ -52,7 +52,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
     };
 
     const loadSavedRoadmaps = useCallback(async () => {
-        if (!currentUser) return;
+        if (!currentUser || currentUser?.is_guest) return;
         try {
             const response = await fetch(`${API_URL}/roadmaps`, { credentials: 'include' });
             if (response.ok) setSavedRoadmaps(await response.json());
@@ -63,7 +63,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
 
     useEffect(() => {
         const loadProfile = async () => {
-            if (!currentUser) return;
+            if (!currentUser || currentUser?.is_guest) return;
             try {
                 const response = await fetch(`${API_URL}/student-profile`, { credentials: 'include' });
                 if (!response.ok) return;
