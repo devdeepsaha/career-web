@@ -97,18 +97,36 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     }, [i18n]);
 
     useEffect(() => {
-        const show = () => setShowRoad(true);
+        const motionRoadQuery = window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)');
         let idleId;
-        const timer = window.setTimeout(() => {
-            if ('requestIdleCallback' in window) {
-                idleId = window.requestIdleCallback(show, { timeout: 2500 });
-            } else {
-                show();
-            }
-        }, 9000);
+        let timer;
+
+        const show = () => {
+            if (motionRoadQuery.matches) setShowRoad(true);
+        };
+
+        const schedule = () => {
+            setShowRoad(false);
+            window.clearTimeout(timer);
+            if (idleId) window.cancelIdleCallback?.(idleId);
+            if (!motionRoadQuery.matches) return;
+
+            timer = window.setTimeout(() => {
+                if ('requestIdleCallback' in window) {
+                    idleId = window.requestIdleCallback(show, { timeout: 3500 });
+                } else {
+                    show();
+                }
+            }, 3500);
+        };
+
+        schedule();
+        motionRoadQuery.addEventListener('change', schedule);
+
         return () => {
             window.clearTimeout(timer);
             if (idleId) window.cancelIdleCallback?.(idleId);
+            motionRoadQuery.removeEventListener('change', schedule);
         };
     }, []);
 
@@ -317,6 +335,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                 {/* Hero Section */}
                 <section id="platform" className="landing-hero-simple !p-0 !h-[100svh] !min-h-[600px] w-full flex flex-col justify-center items-center relative overflow-hidden">
                     <div className="landing-road-stage absolute inset-0 z-0">
+                        <div className="landing-mobile-road" aria-hidden="true" />
                         {showRoad && (
                             <React.Suspense fallback={null}>
                                 <Hyperspeed effectOptions={hyperspeedOptions} />

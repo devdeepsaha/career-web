@@ -163,6 +163,7 @@
 .landing-hero-title {
   display: inline-block;
   line-height: 1.02;
+  will-change: transform, opacity;
   animation: landingWordIn 420ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
@@ -182,6 +183,46 @@
   height: auto;
   overflow: hidden;
   background: #000;
+}
+
+.landing-mobile-road {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 88%, rgba(241, 176, 23, 0.2), transparent 34%),
+    radial-gradient(ellipse at 50% 76%, rgba(255, 16, 42, 0.16), transparent 38%),
+    linear-gradient(180deg, #000 0%, #030306 54%, #000 100%);
+}
+
+.landing-mobile-road::before,
+.landing-mobile-road::after {
+  position: absolute;
+  bottom: -18%;
+  left: 50%;
+  width: min(760px, 130vw);
+  height: min(460px, 58svh);
+  content: "";
+  transform: translateX(-50%) perspective(520px) rotateX(64deg);
+  transform-origin: bottom center;
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+}
+
+.landing-mobile-road::before {
+  background:
+    linear-gradient(92deg, transparent 0 42%, rgba(125, 13, 27, 0.92) 42.4% 43%, transparent 43.4% 49%, rgba(241, 238, 206, 0.9) 49.4% 50%, transparent 50.4% 56%, rgba(255, 16, 42, 0.9) 56.4% 57%, transparent 57.4% 100%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08), transparent 58%);
+  opacity: 0.88;
+}
+
+.landing-mobile-road::after {
+  width: min(980px, 148vw);
+  height: min(320px, 42svh);
+  border-top: 1px solid rgba(241, 238, 206, 0.16);
+  background:
+    linear-gradient(90deg, transparent 0 43%, rgba(255, 16, 42, 0.46) 43.4% 44%, transparent 44.4% 50%, rgba(241, 238, 206, 0.46) 50.4% 51%, transparent 51.4% 57%, rgba(241, 176, 23, 0.42) 57.4% 58%, transparent 58.4% 100%);
+  opacity: 0.62;
 }
 
 .landing-road-stage canvas {
@@ -214,13 +255,18 @@
 @keyframes landingWordIn {
   from {
     opacity: 0;
-    filter: blur(4px);
     transform: translateY(12px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-road-stage canvas + .landing-road-fade,
+  .landing-road-stage canvas {
+    z-index: 1;
   }
 }
 
