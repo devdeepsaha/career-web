@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
 import BrandLogo from '../../components/shared/BrandLogo';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
@@ -12,22 +11,44 @@ const quickAskKeys = [
     'landing_ask_quick_3',
 ];
 
-const HeroPhrase = ({ text }) => (
-    <span className="font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-light tracking-[-0.055em] text-white text-balance">
-        {text.split('').map((char, index) => (
-            <span
-                key={`${char}-${index}`}
-                aria-hidden="true"
-                className="inline-block motion-reduce:animate-none"
-                style={{
-                    animation: 'landingWordIn 520ms ease-out both',
-                    animationDelay: `${Math.min(index * 18, 720)}ms`,
-                }}
-            >
-                {char === ' ' ? '\u00A0' : char}
-            </span>
+const iconPaths = {
+    arrowUp: ['M12 19V5', 'M5 12l7-7 7 7'],
+    brain: ['M9.5 2a3.5 3.5 0 0 0-3.4 2.7A3.8 3.8 0 0 0 3 8.5c0 1 .4 1.9 1 2.6A4 4 0 0 0 8 18h1', 'M14.5 2a3.5 3.5 0 0 1 3.4 2.7A3.8 3.8 0 0 1 21 8.5c0 1-.4 1.9-1 2.6A4 4 0 0 1 16 18h-1', 'M12 2v20', 'M8 8h3', 'M13 8h3', 'M8 13h3', 'M13 13h3'],
+    calendar: ['M8 2v4', 'M16 2v4', 'M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M8 14h.01', 'M12 14h.01', 'M16 14h.01', 'M8 18h.01', 'M12 18h.01'],
+    library: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z', 'M8 6h8', 'M8 10h8'],
+    lock: ['M7 11V8a5 5 0 0 1 10 0v3', 'M5 11h14v10H5z', 'M12 15v2'],
+    map: ['M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z', 'M9 3v15', 'M15 6v15'],
+    menu: ['M4 7h16', 'M4 12h16', 'M4 17h16'],
+    message: ['M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z'],
+    moon: ['M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8z'],
+    route: ['M4 5a3 3 0 1 0 0 6c2.5 0 4-2 8-2s5.5 2 8 2a3 3 0 1 0 0-6c-2.5 0-4 2-8 2S6.5 5 4 5z', 'M4 11v8', 'M20 11v8'],
+    search: ['M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z', 'M21 21l-4.35-4.35'],
+    sparkles: ['M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3z', 'M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z', 'M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14z'],
+    sun: ['M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', 'M12 2v2', 'M12 20v2', 'M4.93 4.93l1.41 1.41', 'M17.66 17.66l1.41 1.41', 'M2 12h2', 'M20 12h2', 'M4.93 19.07l1.41-1.41', 'M17.66 6.34l1.41-1.41'],
+    x: ['M18 6L6 18', 'M6 6l12 12'],
+};
+
+const LandingIcon = ({ name, className = 'h-5 w-5', strokeWidth = 2 }) => (
+    <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        {(iconPaths[name] || iconPaths.sparkles).map((path) => (
+            <path key={path} d={path} />
         ))}
-        <span className="sr-only">{text}</span>
+    </svg>
+);
+
+const HeroPhrase = ({ text }) => (
+    <span className="landing-hero-title font-['Yu_Gothic_UI_Light','Yu_Gothic_UI',Arial,sans-serif] text-[clamp(2.6rem,4.2vw,5.2rem)] font-light tracking-[-0.055em] text-white text-balance motion-reduce:animate-none">
+        {text}
     </span>
 );
 
@@ -204,17 +225,17 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
     const audiences = ['CIL aspirants', 'Final year students', 'JEE / NEET', 'Scholarship seekers', 'Career switchers'];
     
     const workflowSteps = [
-        { id: 'roadmap', title: t('landing_workflow_card_1_title'), body: t('landing_workflow_card_1_body'), icon: Route },
-        { id: 'practice', title: t('landing_workflow_card_2_title'), body: t('landing_workflow_card_2_body'), icon: Sparkles },
-        { id: 'measure', title: t('landing_stack_title_3'), body: t('landing_stack_body_3'), icon: Brain },
-        { id: 'library', title: t('landing_stack_title_4'), body: t('landing_stack_body_4'), icon: Library },
+        { id: 'roadmap', title: t('landing_workflow_card_1_title'), body: t('landing_workflow_card_1_body'), icon: 'route' },
+        { id: 'practice', title: t('landing_workflow_card_2_title'), body: t('landing_workflow_card_2_body'), icon: 'sparkles' },
+        { id: 'measure', title: t('landing_stack_title_3'), body: t('landing_stack_body_3'), icon: 'brain' },
+        { id: 'library', title: t('landing_stack_title_4'), body: t('landing_stack_body_4'), icon: 'library' },
     ];
 
     const featureCards = [
-        { icon: Map, label: t('landing_stack_label_1'), title: t('landing_feature_planner_title'), body: t('landing_feature_planner_text') },
-        { icon: Brain, label: t('landing_stack_label_2'), title: t('landing_feature_tutor_title'), body: t('landing_feature_tutor_text') },
-        { icon: CalendarDays, label: t('landing_stack_label_3'), title: t('landing_stack_title_3'), body: t('landing_stack_body_3') },
-        { icon: Library, label: t('landing_stack_label_4'), title: t('landing_stack_title_4'), body: t('landing_stack_body_4') },
+        { icon: 'map', label: t('landing_stack_label_1'), title: t('landing_feature_planner_title'), body: t('landing_feature_planner_text') },
+        { icon: 'brain', label: t('landing_stack_label_2'), title: t('landing_feature_tutor_title'), body: t('landing_feature_tutor_text') },
+        { icon: 'calendar', label: t('landing_stack_label_3'), title: t('landing_stack_title_3'), body: t('landing_stack_body_3') },
+        { icon: 'library', label: t('landing_stack_label_4'), title: t('landing_stack_title_4'), body: t('landing_stack_body_4') },
     ];
 
     return (
@@ -252,11 +273,11 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                             ))}
                         </div>
 
-                        <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10" aria-label="Toggle theme">{theme === 'dark' ? <Sun size={16}/> : <Moon size={16}/>}</button>
+                        <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10" aria-label="Toggle theme">{theme === 'dark' ? <LandingIcon name="sun" className="h-4 w-4" /> : <LandingIcon name="moon" className="h-4 w-4" />}</button>
                     </div>
 
                     <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-2 rounded-full bg-black/5 dark:bg-white/10" aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}>
-                        {mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}
+                        {mobileNavOpen ? <LandingIcon name="x" className="h-5 w-5" /> : <LandingIcon name="menu" className="h-5 w-5" />}
                     </button>
                 </nav>
 
@@ -353,7 +374,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                             key={activeWorkflowTab}
                             className="w-full max-w-3xl rounded-3xl border border-black/5 bg-white/90 p-8 text-left shadow-xl transition-[opacity,transform] duration-200 dark:border-white/10 dark:bg-white/5"
                         >
-                            {React.createElement(workflowSteps[activeWorkflowTab].icon, { className: 'h-8 w-8 mb-4' })}
+                            <LandingIcon name={workflowSteps[activeWorkflowTab].icon} className="mb-4 h-8 w-8" />
                             <h3 className="text-2xl font-black tracking-tight mb-2">{workflowSteps[activeWorkflowTab].title}</h3>
                             <p className="text-black/60 dark:text-white/60 leading-relaxed">{workflowSteps[activeWorkflowTab].body}</p>
                         </div>
@@ -362,7 +383,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                     <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 pb-8 -mx-4 px-4 scrollbar-hide">
                         {workflowSteps.map((step) => (
                             <div key={step.id} className="min-w-[85vw] snap-center bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-6 text-left shadow-lg flex flex-col justify-start">
-                                {React.createElement(step.icon, { className: 'h-8 w-8 mb-4' })}
+                                <LandingIcon name={step.icon} className="mb-4 h-8 w-8" />
                                 <h3 className="text-xl font-black tracking-tight mb-2">{step.title}</h3>
                                 <p className="text-black/60 dark:text-white/60 leading-relaxed text-sm">{step.body}</p>
                             </div>
@@ -385,7 +406,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                                 </div>
                                 <p className="flex-1 text-black/60 dark:text-white/60 leading-relaxed text-sm md:text-base">{card.body}</p>
                                 <div className="hidden md:block">
-                                    {React.createElement(card.icon, { className: 'h-8 w-8' })}
+                                    <LandingIcon name={card.icon} className="h-8 w-8" />
                                 </div>
                             </article>
                         ))}
@@ -401,7 +422,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                     </div>
                     <div className="w-full md:w-[400px] bg-white/90 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-8 shadow-xl">
                         <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-6">
-                            <LockKeyhole className="h-6 w-6" />
+                            <LandingIcon name="lock" className="h-6 w-6" />
                         </div>
                         <ul className="flex flex-col gap-4 mb-8 text-black/60 dark:text-white/60">
                             <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-current"></span>{t('landing_guest_free_1')}</li>
@@ -421,14 +442,14 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                     <div className="mb-4 bg-white/95 dark:bg-[#0f111a]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
                         <div className="flex items-center gap-4 p-4 md:p-5 border-b border-black/5 dark:border-white/10">
                             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-200 to-amber-400 text-black shadow-inner">
-                                <MessageCircle className="h-5 w-5" />
+                                <LandingIcon name="message" className="h-5 w-5" />
                             </div>
                             <div className="flex-1">
                                 <strong className="block text-base">{t('landing_ask_title')}</strong>
                                 <small className="block text-xs opacity-60">{t('landing_ask_subtitle')}</small>
                             </div>
                             <button onClick={() => setAskOpen(false)} className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 transition-colors" aria-label="Close QA AI">
-                                <X className="h-4 w-4" />
+                                <LandingIcon name="x" className="h-4 w-4" />
                             </button>
                         </div>
                         
@@ -464,7 +485,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                 )}
 
                 <form className="flex items-center gap-3 p-2 pl-6 bg-white/95 dark:bg-[#0c101c]/95 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-full shadow-2xl" onSubmit={(e) => { e.preventDefault(); ask(); }}>
-                    <Search className="h-5 w-5 opacity-50 shrink-0" />
+                    <LandingIcon name="search" className="h-5 w-5 shrink-0 opacity-50" />
                     <input 
                         value={askQuestion} 
                         onFocus={() => setAskOpen(true)} 
@@ -473,7 +494,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                         className="flex-1 bg-transparent border-none outline-none text-base font-medium placeholder-black/40 dark:placeholder-white/40"
                     />
                     <button type="submit" disabled={isAskThinking} aria-label={t('landing_ask_submit')} className="w-12 h-12 shrink-0 bg-black/5 dark:bg-white/10 hover:bg-[#f1b017] hover:text-black dark:hover:bg-[#f1b017] dark:hover:text-black rounded-full flex items-center justify-center transition-colors disabled:opacity-50">
-                        <ArrowUp className="h-5 w-5" />
+                        <LandingIcon name="arrowUp" className="h-5 w-5" />
                     </button>
                 </form>
             </div>

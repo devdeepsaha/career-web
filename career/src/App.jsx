@@ -15,9 +15,9 @@ const SupportPage = React.lazy(() => import('./pages/extra/Support'));
 const PoliciesPage = React.lazy(() => import('./pages/extra/Policies'));
 const ThankYouPage = React.lazy(() => import('./pages/extra/ThankYouPage'));
 const LandingPage = React.lazy(() => import('./pages/LandingPage/LandingPage'));
+const LoginPage = React.lazy(() => import('./components/auth/LoginPage'));
+const SignupPage = React.lazy(() => import('./components/auth/SignupPage'));
 
-import LoginPage from './components/auth/LoginPage';
-import SignupPage from './components/auth/SignupPage';
 import BrandLogo from './components/shared/BrandLogo';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
@@ -430,21 +430,25 @@ export default function App() {
     const renderAuthScreen = () => {
         if (authView === 'login') {
             return (
-                <LoginPage
-                    onLoginSuccess={handleLoginSuccess}
-                    showSignup={() => setAuthView('signup')}
-                    onClose={() => setAuthView(null)}
-                />
+                <Suspense fallback={<div className="min-h-screen bg-white dark:bg-slate-950" />}>
+                    <LoginPage
+                        onLoginSuccess={handleLoginSuccess}
+                        showSignup={() => setAuthView('signup')}
+                        onClose={() => setAuthView(null)}
+                    />
+                </Suspense>
             );
         }
 
         if (authView === 'signup') {
             return (
-                <SignupPage
-                    onLoginSuccess={handleLoginSuccess}
-                    showLogin={() => setAuthView('login')}
-                    onClose={() => setAuthView(null)}
-                />
+                <Suspense fallback={<div className="min-h-screen bg-white dark:bg-slate-950" />}>
+                    <SignupPage
+                        onLoginSuccess={handleLoginSuccess}
+                        showLogin={() => setAuthView('login')}
+                        onClose={() => setAuthView(null)}
+                    />
+                </Suspense>
             );
         }
 
