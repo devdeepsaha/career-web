@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, Bell, Check, ChevronDown, CircleHelp, Clock3, ExternalLink, FileCheck2, GraduationCap, IndianRupee, Save, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { AlertCircle, Bell, Check, ChevronDown, CircleHelp, ExternalLink, GraduationCap, IndianRupee, Save, Search, Sparkles } from 'lucide-react';
 import ScholarshipEmptyState from './ScholarshipEmptyState';
 import { addGuestWorkspaceItem, setGuestScholarshipProfile } from '../../utils/guestWorkspace';
+import { debounce } from '../../utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -93,6 +94,9 @@ const buildProfileContext = (profile = {}) => (
         `Disability: ${profile.disability_status || 'not set'}`,
         `Target exams and branch: ${profile.target_exams || 'not set'}`,
         `Career goals: ${profile.goals || 'not set'}`,
+        `Resume education: ${Array.isArray(profile.education_json) ? profile.education_json.map((item) => [item.program, item.institution, item.score].filter(Boolean).join(' ')).join('; ') : 'not set'}`,
+        `Resume projects: ${Array.isArray(profile.projects_json) ? profile.projects_json.map((item) => item.name || item.title).filter(Boolean).join(', ') : 'not set'}`,
+        `Resume credentials: ${Array.isArray(profile.credentials_json) ? profile.credentials_json.map((item) => item.name || item.title).filter(Boolean).join(', ') : 'not set'}`,
     ].join('\n')
 );
 
@@ -161,9 +165,13 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const [activeScholarship, setActiveScholarship] = useState(null);
     const [chatQuestion, setChatQuestion] = useState('');
     const [chatAnswer, setChatAnswer] = useState('');
+    const [scholarshipBotOpen, setScholarshipBotOpen] = useState(false);
     const [filtersCollapsed, setFiltersCollapsed] = useState(false);
     const scholarshipFormStorageKey = useMemo(() => getScholarshipFormStorageKey(currentUser), [currentUser]);
     const scholarshipResultsStorageKey = useMemo(() => getScholarshipResultsStorageKey(currentUser), [currentUser]);
+    const debouncedSaveDraft = useMemo(() => debounce((key, nextForm) => {
+        localStorage.setItem(key, JSON.stringify(nextForm));
+    }, 400), []);
 
     useEffect(() => {
         const loadProfileDefaults = async () => {
@@ -222,6 +230,10 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
             console.error('Cached scholarship results could not load:', err);
         }
     }, [scholarshipResultsStorageKey]);
+
+    useEffect(() => {
+        debouncedSaveDraft(scholarshipFormStorageKey, form);
+    }, [debouncedSaveDraft, scholarshipFormStorageKey, form]);
 
     const profileContext = useMemo(() => buildProfileContext(studentProfile || {}), [studentProfile]);
     const documentReadyCount = Object.values(form.documents).filter(Boolean).length;
@@ -443,6 +455,11 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                 <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${filtersCollapsed ? '' : 'rotate-180'}`} />
                             </button>
                         )}
+                        {filtersCollapsed && (
+                            <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                {[form.student_type, form.course_stream, form.gender, form.caste, form.region].filter(Boolean).slice(0, 5).join(' · ') || 'Eligibility filters saved'}
+                            </p>
+                        )}
 
                         <div className={`${filtersCollapsed ? 'hidden' : 'grid'} mt-4 gap-3`}>
                             <div>
@@ -546,14 +563,6 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                         </button>
                     </form>
 
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Why this is different</h2>
-                        <div className="mt-3 grid gap-2 text-sm text-slate-600 dark:text-slate-400">
-                            <p className="flex gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" /> Match score explains fit instead of only showing links.</p>
-                            <p className="flex gap-2"><FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" /> Missing documents are separated before students apply.</p>
-                            <p className="flex gap-2"><Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" /> Deadline urgency is visible on every card.</p>
-                        </div>
-                    </div>
                 </aside>
 
                 <main className="min-w-0">
@@ -656,29 +665,31 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                     </div>
                                 )}
 
-                                <div className="saas-card p-4">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                                        <h2 className="saas-section-title">Scholarship smart bot</h2>
-                                    </div>
-                                    {activeScholarship ? (
-                                        <>
-                                            <p className="mt-3 text-sm font-semibold text-slate-950 dark:text-white">{activeScholarship.name}</p>
-                                            <form onSubmit={askScholarshipBot} className="mt-3 space-y-2">
-                                                <input value={chatQuestion} onChange={(event) => setChatQuestion(event.target.value)} className="pp-input" maxLength={240} placeholder="Am I eligible? Why not? Deadline?" />
+                                <div className="saas-card p-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setScholarshipBotOpen((value) => !value)}
+                                        className="flex min-h-10 w-full items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-800 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-100"
+                                    >
+                                        <span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-300" /> Ask about this scholarship</span>
+                                        <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${scholarshipBotOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {scholarshipBotOpen && activeScholarship && (
+                                        <div className="mt-3">
+                                            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Ask if you are eligible, what documents are missing, or how to apply.</p>
+                                            <form onSubmit={askScholarshipBot} className="mt-3 grid gap-2">
+                                                <input value={chatQuestion} onChange={(event) => setChatQuestion(event.target.value)} className="pp-input" maxLength={240} placeholder="Am I eligible?" />
                                                 <button className="pp-button flex w-full items-center justify-center gap-2"><CircleHelp className="h-4 w-4" /> Ask</button>
                                             </form>
                                             <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                                {chatAnswer || activeScholarship.smart_answers?.am_i_eligible || activeScholarship.eligibility}
+                                                {chatAnswer || 'Ask if you are eligible, what documents are missing, or how to apply.'}
                                             </div>
                                             <div className="mt-3 grid gap-2">
                                                 {['Am I eligible?', 'Why am I not eligible?', 'Will I be eligible next year?', 'What documents do I need?'].map((question) => (
                                                     <button key={question} onClick={() => { setChatQuestion(question); setChatAnswer(answerScholarshipQuestion(activeScholarship, question)); }} className="rounded-lg bg-slate-50 p-2 text-left text-xs font-semibold text-slate-600 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">{question}</button>
                                                 ))}
                                             </div>
-                                        </>
-                                    ) : (
-                                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Select a scholarship to ask eligibility questions.</p>
+                                        </div>
                                     )}
                                 </div>
                             </aside>

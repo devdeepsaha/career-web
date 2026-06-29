@@ -21,8 +21,9 @@ const SignupPage = React.lazy(() => import('./components/auth/SignupPage'));
 import BrandLogo from './components/shared/BrandLogo';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
-import { migrateGuestWorkspaceToAccount } from './utils/guestWorkspace';
+import { clearGuestWorkspace, ensureGuestWorkspaceFresh, getGuestExpiryLabel, migrateGuestWorkspaceToAccount, touchGuestWorkspace } from './utils/guestWorkspace';
 import { applyDomTranslations, startDomTranslations } from './utils/domTranslations';
+import { useDebouncedValue } from './utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const AUTH_TOKEN_KEY = 'potho_auth_token';
@@ -191,6 +192,7 @@ export default function App() {
     const [commandOpen, setCommandOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [commandQuery, setCommandQuery] = useState('');
+    const debouncedCommandQuery = useDebouncedValue(commandQuery, 300);
     const [commandResults, setCommandResults] = useState([]);
     const languageOptions = [
         { value: 'en', label: 'EN' },
@@ -245,7 +247,7 @@ export default function App() {
     useEffect(() => {
         const handleAuthLost = () => {
             localStorage.removeItem(AUTH_TOKEN_KEY);
-            localStorage.removeItem('guest_mode');
+            clearGuestWorkspace();
             setCurrentUser(null);
         };
         window.addEventListener('potho-auth-lost', handleAuthLost);
@@ -253,19 +255,28 @@ export default function App() {
     }, []);
 
     useEffect(() => {
+        if (!currentUser?.is_guest) return;
+        if (!ensureGuestWorkspaceFresh()) {
+            setCurrentUser(null);
+            setActiveTab('dashboard');
+            window.history.replaceState({}, '', '/');
+        }
+    }, [activeTab, currentUser?.is_guest]);
+
+    useEffect(() => {
         if (currentUser?.is_guest) {
             setCommandResults([]);
             return undefined;
         }
-        if (!commandOpen || commandQuery.trim().length < 2) {
+        if (!commandOpen || debouncedCommandQuery.trim().length < 2) {
             setCommandResults([]);
             return undefined;
         }
 
         const controller = new AbortController();
-        const timer = window.setTimeout(async () => {
+        const runSearch = async () => {
             try {
-                const response = await fetch(`${API_URL}/global-search?q=${encodeURIComponent(commandQuery)}`, {
+                const response = await fetch(`${API_URL}/global-search?q=${encodeURIComponent(debouncedCommandQuery)}`, {
                     credentials: 'include',
                     signal: controller.signal,
                 });
@@ -273,13 +284,13 @@ export default function App() {
             } catch (error) {
                 if (error.name !== 'AbortError') console.error('Search failed:', error);
             }
-        }, 180);
+        };
+        runSearch();
 
         return () => {
             controller.abort();
-            window.clearTimeout(timer);
         };
-    }, [commandOpen, commandQuery, currentUser?.is_guest]);
+    }, [commandOpen, debouncedCommandQuery, currentUser?.is_guest]);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -423,7 +434,8 @@ export default function App() {
                 console.error('Logout failed:', error);
             }
         }
-        localStorage.removeItem('guest_mode');
+        if (currentUser?.is_guest) clearGuestWorkspace();
+        else localStorage.removeItem('guest_mode');
         localStorage.removeItem(AUTH_TOKEN_KEY);
         setCurrentUser(null);
     };
@@ -432,6 +444,7 @@ export default function App() {
 
     const continueAsGuest = () => {
         localStorage.setItem('guest_mode', 'true');
+        touchGuestWorkspace();
         setCurrentUser(guestUser);
         setAuthView(null);
         navigateTo('dashboard', { replace: true });
@@ -488,7 +501,7 @@ export default function App() {
             case 'policies': return <PoliciesPage {...pageProps} />;
             case 'thankyou': return <ThankYouPage {...pageProps} />;
             case 'planner':
-            default: return <CareerPlannerPage {...pageProps} />;
+            default: return <CareerPlannerPage {...pageProps} onNavigate={navigateTo} />;
         }
     };
 
@@ -580,7 +593,7 @@ export default function App() {
                     <div className="flex items-center gap-2">
                         {currentUser?.is_guest && (
                             <button onClick={() => showAuth('signup')} className="hidden rounded-md bg-amber-100 px-2.5 py-1.5 text-xs font-bold text-amber-900 transition-[background-color,transform] duration-150 hover:bg-amber-200 active:scale-[0.96] md:block">
-                                Guest mode
+                                Guest data expires in {getGuestExpiryLabel()}
                             </button>
                         )}
                         <div className="hidden max-w-[240px] truncate rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 md:block">
@@ -629,6 +642,9 @@ export default function App() {
                         <div className="mb-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                             <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{currentUser?.email || currentUser?.name || 'Active user'}</p>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{currentUser?.is_guest ? 'Guest preview workspace' : 'Signed in workspace'}</p>
+                            {currentUser?.is_guest && (
+                                <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">Guest data is kept for {getGuestExpiryLabel()}. Create an account to save it permanently.</p>
+                            )}
                         </div>
                         <nav className="grid gap-1">
                             {dashboardNavItems.map((item) => {
@@ -680,6 +696,12 @@ export default function App() {
                     </div>
                 )}
             </header>
+
+            {currentUser?.is_guest && (
+                <div className="border-b border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                    Guest data is kept for {getGuestExpiryLabel()}. Create an account to save it permanently.
+                </div>
+            )}
 
             <div className="mx-auto flex max-w-screen-2xl">
                 <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:flex">

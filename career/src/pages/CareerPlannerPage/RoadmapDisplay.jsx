@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import RoadmapStepCard from './RoadmapStepCard';
 import EmptyStateGraphic from './EmptyStateGraphic';
 
-const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, sendMessageToChatbot, currentUser }) => {
+const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, sendMessageToChatbot, currentUser, onOpenStage }) => {
     const { t } = useTranslation();
     const [visibleCards, setVisibleCards] = useState([]);
 
@@ -18,22 +18,8 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
         }
     };
 
-    // --- Animated card loading ---
     useEffect(() => {
-        setVisibleCards([]);
-        if (!roadmap || roadmap.length === 0) return;
-
-        let index = 0;
-        const interval = setInterval(() => {
-            if (index < roadmap.length) {
-                setVisibleCards(prev => [...prev, roadmap[index]]);
-                index++;
-            } else {
-                clearInterval(interval);
-            }
-        }, 500);
-
-        return () => clearInterval(interval);
+        setVisibleCards(Array.isArray(roadmap) ? roadmap.filter(Boolean) : []);
     }, [roadmap]);
 
     return (
@@ -73,21 +59,24 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
             {!isLoading && visibleCards.length > 0 && (
                 <div className="relative space-y-3">
                     <div
-                        className="absolute left-4 top-0 h-full w-px bg-slate-200 dark:bg-slate-800"
+                        className="absolute left-4 top-0 hidden h-full w-px bg-slate-200 dark:bg-slate-800 sm:block"
                         aria-hidden="true"
                     />
                     <>
                         {visibleCards.map((step, index) => (
                             step && (
                                 <div key={index} className="relative flex items-start">
-                                    <div className="flex w-8 flex-shrink-0 flex-col items-center">
+                                    <div className="hidden w-8 flex-shrink-0 flex-col items-center sm:flex">
                                         <div className="z-10 mt-5 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-500 dark:border-slate-950"></div>
                                     </div>
-                                    <div className="ml-3 flex-1">
+                                    <div className="min-w-0 flex-1 sm:ml-3">
                                         <RoadmapStepCard
                                             step={step}
                                             currentUser={currentUser}
                                             openChatWithQuery={handleChatTrigger}
+                                            roadmapId={savedRoadmapMeta?.id}
+                                            stageNumber={index + 1}
+                                            onOpenStage={onOpenStage}
                                         />
                                     </div>
                                 </div>

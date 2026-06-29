@@ -4,6 +4,7 @@ import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 import { Maximize, Minimize, Copy, Plus, Trash2, Clock, Menu } from 'lucide-react';
+import { throttle } from '../../utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -156,14 +157,14 @@ const CareerPlannerChatbot = () => {
     useEffect(() => {
         if (!isOpen) return;
 
-        const handleResize = () => {
+        const handleResize = throttle(() => {
             // Scroll input into view when keyboard appears on mobile
             if (inputRef.current && window.innerWidth < 768) {
                 setTimeout(() => {
                     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }, 100);
             }
-        };
+        }, 150);
 
         // Handle focus event to ensure input is visible
         const handleFocus = () => {
@@ -465,8 +466,19 @@ const CareerPlannerChatbot = () => {
                                 <button
                                     onClick={() => setIsFullscreen(!isFullscreen)}
                                     className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                                    aria-label={isFullscreen ? 'Exit fullscreen chat' : 'Open fullscreen chat'}
                                 >
                                     {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setIsFullscreen(false);
+                                    }}
+                                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                                    aria-label="Close AI chat"
+                                >
+                                    <XIcon className="h-[18px] w-[18px]" />
                                 </button>
                             </div>
                         </div>

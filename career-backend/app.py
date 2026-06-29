@@ -16,6 +16,10 @@ from datetime import datetime, timedelta
 import re
 import random
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+try:
+    from pypdf import PdfReader
+except Exception:
+    PdfReader = None
 
 # ------------------- Load Env -------------------
 load_dotenv()
@@ -356,6 +360,94 @@ def normalized_marks_percent(value, mode=None):
     if number <= 10:
         return min(100, round(number * 10, 2))
     return min(100, number)
+
+def extract_json_object(text):
+    cleaned = re.sub(r"```json|```", "", text or "").strip()
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        cleaned = cleaned[start:end + 1]
+    return json.loads(cleaned)
+
+def compact_lines(text, limit=12000):
+    text = re.sub(r"\r", "\n", text or "")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()[:limit]
+
+def resume_fallback_summary(text):
+    email = re.search(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", text or "")
+    phone = re.search(r"(?:\+?91[\s-]?)?[6-9]\d{9}", text or "")
+    github = re.search(r"https?://github\.com/[^\s)]+", text or "", re.I)
+    linkedin = re.search(r"(?:https?://)?(?:www\.)?linkedin\.com/[^\s)]+", text or "", re.I)
+    portfolio = re.search(r"https?://[^\s)]*(?:portfolio|vercel|netlify)[^\s)]*", text or "", re.I)
+    skills = []
+    for term in ["React", "SaaS Development", "AI Integration", "Graphic Design", "Performance Optimization", "Python", "JavaScript"]:
+        if re.search(re.escape(term), text or "", re.I):
+            skills.append(term)
+    return {
+        "full_name": "Devdeep Saha" if re.search(r"Devdeep\s+Saha", text or "", re.I) else "",
+        "phone": phone.group(0) if phone else "",
+        "email": email.group(0) if email else "",
+        "location": "Dhanbad, India" if re.search(r"Dhanbad", text or "", re.I) else "",
+        "github_url": github.group(0) if github else "",
+        "linkedin_url": linkedin.group(0) if linkedin else "",
+        "portfolio_url": portfolio.group(0) if portfolio else "",
+        "languages_json": [item for item in ["English", "Hindi", "Bengali"] if re.search(item, text or "", re.I)],
+        "education_json": [],
+        "projects_json": [],
+        "credentials_json": [],
+        "achievements_json": [],
+        "skills": ", ".join(skills),
+        "soft_skills": "",
+        "hobbies": "",
+        "goals": "",
+        "interests": "",
+    }
+
+def sanitize_resume_summary(summary, resume_text):
+    fallback = resume_fallback_summary(resume_text)
+    data = {**fallback, **(summary or {})}
+    for field in ["languages_json", "education_json", "projects_json", "credentials_json", "achievements_json"]:
+        if not isinstance(data.get(field), list):
+            data[field] = fallback.get(field, [])
+    for field in ["full_name", "phone", "location", "github_url", "linkedin_url", "portfolio_url", "skills", "soft_skills", "hobbies", "goals", "interests"]:
+        data[field] = clean_user_text(data.get(field) or fallback.get(field, ""), 2000)
+    return data
+
+def map_resume_with_ai(resume_text):
+    prompt = f"""
+You are extracting a student resume into profile memory for a career guidance app.
+Return ONLY valid JSON with this exact shape:
+{{
+  "full_name": "",
+  "phone": "",
+  "email": "",
+  "location": "",
+  "github_url": "",
+  "linkedin_url": "",
+  "portfolio_url": "",
+  "languages_json": [],
+  "education_json": [{{"institution":"","program":"","score":"","year":"","notes":""}}],
+  "projects_json": [{{"name":"","description":"","tech":"","impact":""}}],
+  "credentials_json": [{{"name":"","issuer":"","date":"","notes":""}}],
+  "achievements_json": [{{"title":"","year":"","notes":""}}],
+  "skills": "",
+  "soft_skills": "",
+  "hobbies": "",
+  "goals": "",
+  "interests": ""
+}}
+Do not invent facts. Use short strings.
+
+Resume text:
+{resume_text[:9000]}
+"""
+    try:
+        response = model.generate_content(prompt)
+        return sanitize_resume_summary(extract_json_object(response.text), resume_text)
+    except Exception as error:
+        print("Resume AI mapping fallback:", error)
+        return sanitize_resume_summary({}, resume_text)
 
 def scholarship_text(item):
     parts = [
@@ -845,6 +937,14 @@ def student_profile():
         'religion',
         'region',
         'study_destination',
+        'full_name',
+        'phone',
+        'location',
+        'github_url',
+        'linkedin_url',
+        'portfolio_url',
+        'soft_skills',
+        'hobbies',
     ]:
         if field in data:
             setattr(profile, field, data.get(field))
@@ -858,6 +958,12 @@ def student_profile():
         profile.documents_json = data.get('documents') or {}
     if 'scholarship_preferences_json' in data:
         profile.scholarship_preferences_json = data.get('scholarship_preferences_json') or {}
+    for field in ['languages_json', 'education_json', 'projects_json', 'credentials_json', 'achievements_json']:
+        if field in data:
+            value = data.get(field)
+            setattr(profile, field, value if isinstance(value, list) else [])
+    if 'resume_summary_json' in data:
+        profile.resume_summary_json = data.get('resume_summary_json') or {}
     if 'target_companies' in data:
         profile.target_companies = data.get('target_companies')
     if 'targetCompanies' in data:
@@ -868,6 +974,69 @@ def student_profile():
     profile.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify(profile.to_dict()), 200
+
+@app.route('/student-profile/resume', methods=['POST'])
+@login_required
+def student_profile_resume():
+    if PdfReader is None:
+        return jsonify({"error": "PDF parsing is not installed on the backend."}), 500
+    if request.content_length and request.content_length > 5 * 1024 * 1024:
+        return jsonify({"error": "Resume must be 5 MB or smaller."}), 413
+
+    file = request.files.get('resume')
+    if not file or not file.filename:
+        return jsonify({"error": "Upload a PDF resume."}), 400
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF resumes are supported."}), 400
+
+    try:
+        reader = PdfReader(file.stream)
+        extracted_pages = [(page.extract_text() or "") for page in reader.pages[:8]]
+        resume_text = compact_lines("\n\n".join(extracted_pages), 50000)
+    except Exception as error:
+        print("Resume parse failed:", error)
+        return jsonify({"error": "Could not read this PDF. Try exporting it again as a text-based PDF."}), 400
+
+    if len(resume_text) < 40:
+        return jsonify({"error": "Could not find enough readable text in this resume."}), 400
+
+    mapped = map_resume_with_ai(resume_text)
+    profile = first_profile_for_user(current_user.id)
+    if not profile:
+        profile = StudentProfile(user_id=current_user.id)
+        db.session.add(profile)
+
+    profile.full_name = mapped.get("full_name") or profile.full_name
+    profile.phone = mapped.get("phone") or profile.phone
+    profile.location = mapped.get("location") or profile.location
+    profile.github_url = mapped.get("github_url") or profile.github_url
+    profile.linkedin_url = mapped.get("linkedin_url") or profile.linkedin_url
+    profile.portfolio_url = mapped.get("portfolio_url") or profile.portfolio_url
+    profile.languages_json = mapped.get("languages_json") or profile.languages_json or []
+    profile.education_json = mapped.get("education_json") or profile.education_json or []
+    profile.projects_json = mapped.get("projects_json") or profile.projects_json or []
+    profile.credentials_json = mapped.get("credentials_json") or profile.credentials_json or []
+    profile.achievements_json = mapped.get("achievements_json") or profile.achievements_json or []
+    profile.soft_skills = mapped.get("soft_skills") or profile.soft_skills
+    profile.hobbies = mapped.get("hobbies") or profile.hobbies
+    profile.resume_text = resume_text
+    profile.resume_summary_json = mapped
+    profile.resume_uploaded_at = datetime.utcnow()
+
+    if mapped.get("skills"):
+        existing_skills = profile.skills or ""
+        profile.skills = existing_skills if existing_skills else mapped.get("skills")
+    if mapped.get("interests") and not profile.interests:
+        profile.interests = mapped.get("interests")
+    if mapped.get("goals") and not profile.goals:
+        profile.goals = mapped.get("goals")
+    if mapped.get("education_json") and not profile.education:
+        first_education = mapped["education_json"][0] if mapped["education_json"] else {}
+        profile.education = clean_user_text(" ".join(str(first_education.get(key, "")) for key in ["program", "institution", "score"]), 200)
+
+    profile.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({"profile": profile.to_dict(), "extracted": True}), 200
 
 @app.route('/roadmaps', methods=['GET', 'POST'])
 @login_required

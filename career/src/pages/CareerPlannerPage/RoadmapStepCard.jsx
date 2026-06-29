@@ -10,7 +10,7 @@ const iconByType = {
     mentor: UsersRound,
 };
 
-const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
+const RoadmapStepCard = ({ step, openChatWithQuery, currentUser, roadmapId, stageNumber, onOpenStage }) => {
     const { t } = useTranslation();
     const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
 
@@ -55,8 +55,27 @@ const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
         }
     };
 
+    const openStage = () => {
+        if (roadmapId && stageNumber && onOpenStage) onOpenStage(roadmapId, stageNumber);
+    };
+
+    const stopCardNavigation = (event) => {
+        event.stopPropagation();
+    };
+
     return (
-        <div className="rounded-lg border border-slate-200 bg-white p-4 transition-[border-color,background-color] duration-150 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+        <article
+            role={roadmapId ? 'button' : undefined}
+            tabIndex={roadmapId ? 0 : undefined}
+            onClick={openStage}
+            onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && roadmapId) {
+                    event.preventDefault();
+                    openStage();
+                }
+            }}
+            className={`rounded-lg border border-slate-200 bg-white p-4 transition-[border-color,background-color,transform] duration-150 hover:border-slate-300 active:scale-[0.99] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 ${roadmapId ? 'cursor-pointer' : ''}`}
+        >
             <div className="flex items-start gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 ${config.borderColor || ''}`}>
                     <Icon className="h-4 w-4" />
@@ -69,6 +88,7 @@ const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
                     <div className="mt-3 grid gap-2 md:grid-cols-[160px_minmax(0,1fr)]">
                         <select
                             value={progress.status}
+                            onClick={stopCardNavigation}
                             onChange={(event) => setProgress((prev) => ({ ...prev, status: event.target.value }))}
                             className="pp-input py-2 text-xs"
                         >
@@ -78,6 +98,7 @@ const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
                         </select>
                         <input
                             value={progress.note}
+                            onClick={stopCardNavigation}
                             onChange={(event) => setProgress((prev) => ({ ...prev, note: event.target.value }))}
                             className="pp-input py-2 text-xs"
                             maxLength={240}
@@ -85,13 +106,13 @@ const RoadmapStepCard = ({ step, openChatWithQuery, currentUser }) => {
                         />
                     </div>
 
-                    <button onClick={handleLearnMore} className="ios-pill mt-3 inline-flex items-center gap-2">
+                    <button onClick={(event) => { stopCardNavigation(event); handleLearnMore(); }} className="ios-pill mt-3 inline-flex items-center gap-2">
                         {t('roadmapCard_learnMore', { source: step.source })}
                         <ArrowUpRight className="h-3.5 w-3.5" />
                     </button>
                 </div>
             </div>
-        </div>
+        </article>
     );
 };
 

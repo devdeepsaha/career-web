@@ -100,6 +100,22 @@ class StudentProfile(db.Model):
     study_destination = db.Column(db.String(160), nullable=True)
     documents_json = db.Column(db.JSON, nullable=True, default=dict)
     scholarship_preferences_json = db.Column(db.JSON, nullable=True, default=dict)
+    full_name = db.Column(db.String(160), nullable=True)
+    phone = db.Column(db.String(40), nullable=True)
+    location = db.Column(db.String(160), nullable=True)
+    github_url = db.Column(db.Text, nullable=True)
+    linkedin_url = db.Column(db.Text, nullable=True)
+    portfolio_url = db.Column(db.Text, nullable=True)
+    languages_json = db.Column(db.JSON, nullable=True, default=list)
+    education_json = db.Column(db.JSON, nullable=True, default=list)
+    projects_json = db.Column(db.JSON, nullable=True, default=list)
+    credentials_json = db.Column(db.JSON, nullable=True, default=list)
+    achievements_json = db.Column(db.JSON, nullable=True, default=list)
+    soft_skills = db.Column(db.Text, nullable=True)
+    hobbies = db.Column(db.Text, nullable=True)
+    resume_text = db.Column(db.Text, nullable=True)
+    resume_summary_json = db.Column(db.JSON, nullable=True, default=dict)
+    resume_uploaded_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -129,6 +145,22 @@ class StudentProfile(db.Model):
             'study_destination': self.study_destination,
             'documents_json': self.documents_json or {},
             'scholarship_preferences_json': self.scholarship_preferences_json or {},
+            'full_name': self.full_name,
+            'phone': self.phone,
+            'location': self.location,
+            'github_url': self.github_url,
+            'linkedin_url': self.linkedin_url,
+            'portfolio_url': self.portfolio_url,
+            'languages_json': self.languages_json or [],
+            'education_json': self.education_json or [],
+            'projects_json': self.projects_json or [],
+            'credentials_json': self.credentials_json or [],
+            'achievements_json': self.achievements_json or [],
+            'soft_skills': self.soft_skills,
+            'hobbies': self.hobbies,
+            'resume_text': self.resume_text,
+            'resume_summary_json': self.resume_summary_json or {},
+            'resume_uploaded_at': self.resume_uploaded_at.isoformat() if self.resume_uploaded_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

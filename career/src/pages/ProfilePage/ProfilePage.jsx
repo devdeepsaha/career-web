@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Save, UserRound } from 'lucide-react';
+import { Check, FileText, Save, Upload, UserRound } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -26,6 +26,22 @@ const emptyProfile = {
     scholarship_marks: '',
     scholarship_religion: '',
     documents_json: {},
+    full_name: '',
+    phone: '',
+    location: '',
+    github_url: '',
+    linkedin_url: '',
+    portfolio_url: '',
+    languages_json: [],
+    education_json: [],
+    projects_json: [],
+    credentials_json: [],
+    achievements_json: [],
+    soft_skills: '',
+    hobbies: '',
+    resume_text: '',
+    resume_summary_json: {},
+    resume_uploaded_at: '',
 };
 
 const documentOptions = [
@@ -132,6 +148,11 @@ const normalizeProfile = (data) => {
         scholarship_marks: data?.scholarship_marks || preferences.marks || lastSearch.marks || '',
         religion: data?.religion || preferences.religion || lastSearch.religion || '',
         documents_json: { ...emptyDocuments, ...(data?.documents_json || lastSearch.documents || {}) },
+        languages_json: Array.isArray(data?.languages_json) ? data.languages_json : [],
+        education_json: Array.isArray(data?.education_json) ? data.education_json : [],
+        projects_json: Array.isArray(data?.projects_json) ? data.projects_json : [],
+        credentials_json: Array.isArray(data?.credentials_json) ? data.credentials_json : [],
+        achievements_json: Array.isArray(data?.achievements_json) ? data.achievements_json : [],
         target_exams: stripTags(data?.target_exams || ''),
         exam_branch: readTag(data?.target_exams || '', 'Branch'),
         preferred_subjects: readTag(data?.target_exams || '', 'Preferred subjects'),
@@ -151,6 +172,12 @@ const serializeProfile = (profile) => {
         ...profile,
         annual_family_income: profile.annual_income || profile.annual_family_income || null,
         documents_json: profile.documents_json || {},
+        languages_json: profile.languages_json || [],
+        education_json: profile.education_json || [],
+        projects_json: profile.projects_json || [],
+        credentials_json: profile.credentials_json || [],
+        achievements_json: profile.achievements_json || [],
+        resume_summary_json: profile.resume_summary_json || {},
         scholarship_preferences_json: {
             marks_mode: profile.scholarship_marks_mode || 'percent',
             last_search: {
@@ -179,6 +206,8 @@ const ProfilePage = ({ currentUser }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveState, setSaveState] = useState('idle');
     const [message, setMessage] = useState('');
+    const [resumeState, setResumeState] = useState('idle');
+    const [resumeMessage, setResumeMessage] = useState('');
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -213,6 +242,42 @@ const ProfilePage = ({ currentUser }) => {
             },
         }));
         setSaveState('idle');
+    };
+
+    const uploadResume = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+            setResumeMessage('Upload a PDF resume only.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setResumeMessage('Resume must be 5 MB or smaller.');
+            return;
+        }
+
+        const body = new FormData();
+        body.append('resume', file);
+        setResumeState('uploading');
+        setResumeMessage('Reading your resume...');
+        try {
+            const response = await fetch(`${API_URL}/student-profile/resume`, {
+                method: 'POST',
+                credentials: 'include',
+                body,
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || 'Resume upload failed');
+            setProfile(normalizeProfile(data.profile || data));
+            setResumeState('done');
+            setSaveState('saved');
+            setResumeMessage('Resume extracted and saved into your profile.');
+        } catch (error) {
+            console.error(error);
+            setResumeState('idle');
+            setResumeMessage(error.message || 'Resume could not be read.');
+        }
     };
 
     const documentReadyCount = Object.values(profile.documents_json || {}).filter(Boolean).length;
@@ -276,6 +341,54 @@ const ProfilePage = ({ currentUser }) => {
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <form onSubmit={saveProfile} className="saas-card p-4">
+                    <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                                    <FileText className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h2 className="saas-section-title">Upload resume</h2>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">PDF only, up to 5 MB. The file is not stored; extracted text and structured profile fields are saved.</p>
+                                    {profile.resume_uploaded_at && <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Last extracted: {new Date(profile.resume_uploaded_at).toLocaleString()}</p>}
+                                </div>
+                            </div>
+                            <label className="pp-button inline-flex cursor-pointer items-center justify-center gap-2">
+                                <Upload className="h-4 w-4" />
+                                {resumeState === 'uploading' ? 'Reading...' : 'Upload PDF'}
+                                <input type="file" accept="application/pdf,.pdf" onChange={uploadResume} className="sr-only" disabled={resumeState === 'uploading'} />
+                            </label>
+                        </div>
+                        {resumeMessage && <p className="mt-3 text-sm font-medium text-slate-600 dark:text-slate-300">{resumeMessage}</p>}
+                    </div>
+
+                    <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                            <label className="pp-label">Full name</label>
+                            <input value={profile.full_name || ''} onChange={(event) => updateField('full_name', event.target.value)} className="pp-input" maxLength={160} placeholder="Your full name" />
+                        </div>
+                        <div>
+                            <label className="pp-label">Phone</label>
+                            <input value={profile.phone || ''} onChange={(event) => updateField('phone', event.target.value)} className="pp-input" inputMode="tel" maxLength={40} placeholder="Phone number" />
+                        </div>
+                        <div>
+                            <label className="pp-label">Location</label>
+                            <input value={profile.location || ''} onChange={(event) => updateField('location', event.target.value)} className="pp-input" maxLength={160} placeholder="City, country" />
+                        </div>
+                        <div>
+                            <label className="pp-label">Portfolio</label>
+                            <input value={profile.portfolio_url || ''} onChange={(event) => updateField('portfolio_url', event.target.value)} className="pp-input" maxLength={260} placeholder="https://..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">GitHub</label>
+                            <input value={profile.github_url || ''} onChange={(event) => updateField('github_url', event.target.value)} className="pp-input" maxLength={260} placeholder="https://github.com/..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">LinkedIn</label>
+                            <input value={profile.linkedin_url || ''} onChange={(event) => updateField('linkedin_url', event.target.value)} className="pp-input" maxLength={260} placeholder="https://linkedin.com/in/..." />
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <label className="pp-label">Current status</label>
@@ -437,7 +550,42 @@ const ProfilePage = ({ currentUser }) => {
                             <label className="pp-label">Target companies or institutions</label>
                             <textarea rows="4" value={profile.target_companies || ''} onChange={(event) => updateField('target_companies', event.target.value)} className="pp-input" maxLength={1200} placeholder="IIT, Google, government service..." />
                         </div>
+                        <div>
+                            <label className="pp-label">Soft skills</label>
+                            <textarea rows="3" value={profile.soft_skills || ''} onChange={(event) => updateField('soft_skills', event.target.value)} className="pp-input" maxLength={1000} placeholder="Communication, leadership, product thinking..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Hobbies</label>
+                            <textarea rows="3" value={profile.hobbies || ''} onChange={(event) => updateField('hobbies', event.target.value)} className="pp-input" maxLength={1000} placeholder="Writing, photography, music..." />
+                        </div>
                     </div>
+
+                    {(profile.education_json?.length > 0 || profile.projects_json?.length > 0 || profile.credentials_json?.length > 0 || profile.achievements_json?.length > 0) && (
+                        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            {[
+                                ['Education', profile.education_json],
+                                ['Projects', profile.projects_json],
+                                ['Credentials', profile.credentials_json],
+                                ['Achievements', profile.achievements_json],
+                            ].map(([title, items]) => (
+                                Array.isArray(items) && items.length > 0 ? (
+                                    <section key={title} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                                        <h3 className="saas-section-title">{title}</h3>
+                                        <div className="mt-2 space-y-2">
+                                            {items.slice(0, 4).map((item, index) => (
+                                                <div key={`${title}-${index}`} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-950">
+                                                    <p className="font-semibold text-slate-950 dark:text-white">{item.name || item.title || item.institution || item.program || 'Resume item'}</p>
+                                                    <p className="mt-1 leading-5 text-slate-600 dark:text-slate-400">
+                                                        {[item.description, item.tech, item.score, item.year, item.issuer, item.notes, item.impact].filter(Boolean).join(' · ')}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ) : null
+                            ))}
+                        </div>
+                    )}
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                         <button disabled={isSaving} className={`flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-[background-color,transform] duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 ${saveState === 'saved' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200'}`}>

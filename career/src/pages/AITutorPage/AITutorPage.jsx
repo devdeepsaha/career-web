@@ -75,6 +75,10 @@ const buildProfileContext = (profile = {}) => (
         `Interests: ${profile.interests || 'not set'}`,
         `Career goals: ${profile.goals || 'not set'}`,
         `Target companies or institutions: ${profile.target_companies || 'not set'}`,
+        `Resume education: ${Array.isArray(profile.education_json) ? profile.education_json.map((item) => [item.program, item.institution, item.score].filter(Boolean).join(' ')).join('; ') : 'not set'}`,
+        `Resume projects: ${Array.isArray(profile.projects_json) ? profile.projects_json.map((item) => item.name || item.title).filter(Boolean).join(', ') : 'not set'}`,
+        `Resume credentials: ${Array.isArray(profile.credentials_json) ? profile.credentials_json.map((item) => item.name || item.title).filter(Boolean).join(', ') : 'not set'}`,
+        `Soft skills: ${profile.soft_skills || 'not set'}`,
     ].join('\n')
 );
 

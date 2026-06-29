@@ -26,7 +26,7 @@ const roadmapInputWarning = (value, label) => {
     return '';
 };
 
-const CareerPlannerPage = ({ currentUser, showAuth }) => {
+const CareerPlannerPage = ({ currentUser, showAuth, onNavigate }) => {
     const { t, i18n } = useTranslation();
 
     // Form State
@@ -44,6 +44,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
     const [savedRoadmapMeta, setSavedRoadmapMeta] = useState(null);
     const [syncProfile, setSyncProfile] = useState(true);
     const [inputsCollapsed, setInputsCollapsed] = useState(false);
+    const [hasAutoOpenedRoadmap, setHasAutoOpenedRoadmap] = useState(false);
     const inputWarnings = {
         skills: roadmapInputWarning(skills, 'Skills'),
         interests: roadmapInputWarning(interests, 'Interests'),
@@ -111,6 +112,20 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
         } catch (err) {
             console.error('Failed to archive roadmap:', err);
         }
+    };
+
+    useEffect(() => {
+        if (hasAutoOpenedRoadmap || isRoadmapVisible || savedRoadmaps.length === 0) return;
+        const latestActive = savedRoadmaps.find((item) => item.status === 'active') || savedRoadmaps[0];
+        if (latestActive?.id) {
+            setHasAutoOpenedRoadmap(true);
+            openSavedRoadmap(latestActive.id);
+        }
+    }, [hasAutoOpenedRoadmap, isRoadmapVisible, savedRoadmaps]);
+
+    const openStageDetail = (roadmapId, stageNumber) => {
+        if (!roadmapId || !stageNumber || !onNavigate) return;
+        onNavigate('stage', { query: `roadmap=${encodeURIComponent(roadmapId)}&stage=${encodeURIComponent(stageNumber)}` });
     };
 
     const generateRoadmap = async (e) => {
@@ -260,7 +275,7 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
                         </div>
                     </div>
                 ) : (
-                    <RoadmapDisplay isLoading={isLoading} roadmap={roadmap} savedRoadmapMeta={savedRoadmapMeta} currentUser={currentUser} />
+                    <RoadmapDisplay isLoading={isLoading} roadmap={roadmap} savedRoadmapMeta={savedRoadmapMeta} currentUser={currentUser} onOpenStage={openStageDetail} />
                 )}
                     {savedRoadmaps.length > 0 && (
                         <div className="saas-card p-4">

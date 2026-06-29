@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import BrandLogo from '../../components/shared/BrandLogo';
+import { throttle } from '../../utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const Hyperspeed = React.lazy(() => import('../../components/effects/Hyperspeed/Hyperspeed'));
@@ -142,12 +143,13 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
         const updateQaVisibility = () => {
             setShowQa(window.scrollY > Math.max(360, window.innerHeight * 0.58));
         };
+        const throttledVisibility = throttle(updateQaVisibility, 100);
         updateQaVisibility();
-        window.addEventListener('scroll', updateQaVisibility, { passive: true });
-        window.addEventListener('resize', updateQaVisibility);
+        window.addEventListener('scroll', throttledVisibility, { passive: true });
+        window.addEventListener('resize', throttledVisibility);
         return () => {
-            window.removeEventListener('scroll', updateQaVisibility);
-            window.removeEventListener('resize', updateQaVisibility);
+            window.removeEventListener('scroll', throttledVisibility);
+            window.removeEventListener('resize', throttledVisibility);
         };
     }, []);
 

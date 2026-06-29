@@ -4,6 +4,7 @@ import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
 import { Maximize, Minimize, Copy, Plus, Trash2, Clock, Menu } from 'lucide-react';
+import { throttle } from '../../utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -29,6 +30,10 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     const chatEndRef = useRef(null);
     const chatContainerRef = useRef(null);
     const inputRef = useRef(null);
+    const starterMessage = () => ({
+        sender: 'ai',
+        text: t('doubtChat_initialMessage') || 'Ask me a doubt, paste a question, or tap See how to solve it from AI Tutor.',
+    });
 
     // Use prop messages or local messages
     const messages = propMessages || localMessages;
@@ -91,7 +96,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
 
     const createNewSession = async () => {
         if (!isLoggedIn) {
-            setLocalMessages([]);
+            setLocalMessages([starterMessage()]);
             setCurrentSessionId(null);
             return null;
         }
@@ -107,7 +112,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
             if (response.ok) {
                 const session = await response.json();
                 setCurrentSessionId(session.id);
-                setLocalMessages([]); // Clear messages for new chat
+                setLocalMessages([starterMessage()]);
                 await loadSessions();
                 setShowSessionList(false);
                 return session.id;
@@ -152,7 +157,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
                 // If deleted session is current, reset
                 if (currentSessionId === sessionId) {
                     setCurrentSessionId(null);
-                    setLocalMessages([]);
+                    setLocalMessages([starterMessage()]);
                 }
             }
         } catch (error) {
@@ -163,6 +168,12 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        if (!propMessages && localMessages.length === 0) {
+            setLocalMessages([starterMessage()]);
+        }
+    }, [i18n.language, propMessages, localMessages.length]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -179,14 +190,14 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     useEffect(() => {
         if (!isOpen) return;
 
-        const handleResize = () => {
+        const handleResize = throttle(() => {
             // Scroll input into view when keyboard appears on mobile
             if (inputRef.current && window.innerWidth < 768) {
                 setTimeout(() => {
                     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }, 100);
             }
-        };
+        }, 150);
 
         // Handle focus event to ensure input is visible
         const handleFocus = () => {
@@ -531,8 +542,19 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
                                 <button
                                     onClick={() => setIsFullscreen(!isFullscreen)}
                                     className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                                    aria-label={isFullscreen ? 'Exit fullscreen chat' : 'Open fullscreen chat'}
                                 >
                                     {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setIsFullscreen(false);
+                                    }}
+                                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+                                    aria-label="Close AI chat"
+                                >
+                                    <XIcon className="h-[18px] w-[18px]" />
                                 </button>
                             </div>
                         </div>

@@ -1,7 +1,12 @@
 const GUEST_WORKSPACE_KEY = 'potho_guest_workspace_v1';
 const GUEST_OWNER = 'Guest workspace';
+const GUEST_TTL_DAYS = 7;
+const GUEST_TTL_MS = GUEST_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 const emptyWorkspace = () => ({
+    created_at: null,
+    updated_at: null,
+    expires_at: null,
     roadmaps: [],
     savedQuestions: [],
     questionAttempts: [],
@@ -9,6 +14,8 @@ const emptyWorkspace = () => ({
     savedScholarships: [],
     scholarshipProfile: null,
 });
+
+const expiresAtFor = (createdAt) => new Date(new Date(createdAt).getTime() + GUEST_TTL_MS).toISOString();
 
 const readJson = (key, fallback) => {
     try {
@@ -18,15 +25,73 @@ const readJson = (key, fallback) => {
     }
 };
 
-const writeWorkspace = (workspace) => {
-    localStorage.setItem(GUEST_WORKSPACE_KEY, JSON.stringify(workspace));
+export const clearGuestWorkspace = () => {
+    const prefixes = [
+        'resource_vault_Guest workspace',
+        'study_timer_Guest workspace',
+        'scholarship_finder_profile_v1_guest',
+        'scholarship_finder_results_v1_guest',
+    ];
+    localStorage.removeItem(GUEST_WORKSPACE_KEY);
+    localStorage.removeItem('guest_mode');
+    Object.keys(localStorage).forEach((key) => {
+        if (prefixes.some((prefix) => key.startsWith(prefix))) localStorage.removeItem(key);
+    });
+    Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('scholarship_detail_') || key === 'last_scholarship_detail' || key.startsWith('scholarship_finder_results_v1_guest')) {
+            sessionStorage.removeItem(key);
+        }
+    });
     window.dispatchEvent(new CustomEvent('potho-guest-workspace-updated'));
 };
 
-export const getGuestWorkspace = () => ({
-    ...emptyWorkspace(),
-    ...readJson(GUEST_WORKSPACE_KEY, emptyWorkspace()),
-});
+export const ensureGuestWorkspaceFresh = () => {
+    const workspace = readJson(GUEST_WORKSPACE_KEY, null);
+    if (!workspace) return true;
+    if (workspace.expires_at && Date.now() > new Date(workspace.expires_at).getTime()) {
+        clearGuestWorkspace();
+        return false;
+    }
+    return true;
+};
+
+const withTimestamps = (workspace) => {
+    const createdAt = workspace.created_at || new Date().toISOString();
+    const updatedAt = new Date().toISOString();
+    return {
+        ...emptyWorkspace(),
+        ...workspace,
+        created_at: createdAt,
+        updated_at: updatedAt,
+        expires_at: workspace.expires_at || expiresAtFor(createdAt),
+    };
+};
+
+const writeWorkspace = (workspace) => {
+    localStorage.setItem(GUEST_WORKSPACE_KEY, JSON.stringify(withTimestamps(workspace)));
+    window.dispatchEvent(new CustomEvent('potho-guest-workspace-updated'));
+};
+
+export const getGuestWorkspace = () => {
+    if (!ensureGuestWorkspaceFresh()) return emptyWorkspace();
+    const workspace = withTimestamps(readJson(GUEST_WORKSPACE_KEY, emptyWorkspace()));
+    if (!workspace.created_at || !workspace.expires_at) writeWorkspace(workspace);
+    return workspace;
+};
+
+export const touchGuestWorkspace = () => {
+    const workspace = getGuestWorkspace();
+    writeWorkspace(workspace);
+    return workspace;
+};
+
+export const getGuestExpiryLabel = () => {
+    const workspace = getGuestWorkspace();
+    if (!workspace.expires_at) return '7 days';
+    const remaining = Math.max(0, new Date(workspace.expires_at).getTime() - Date.now());
+    const days = Math.max(1, Math.ceil(remaining / (24 * 60 * 60 * 1000)));
+    return `${days} day${days === 1 ? '' : 's'}`;
+};
 
 export const addGuestWorkspaceItem = (collection, item, dedupeKey = null) => {
     const workspace = getGuestWorkspace();

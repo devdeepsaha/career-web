@@ -42,6 +42,17 @@ const ActionLink = ({ href, children, muted = false }) => (
     </a>
 );
 
+const ActionButton = ({ children, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-left text-sm font-semibold leading-6 text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300"
+    >
+        <span>{children}</span>
+        <FileCheck2 className="h-4 w-4 shrink-0" />
+    </button>
+);
+
 const ScholarshipDetailPage = ({ onNavigate }) => {
     const [scholarship, setScholarship] = useState(null);
     const [error, setError] = useState('');
@@ -90,6 +101,8 @@ const ScholarshipDetailPage = ({ onNavigate }) => {
     const readiness = getReadiness(scholarship);
     const deadlineClass = deadlineToneClass[scholarship.deadline_signal?.tone] || deadlineToneClass.neutral;
     const officialUrl = portalUrl(scholarship);
+    const searchUrl = scholarship.search_url || `https://www.google.com/search?q=${encodeURIComponent(`${scholarship.name} official notice scholarship`)}`;
+    const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${scholarship.name} how to apply scholarship`)}`;
     const requiredDocuments = scholarship.documents_required || [];
     const missingDocuments = scholarship.missing_documents || [];
     const steps = scholarship.application_steps?.length
@@ -101,6 +114,13 @@ const ScholarshipDetailPage = ({ onNavigate }) => {
         { id: 'documents', label: 'Docs' },
         { id: 'apply', label: 'Apply' },
     ];
+    const stepTarget = (step, index) => {
+        const text = normalize(step);
+        if (text.includes('document') || text.includes('prepare') || text.includes('certificate')) return 'documents';
+        if (text.includes('notice') || text.includes('eligibility') || text.includes('verify')) return searchUrl;
+        if (index === 0 || text.includes('portal') || text.includes('register') || text.includes('submit')) return officialUrl;
+        return searchUrl;
+    };
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
@@ -215,7 +235,8 @@ const ScholarshipDetailPage = ({ onNavigate }) => {
                         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{scholarship.amount_basis || scholarship.source_note || 'Verify amount, deadline, and final eligibility on the official notice before applying.'}</p>
                         <div className="mt-4 grid gap-2">
                             <ActionLink href={officialUrl}>Open official portal</ActionLink>
-                            {scholarship.search_url && <ActionLink href={scholarship.search_url} muted>Search official notice</ActionLink>}
+                            <ActionLink href={searchUrl} muted>Search official notice</ActionLink>
+                            <ActionLink href={youtubeUrl} muted>Watch application walkthrough</ActionLink>
                             <button className="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300">
                                 <span>Notify me before deadline</span>
                                 <Bell className="h-4 w-4 shrink-0" />
@@ -226,11 +247,18 @@ const ScholarshipDetailPage = ({ onNavigate }) => {
                     <section className="saas-card p-4">
                         <h2 className="saas-section-title">Application steps</h2>
                         <div className="mt-3 grid gap-2">
-                            {steps.map((step, index) => (
-                                <ActionLink href={officialUrl} key={`${step}-${index}`} muted>
-                                    {index + 1}. {step}
-                                </ActionLink>
-                            ))}
+                            {steps.map((step, index) => {
+                                const target = stepTarget(step, index);
+                                return target === 'documents' ? (
+                                    <ActionButton key={`${step}-${index}`} onClick={() => setActiveSection('documents')}>
+                                        {index + 1}. {step}
+                                    </ActionButton>
+                                ) : (
+                                    <ActionLink href={target} key={`${step}-${index}`} muted>
+                                        {index + 1}. {step}
+                                    </ActionLink>
+                                );
+                            })}
                         </div>
                         <p className="mt-3 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200">{scholarship.source_note || 'AI can help organize the application, but final scheme rules must be checked on the official portal.'}</p>
                     </section>

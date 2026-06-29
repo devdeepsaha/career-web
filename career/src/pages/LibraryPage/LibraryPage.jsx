@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Search, Trash2, Trophy, X } from 'lucide-react';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from '../AITutorPage/mathText';
+import { useDebouncedValue } from '../../utils/timing';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -50,6 +51,7 @@ const LibraryPage = ({ currentUser }) => {
     const [error, setError] = useState('');
     const [selectedMock, setSelectedMock] = useState(null);
     const [query, setQuery] = useState('');
+    const debouncedQuery = useDebouncedValue(query, 200);
     const [resources, setResources] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem(resourceStorageKey) || '[]');
@@ -90,11 +92,11 @@ const LibraryPage = ({ currentUser }) => {
     }), [data, resources]);
 
     const filtered = useMemo(() => {
-        const needle = query.trim().toLowerCase();
+        const needle = debouncedQuery.trim().toLowerCase();
         const source = searchable[activeTab] || [];
         if (!needle) return source;
         return source.filter((item) => JSON.stringify(item).toLowerCase().includes(needle));
-    }, [activeTab, query, searchable]);
+    }, [activeTab, debouncedQuery, searchable]);
 
     const loadAll = useCallback(async () => {
         setIsLoading(true);
