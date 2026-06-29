@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Brain, Command, FileText, GraduationCap, LayoutDashboard, Library, LifeBuoy, LogOut, Menu, Route, Search, UserRound, Users, X } from 'lucide-react';
 
@@ -21,6 +21,7 @@ import SignupPage from './components/auth/SignupPage';
 import LogoMark from './components/shared/LogoMark';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
+import { migrateGuestWorkspaceToAccount } from './utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const AUTH_TOKEN_KEY = 'potho_auth_token';
@@ -201,6 +202,16 @@ export default function App() {
         localStorage.setItem('language', language);
     };
 
+    const claimGuestWorkspace = useCallback((user) => {
+        if (localStorage.getItem('guest_mode') !== 'true') {
+            localStorage.removeItem('guest_mode');
+            return;
+        }
+        migrateGuestWorkspaceToAccount(user).catch((error) => {
+            console.error('Guest workspace migration failed:', error);
+        });
+    }, []);
+
     useEffect(() => {
         setDocumentMeta(activeTab);
         sendAnalyticsPageview(`/${activeTab}`, activeTab);
@@ -296,7 +307,7 @@ export default function App() {
                     if (data.is_logged_in) {
                         if (data.auth_token) localStorage.setItem(AUTH_TOKEN_KEY, data.auth_token);
                         setCurrentUser(data.user);
-                        localStorage.removeItem('guest_mode');
+                        claimGuestWorkspace(data.user);
                     } else if (localStorage.getItem('guest_mode') === 'true') {
                         setCurrentUser(guestUser);
                     } else {
@@ -344,7 +355,7 @@ export default function App() {
         } else {
             checkUserSession();
         }
-    }, []);
+    }, [claimGuestWorkspace]);
 
     useEffect(() => {
         const syncRoute = () => setActiveTab(tabFromLocation());
@@ -390,7 +401,7 @@ export default function App() {
     const handleLoginSuccess = (user, authToken) => {
         if (authToken) localStorage.setItem(AUTH_TOKEN_KEY, authToken);
         setCurrentUser(user);
-        localStorage.removeItem('guest_mode');
+        claimGuestWorkspace(user);
         setAuthView(null);
     };
 

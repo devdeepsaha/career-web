@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, Bell, Check, ChevronDown, CircleHelp, Clock3, ExternalLink, FileCheck2, GraduationCap, IndianRupee, Save, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import ScholarshipEmptyState from './ScholarshipEmptyState';
+import { addGuestWorkspaceItem, setGuestScholarshipProfile } from '../../utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -248,6 +249,27 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
 
     const persistScholarshipProfile = async () => {
         localStorage.setItem(scholarshipFormStorageKey, JSON.stringify(form));
+        if (currentUser?.is_guest) {
+            setGuestScholarshipProfile({
+                student_type: form.student_type,
+                course_stream: form.course_stream,
+                institution_name: form.institution,
+                gender: form.gender,
+                caste_category: form.caste,
+                disability_status: form.disability,
+                scholarship_marks: form.marks,
+                religion: form.religion,
+                annual_family_income: form.income,
+                region: form.region,
+                study_destination: form.destination,
+                documents_json: form.documents,
+                scholarship_preferences_json: {
+                    marks_mode: form.marks_mode,
+                    last_search: form,
+                },
+            });
+            return;
+        }
         if (!currentUser) return;
         await fetch(`${API_URL}/student-profile`, {
             method: 'PUT',
@@ -335,6 +357,21 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     };
 
     const saveScholarship = async (scholarship, index, reminder = false) => {
+        if (currentUser?.is_guest) {
+            addGuestWorkspaceItem('savedScholarships', {
+                scholarship_json: scholarship,
+                deadline: scholarship.deadline,
+                status: reminder ? 'shortlisted' : 'saved',
+                reminder_enabled: reminder,
+                reminder_date: scholarship.deadline,
+                official_url: scholarship.direct_url,
+                amount: scholarship.amount,
+                match_score: scholarship.match_score,
+                application_status: scholarship.application_status,
+            }, 'official_url');
+            setSavedScholarshipKeys((prev) => ({ ...prev, [`${scholarship.name}-${index}`]: true }));
+            return;
+        }
         try {
             const response = await fetch(`${API_URL}/saved-scholarships`, {
                 method: 'POST',

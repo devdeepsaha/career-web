@@ -6,6 +6,7 @@ import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from './mathText';
+import { addGuestWorkspaceItem } from '../../utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const EXAM_OPTIONS = [
@@ -237,7 +238,33 @@ const AITutorPage = ({ currentUser, showAuth }) => {
         setSelectedPracticeAnswer(option);
         const isCorrect = option === question.answer;
         if (currentUser?.is_guest) {
-            if (!isCorrect) setIsQuestionSaved(false);
+            const attempt = {
+                question_text: question.question,
+                selected_answer: option,
+                correct_answer: question.answer,
+                is_correct: isCorrect,
+                time_taken_seconds: questionStartedAt ? Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000)) : null,
+                exam: practiceExam,
+                subject: cleanInput(practiceSubject),
+                topic: cleanInput(practiceTopic),
+                difficulty: practiceDifficulty,
+            };
+            addGuestWorkspaceItem('questionAttempts', attempt);
+            if (!isCorrect) {
+                const saved = addGuestWorkspaceItem('savedQuestions', {
+                    question_text: question.question,
+                    options_json: question.options,
+                    correct_answer: question.answer,
+                    explanation: question.explanation,
+                    exam: practiceExam,
+                    subject: practiceSubject,
+                    topic: practiceTopic,
+                    difficulty: practiceDifficulty,
+                    source: 'mistake',
+                }, 'question_text');
+                setWeakQueue((items) => [{ ...attempt, ...saved, created_at: new Date().toISOString() }, ...items]);
+                setIsQuestionSaved(true);
+            }
             return;
         }
         try {
@@ -295,7 +322,18 @@ const AITutorPage = ({ currentUser, showAuth }) => {
     const savePracticeQuestion = async () => {
         if (!question) return;
         if (currentUser?.is_guest) {
-            showAuth('signup');
+            addGuestWorkspaceItem('savedQuestions', {
+                question_text: question.question,
+                options_json: question.options,
+                correct_answer: question.answer,
+                explanation: question.explanation,
+                exam: practiceExam,
+                subject: practiceSubject,
+                topic: practiceTopic,
+                difficulty: practiceDifficulty,
+                source: 'practice',
+            }, 'question_text');
+            setIsQuestionSaved(true);
             return;
         }
         try {
@@ -392,6 +430,21 @@ const AITutorPage = ({ currentUser, showAuth }) => {
             if (!response.ok) throw new Error('Failed to analyze test');
             const data = await response.json();
             setTestResult(data);
+            if (currentUser?.is_guest) {
+                addGuestWorkspaceItem('mockTests', {
+                    exam: mockExam,
+                    subject: mockSubject,
+                    topic: mockTopic,
+                    difficulty: mockDifficulty,
+                    total_questions: testQuestions.length,
+                    correct_answers: data?.score_summary?.correct ?? data?.correct_answers,
+                    incorrect_answers: data?.score_summary?.incorrect ?? data?.incorrect_answers,
+                    score: data?.score ?? data?.score_percentage,
+                    questions_json: testQuestions,
+                    answers_json: testAnswers,
+                    analysis_json: data,
+                });
+            }
             setTestState('completed');
         } catch (err) {
             console.error(err);

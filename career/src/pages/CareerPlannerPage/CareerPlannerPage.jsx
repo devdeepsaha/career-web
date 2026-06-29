@@ -4,6 +4,7 @@ import UserInputForm from './UserInputForm';
 import RoadmapDisplay from './RoadmapDisplay';
 import EmptyStateGraphic from './EmptyStateGraphic';
 import CareerPlannerChatbot from '../../components/chat/CareerPlannerChatbot';
+import { addGuestWorkspaceItem } from '../../utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -161,6 +162,21 @@ const CareerPlannerPage = ({ currentUser, showAuth }) => {
             const generatedSteps = Array.isArray(payload) ? payload : payload.roadmap;
             setRoadmap(generatedSteps);
             setSavedRoadmapMeta(Array.isArray(payload) ? null : payload.saved_roadmap);
+            if (currentUser?.is_guest) {
+                addGuestWorkspaceItem('roadmaps', {
+                    title: cleanInput(goals) || 'Career roadmap',
+                    input_profile: {
+                        skills: cleanInput(skills),
+                        interests: cleanInput(interests),
+                        goals: cleanInput(goals),
+                        status,
+                        targetCompanies: cleanInput(targetCompanies),
+                        education: cleanInput(education),
+                    },
+                    roadmap_json: generatedSteps,
+                    status: 'active',
+                }, 'title');
+            }
             setInputsCollapsed(true);
             if (!currentUser?.is_guest) loadSavedRoadmaps();
         } catch (err) {
