@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Compass, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import LogoMark from '../shared/LogoMark';
+import BrandLogo from '../shared/BrandLogo';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -69,7 +69,7 @@ const SignupPage = ({ onLoginSuccess, showLogin, onClose }) => {
                             Back to landing
                         </button>
                         <div className="flex items-center gap-3">
-                            <LogoMark className="h-10 w-10" />
+                            <BrandLogo className="h-10 w-auto" />
                             <span className="text-2xl font-extrabold">Potho Prodorshok</span>
                         </div>
                         <h1 className="mt-8 max-w-md text-3xl font-semibold leading-tight tracking-[-0.01em]">

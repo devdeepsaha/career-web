@@ -18,7 +18,7 @@ const LandingPage = React.lazy(() => import('./pages/LandingPage/LandingPage'));
 
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
-import LogoMark from './components/shared/LogoMark';
+import BrandLogo from './components/shared/BrandLogo';
 import ThemeToggle from './components/shared/ThemeToggle';
 import BottomNav from './components/sidebar/BottomNav';
 import { migrateGuestWorkspaceToAccount } from './utils/guestWorkspace';
@@ -523,7 +523,7 @@ export default function App() {
                 <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
                     <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
                         <button onClick={() => { setActiveTab('dashboard'); window.history.pushState({}, '', '/'); }} className="flex items-center gap-2 text-sm font-semibold" aria-label="Go to landing page">
-                            <LogoMark />
+                            <BrandLogo />
                             {t('header_title')}
                         </button>
                         <div className="flex items-center gap-2">
@@ -544,7 +544,7 @@ export default function App() {
             <header className="saas-topbar">
                 <div className="mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
                     <button onClick={() => navigateTo('dashboard')} className="flex min-w-0 items-center gap-2 text-left" aria-label="Open dashboard">
-                        <LogoMark />
+                        <BrandLogo />
                         <div className="min-w-0">
                             <p className="truncate text-sm font-semibold leading-4 text-slate-950 dark:text-white">{t('header_title')}</p>
                             <p className="hidden truncate text-xs text-slate-500 dark:text-slate-400 sm:block">Career OS</p>

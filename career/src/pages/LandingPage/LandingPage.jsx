@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, Brain, CalendarDays, Library, LockKeyhole, Map, Menu, MessageCircle, Moon, Route, Search, Sparkles, Sun, X } from 'lucide-react';
-import LogoMark from '../../components/shared/LogoMark';
+import BrandLogo from '../../components/shared/BrandLogo';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const Hyperspeed = React.lazy(() => import('../../components/effects/Hyperspeed/Hyperspeed'));
@@ -224,7 +224,7 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
             <div className="fixed top-4 left-0 right-0 z-[100] mx-auto px-4 w-full max-w-7xl">
                 <nav className={`flex items-center justify-between p-3 pl-5 pr-3 rounded-full border shadow-sm backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 ${theme === 'dark' ? 'bg-[#0a0c12]/80 border-white/10' : 'bg-white/80 border-black/5'}`}>
                     <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3" aria-label="Back to top">
-                        <LogoMark />
+                        <BrandLogo />
                         <span className="font-bold text-[17px] tracking-tight">{t('landing_brand')}</span>
                     </button>
 
