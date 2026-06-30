@@ -448,14 +448,9 @@ const ProfilePage = ({ currentUser }) => {
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-                <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Profile & Settings</p>
-                <h1 className="pp-page-title">Your student context</h1>
-                <p className="pp-page-copy mt-1 max-w-3xl">Keep this updated so roadmaps, questions, scholarships, and recommendations become more personal.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[240px_minmax(0,1fr)]">
-                <aside className="saas-card h-fit p-2 xl:sticky xl:top-16">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950">
+            <div className="grid grid-cols-1 xl:grid-cols-[240px_minmax(0,1fr)]">
+                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:border-b-0 xl:border-r">
                     <div className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0">
                         {profileSections.map((section) => {
                             const Icon = section.icon;
@@ -467,30 +462,23 @@ const ProfilePage = ({ currentUser }) => {
                                     onClick={() => setActiveSection(section.id)}
                                     className={`flex min-h-11 min-w-[180px] items-center gap-3 rounded-lg px-3 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.96] xl:w-full xl:min-w-0 ${
                                         active
-                                            ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                                            ? 'bg-slate-100 text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white'
                                             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
                                     }`}
                                 >
                                     <Icon className="h-4 w-4 shrink-0" />
                                     <span className="min-w-0">
                                         <span className="block truncate text-sm font-semibold">{section.label}</span>
-                                        <span className={`hidden truncate text-xs xl:block ${active ? 'text-white/70 dark:text-slate-600' : 'text-slate-400'}`}>{section.detail}</span>
+                                        <span className={`hidden truncate text-xs xl:block ${active ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400'}`}>{section.detail}</span>
                                     </span>
                                 </button>
                             );
                         })}
                     </div>
                 </aside>
-                <form onSubmit={saveProfile} className="saas-card p-4">
-                    <div className="mb-4 flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-center">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Editing</p>
-                            <h2 className="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{profileSections.find((section) => section.id === activeSection)?.label || 'Profile'}</h2>
-                        </div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{profileSections.find((section) => section.id === activeSection)?.detail}</p>
-                    </div>
+                <form onSubmit={saveProfile} className="min-w-0 p-4">
 
-                    {activeSection === 'resume' && (
+                    {(activeSection === 'identity' || activeSection === 'resume') && (
                     <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
@@ -716,7 +704,7 @@ const ProfilePage = ({ currentUser }) => {
                     )}
 
                     {activeSection === 'resume' && (profile.education_json?.length > 0 || profile.projects_json?.length > 0 || profile.credentials_json?.length > 0 || profile.achievements_json?.length > 0) && (
-                        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                        <div className="mt-4 grid grid-cols-1 gap-3">
                             {[
                                 ['Education', profile.education_json],
                                 ['Projects', profile.projects_json],
@@ -724,10 +712,10 @@ const ProfilePage = ({ currentUser }) => {
                                 ['Achievements', profile.achievements_json],
                             ].map(([title, items]) => (
                                 Array.isArray(items) && items.length > 0 ? (
-                                    <section key={title} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                                    <section key={title} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
                                         <h3 className="saas-section-title">{title}</h3>
-                                        <div className="mt-2 space-y-2">
-                                            {items.slice(0, 4).map((item, index) => (
+                                        <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                            {items.slice(0, 6).map((item, index) => (
                                                 <div key={`${title}-${index}`} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-950">
                                                     <p className="font-semibold text-slate-950 dark:text-white">{item.name || item.title || item.institution || item.program || 'Resume item'}</p>
                                                     <p className="mt-1 leading-5 text-slate-600 dark:text-slate-400">
@@ -802,6 +790,7 @@ const ProfilePage = ({ currentUser }) => {
                     </div>
                 </form>
 
+            </div>
             </div>
         </div>
     );
