@@ -176,7 +176,7 @@ const LibraryPage = ({ currentUser }) => {
                 correct_answer: item.correct_answer || item.answer,
                 is_attempt_only: true,
             }));
-            const questionMap = new Map();
+            const questionMap = new globalThis.Map();
             [...savedQuestions, ...wrongAttempts].forEach((item) => {
                 const key = String(item.question_text || '').trim().toLowerCase();
                 if (!key) return;
