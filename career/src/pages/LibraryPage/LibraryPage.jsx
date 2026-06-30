@@ -49,7 +49,7 @@ const LibraryPage = ({ currentUser }) => {
     const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
     const resourceStorageKey = `resource_vault_${storageOwner}`;
     const [activeTab, setActiveTab] = useState(getInitialView);
-    const [data, setData] = useState({ roadmaps: [], questions: [], mocks: [], scholarships: [], chats: [] });
+    const [data, setData] = useState({ roadmaps: [], questions: [], questionAttempts: [], mocks: [], scholarships: [], chats: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedMock, setSelectedMock] = useState(null);
@@ -67,6 +67,7 @@ const LibraryPage = ({ currentUser }) => {
     const endpoints = useMemo(() => ({
         roadmaps: '/roadmaps',
         questions: '/saved-questions',
+        questionAttempts: '/question-attempts?wrong_only=true',
         mocks: '/mock-tests',
         scholarships: '/saved-scholarships',
         chats: '/chat-sessions',
@@ -108,6 +109,7 @@ const LibraryPage = ({ currentUser }) => {
         const aliases = {
             roadmaps: ['roadmaps', 'items', 'data'],
             questions: ['questions', 'saved_questions', 'savedQuestions', 'items', 'data'],
+            questionAttempts: ['question_attempts', 'questionAttempts', 'attempts', 'items', 'data'],
             mocks: ['mocks', 'mock_tests', 'mockTests', 'items', 'data'],
             scholarships: ['scholarships', 'saved_scholarships', 'savedScholarships', 'items', 'data'],
             chats: ['chats', 'chat_sessions', 'chatSessions', 'items', 'data'],
@@ -141,6 +143,7 @@ const LibraryPage = ({ currentUser }) => {
                 question_text: item.question_text || item.question,
                 correct_answer: item.correct_answer || item.answer,
             })),
+            questionAttempts: wrongAttempts,
             mocks: (workspace.mockTests || []).map((item) => ({ ...item, id: item.id || item.guest_id })),
             scholarships: (workspace.savedScholarships || []).map((item) => ({ ...item, id: item.id || item.guest_id })),
             chats: [],
@@ -158,13 +161,38 @@ const LibraryPage = ({ currentUser }) => {
         try {
             const entries = await Promise.all(Object.entries(endpoints).map(async ([key, endpoint]) => {
                 const response = await fetch(`${API_URL}${endpoint}`, { credentials: 'include' });
+                if (response.status === 401) throw new Error('Your session could not load library data. Please refresh or log in again.');
                 if (!response.ok) return [key, []];
                 return [key, normalizeList(await response.json(), key)];
             }));
-            setData(Object.fromEntries(entries));
+            const nextData = Object.fromEntries(entries);
+            const savedQuestions = Array.isArray(nextData.questions) ? nextData.questions : [];
+            const wrongAttempts = (Array.isArray(nextData.questionAttempts) ? nextData.questionAttempts : []).map((item) => ({
+                ...item,
+                id: `attempt-${item.id}`,
+                attempt_id: item.id,
+                source: item.source || 'mistake',
+                question_text: item.question_text || item.question,
+                correct_answer: item.correct_answer || item.answer,
+                is_attempt_only: true,
+            }));
+            const questionMap = new Map();
+            [...savedQuestions, ...wrongAttempts].forEach((item) => {
+                const key = String(item.question_text || '').trim().toLowerCase();
+                if (!key) return;
+                if (!questionMap.has(key)) questionMap.set(key, item);
+            });
+            setData({
+                roadmaps: nextData.roadmaps || [],
+                questions: Array.from(questionMap.values()),
+                questionAttempts: nextData.questionAttempts || [],
+                mocks: nextData.mocks || [],
+                scholarships: nextData.scholarships || [],
+                chats: nextData.chats || [],
+            });
         } catch (err) {
             console.error(err);
-            setError('Could not load your library.');
+            setError(err.message || 'Could not load your library.');
         } finally {
             setIsLoading(false);
         }
@@ -277,9 +305,11 @@ const LibraryPage = ({ currentUser }) => {
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{[item.exam, item.subject, item.topic, item.difficulty].filter(Boolean).join(' | ')}</p>
                             <p className="mt-2 break-words text-sm text-emerald-700 dark:text-emerald-300">Answer: {item.correct_answer}</p>
                         </div>
-                        <button onClick={() => deleteQuestion(item.id)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-[background-color,color,transform] duration-150 hover:bg-red-50 hover:text-red-600 active:scale-[0.96] dark:border-slate-800 dark:hover:bg-red-950/30">
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+                        {!item.is_attempt_only && (
+                            <button onClick={() => deleteQuestion(item.id)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-[background-color,color,transform] duration-150 hover:bg-red-50 hover:text-red-600 active:scale-[0.96] dark:border-slate-800 dark:hover:bg-red-950/30" aria-label="Delete saved question">
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
             ));
