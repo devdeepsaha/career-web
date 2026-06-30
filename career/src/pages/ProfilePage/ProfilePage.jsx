@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, FileText, Save, Upload, UserRound } from 'lucide-react';
+import { BookOpen, BriefcaseBusiness, Check, FileText, GraduationCap, IdCard, Plus, Save, Target, Trash2, Trophy, Upload } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -65,6 +65,50 @@ const marksModeOptions = [
 const studentTypes = ['Engineering student', 'Medical student', 'School student', 'College student', 'Dropper', 'Diploma student', 'Postgraduate', 'Working aspirant'];
 const genderOptions = ['Not specified', 'Female', 'Male', 'Other'];
 const casteOptions = ['General', 'SC', 'ST', 'OBC', 'EWS', 'Minority', 'PwD'];
+
+const profileSections = [
+    { id: 'identity', label: 'Identity', detail: 'Name, contacts, links', icon: IdCard },
+    { id: 'career', label: 'Career', detail: 'Goals, skills, targets', icon: Target },
+    { id: 'scholarship', label: 'Scholarships', detail: 'Eligibility and documents', icon: GraduationCap },
+    { id: 'resume', label: 'Resume', detail: 'Upload and extracted memory', icon: FileText },
+    { id: 'projects', label: 'Projects', detail: 'Portfolio evidence', icon: BriefcaseBusiness },
+    { id: 'education', label: 'Education', detail: 'Academic records', icon: BookOpen },
+    { id: 'credentials', label: 'Credentials', detail: 'Certificates and wins', icon: Trophy },
+];
+
+const listTemplates = {
+    education_json: { institution: '', program: '', score: '', year: '', notes: '' },
+    projects_json: { name: '', description: '', tech: '', impact: '' },
+    credentials_json: { name: '', issuer: '', date: '', notes: '' },
+    achievements_json: { title: '', year: '', notes: '' },
+};
+
+const listFields = {
+    education_json: [
+        ['institution', 'Institution', 'College, school, university'],
+        ['program', 'Program', 'B.Tech CSE, Class 12 Science...'],
+        ['score', 'Score', 'CGPA 7.46, 84%, rank...'],
+        ['year', 'Year', '2022-2026'],
+        ['notes', 'Notes', 'Relevant coursework, branch, board...', 'textarea'],
+    ],
+    projects_json: [
+        ['name', 'Project name', 'BCCL CMS, Portfolio Website...'],
+        ['tech', 'Tech stack', 'React, Flask, Supabase...'],
+        ['description', 'Description', 'What this project does...', 'textarea'],
+        ['impact', 'Impact', 'Metrics, users, outcome...', 'textarea'],
+    ],
+    credentials_json: [
+        ['name', 'Credential', 'Internship, course, certificate...'],
+        ['issuer', 'Issuer', 'BCCL, Google, college...'],
+        ['date', 'Date', '2025'],
+        ['notes', 'Notes', 'What it proves...', 'textarea'],
+    ],
+    achievements_json: [
+        ['title', 'Achievement', 'General Secretary, Editor...'],
+        ['year', 'Year', '2025'],
+        ['notes', 'Notes', 'Context, outcome, responsibility...', 'textarea'],
+    ],
+};
 
 const readNumber = (value) => {
     const match = String(value || '').match(/\d+(?:\.\d+)?/);
@@ -200,8 +244,54 @@ const serializeProfile = (profile) => {
     };
 };
 
+const ProfileListEditor = ({ title, description, items = [], fields, onAdd, onChange, onRemove, emptyLabel }) => (
+    <section className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 className="saas-section-title">{title}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p>
+            </div>
+            <button type="button" onClick={onAdd} className="pp-button-secondary inline-flex min-h-10 items-center justify-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add
+            </button>
+        </div>
+        <div className="mt-4 space-y-3">
+            {items.length === 0 && (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
+                    {emptyLabel}
+                </div>
+            )}
+            {items.map((item, index) => (
+                <div key={index} className="rounded-lg bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:bg-slate-950">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Entry {index + 1}</p>
+                        <button type="button" onClick={() => onRemove(index)} className="flex min-h-10 items-center gap-2 rounded-md px-2.5 text-xs font-semibold text-red-600 transition-[background-color,transform] duration-150 hover:bg-red-50 active:scale-[0.96] dark:text-red-300 dark:hover:bg-red-950/30">
+                            <Trash2 className="h-4 w-4" />
+                            Remove
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        {fields.map(([key, label, placeholder, type]) => (
+                            <div key={key} className={type === 'textarea' ? 'md:col-span-2' : ''}>
+                                <label className="pp-label">{label}</label>
+                                {type === 'textarea' ? (
+                                    <textarea rows="3" value={item?.[key] || ''} onChange={(event) => onChange(index, key, event.target.value)} className="pp-input" maxLength={1200} placeholder={placeholder} />
+                                ) : (
+                                    <input value={item?.[key] || ''} onChange={(event) => onChange(index, key, event.target.value)} className="pp-input" maxLength={240} placeholder={placeholder} />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </section>
+);
+
 const ProfilePage = ({ currentUser }) => {
     const [profile, setProfile] = useState(emptyProfile);
+    const [activeSection, setActiveSection] = useState('identity');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saveState, setSaveState] = useState('idle');
@@ -229,6 +319,31 @@ const ProfilePage = ({ currentUser }) => {
 
     const updateField = (field, value) => {
         setProfile((prev) => ({ ...prev, [field]: value }));
+        setSaveState('idle');
+    };
+
+    const addListItem = (field) => {
+        setProfile((prev) => ({
+            ...prev,
+            [field]: [...(prev[field] || []), { ...(listTemplates[field] || {}) }],
+        }));
+        setSaveState('idle');
+    };
+
+    const updateListItem = (field, index, key, value) => {
+        setProfile((prev) => {
+            const nextItems = [...(prev[field] || [])];
+            nextItems[index] = { ...(nextItems[index] || {}), [key]: value };
+            return { ...prev, [field]: nextItems };
+        });
+        setSaveState('idle');
+    };
+
+    const removeListItem = (field, index) => {
+        setProfile((prev) => ({
+            ...prev,
+            [field]: (prev[field] || []).filter((_, itemIndex) => itemIndex !== index),
+        }));
         setSaveState('idle');
     };
 
@@ -339,8 +454,43 @@ const ProfilePage = ({ currentUser }) => {
                 <p className="pp-page-copy mt-1 max-w-3xl">Keep this updated so roadmaps, questions, scholarships, and recommendations become more personal.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[240px_minmax(0,1fr)]">
+                <aside className="saas-card h-fit p-2 xl:sticky xl:top-16">
+                    <div className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0">
+                        {profileSections.map((section) => {
+                            const Icon = section.icon;
+                            const active = activeSection === section.id;
+                            return (
+                                <button
+                                    key={section.id}
+                                    type="button"
+                                    onClick={() => setActiveSection(section.id)}
+                                    className={`flex min-h-11 min-w-[180px] items-center gap-3 rounded-lg px-3 text-left transition-[background-color,color,transform] duration-150 active:scale-[0.96] xl:w-full xl:min-w-0 ${
+                                        active
+                                            ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    <Icon className="h-4 w-4 shrink-0" />
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-sm font-semibold">{section.label}</span>
+                                        <span className={`hidden truncate text-xs xl:block ${active ? 'text-white/70 dark:text-slate-600' : 'text-slate-400'}`}>{section.detail}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </aside>
                 <form onSubmit={saveProfile} className="saas-card p-4">
+                    <div className="mb-4 flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-center">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Editing</p>
+                            <h2 className="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{profileSections.find((section) => section.id === activeSection)?.label || 'Profile'}</h2>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{profileSections.find((section) => section.id === activeSection)?.detail}</p>
+                    </div>
+
+                    {activeSection === 'resume' && (
                     <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
@@ -361,8 +511,10 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                         {resumeMessage && <p className="mt-3 text-sm font-medium text-slate-600 dark:text-slate-300">{resumeMessage}</p>}
                     </div>
+                    )}
 
-                    <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {activeSection === 'identity' && (
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <label className="pp-label">Full name</label>
                             <input value={profile.full_name || ''} onChange={(event) => updateField('full_name', event.target.value)} className="pp-input" maxLength={160} placeholder="Your full name" />
@@ -388,7 +540,9 @@ const ProfilePage = ({ currentUser }) => {
                             <input value={profile.linkedin_url || ''} onChange={(event) => updateField('linkedin_url', event.target.value)} className="pp-input" maxLength={260} placeholder="https://linkedin.com/in/..." />
                         </div>
                     </div>
+                    )}
 
+                    {activeSection === 'career' && (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <label className="pp-label">Current status</label>
@@ -431,9 +585,35 @@ const ProfilePage = ({ currentUser }) => {
                             {incomeWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{incomeWarning}</p>}
                             <input value={profile.annual_income || ''} onChange={(event) => updateField('annual_income', event.target.value)} className="pp-input" inputMode="numeric" maxLength={12} placeholder="e.g. 350000" />
                         </div>
+                        <div>
+                            <label className="pp-label">Skills</label>
+                            <textarea rows="4" value={profile.skills || ''} onChange={(event) => updateField('skills', event.target.value)} className="pp-input" maxLength={1200} placeholder="React, Python, AI integration..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Interests</label>
+                            <textarea rows="4" value={profile.interests || ''} onChange={(event) => updateField('interests', event.target.value)} className="pp-input" maxLength={1200} placeholder="SaaS, machine learning, public sector tech..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Career goals</label>
+                            <textarea rows="4" value={profile.goals || ''} onChange={(event) => updateField('goals', event.target.value)} className="pp-input" maxLength={1200} placeholder="Web developer, CIL Systems/EDP..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Target companies or institutions</label>
+                            <textarea rows="4" value={profile.target_companies || ''} onChange={(event) => updateField('target_companies', event.target.value)} className="pp-input" maxLength={1200} placeholder="BCCL, Coal India, startups..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Soft skills</label>
+                            <textarea rows="3" value={profile.soft_skills || ''} onChange={(event) => updateField('soft_skills', event.target.value)} className="pp-input" maxLength={1000} placeholder="Communication, leadership, product thinking..." />
+                        </div>
+                        <div>
+                            <label className="pp-label">Hobbies</label>
+                            <textarea rows="3" value={profile.hobbies || ''} onChange={(event) => updateField('hobbies', event.target.value)} className="pp-input" maxLength={1000} placeholder="Writing, photography, music..." />
+                        </div>
                     </div>
+                    )}
 
-                    <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+                    {activeSection === 'scholarship' && (
+                    <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
                         <div className="mb-3 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="saas-section-title">Scholarship eligibility profile</h2>
@@ -533,34 +713,9 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                        <div>
-                            <label className="pp-label">Skills</label>
-                            <textarea rows="4" value={profile.skills || ''} onChange={(event) => updateField('skills', event.target.value)} className="pp-input" maxLength={1200} placeholder="Python, communication, lab research..." />
-                        </div>
-                        <div>
-                            <label className="pp-label">Interests</label>
-                            <textarea rows="4" value={profile.interests || ''} onChange={(event) => updateField('interests', event.target.value)} className="pp-input" maxLength={1200} placeholder="Machine learning, biology, design..." />
-                        </div>
-                        <div>
-                            <label className="pp-label">Career goals</label>
-                            <textarea rows="4" value={profile.goals || ''} onChange={(event) => updateField('goals', event.target.value)} className="pp-input" maxLength={1200} placeholder="Doctor, IAS officer, software engineer..." />
-                        </div>
-                        <div>
-                            <label className="pp-label">Target companies or institutions</label>
-                            <textarea rows="4" value={profile.target_companies || ''} onChange={(event) => updateField('target_companies', event.target.value)} className="pp-input" maxLength={1200} placeholder="IIT, Google, government service..." />
-                        </div>
-                        <div>
-                            <label className="pp-label">Soft skills</label>
-                            <textarea rows="3" value={profile.soft_skills || ''} onChange={(event) => updateField('soft_skills', event.target.value)} className="pp-input" maxLength={1000} placeholder="Communication, leadership, product thinking..." />
-                        </div>
-                        <div>
-                            <label className="pp-label">Hobbies</label>
-                            <textarea rows="3" value={profile.hobbies || ''} onChange={(event) => updateField('hobbies', event.target.value)} className="pp-input" maxLength={1000} placeholder="Writing, photography, music..." />
-                        </div>
-                    </div>
+                    )}
 
-                    {(profile.education_json?.length > 0 || profile.projects_json?.length > 0 || profile.credentials_json?.length > 0 || profile.achievements_json?.length > 0) && (
+                    {activeSection === 'resume' && (profile.education_json?.length > 0 || profile.projects_json?.length > 0 || profile.credentials_json?.length > 0 || profile.achievements_json?.length > 0) && (
                         <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
                             {[
                                 ['Education', profile.education_json],
@@ -587,6 +742,57 @@ const ProfilePage = ({ currentUser }) => {
                         </div>
                     )}
 
+                    {activeSection === 'projects' && (
+                        <ProfileListEditor
+                            title="Projects"
+                            description="Add SaaS projects, internships, portfolio work, or college builds directly. These become AI evidence for plans and applications."
+                            items={profile.projects_json || []}
+                            fields={listFields.projects_json}
+                            onAdd={() => addListItem('projects_json')}
+                            onChange={(index, key, value) => updateListItem('projects_json', index, key, value)}
+                            onRemove={(index) => removeListItem('projects_json', index)}
+                            emptyLabel="No projects yet. Add at least one project so the AI can recommend stronger roadmap steps."
+                        />
+                    )}
+
+                    {activeSection === 'education' && (
+                        <ProfileListEditor
+                            title="Education"
+                            description="Store college, school, CGPA, percentages, boards, and year details without needing a resume upload."
+                            items={profile.education_json || []}
+                            fields={listFields.education_json}
+                            onAdd={() => addListItem('education_json')}
+                            onChange={(index, key, value) => updateListItem('education_json', index, key, value)}
+                            onRemove={(index) => removeListItem('education_json', index)}
+                            emptyLabel="No education entries yet. Add your latest academic record first."
+                        />
+                    )}
+
+                    {activeSection === 'credentials' && (
+                        <div className="space-y-4">
+                            <ProfileListEditor
+                                title="Credentials"
+                                description="Add certificates, internships, courses, and verifiable proof that should influence recommendations."
+                                items={profile.credentials_json || []}
+                                fields={listFields.credentials_json}
+                                onAdd={() => addListItem('credentials_json')}
+                                onChange={(index, key, value) => updateListItem('credentials_json', index, key, value)}
+                                onRemove={(index) => removeListItem('credentials_json', index)}
+                                emptyLabel="No credentials yet. Add internships, certificates, or courses here."
+                            />
+                            <ProfileListEditor
+                                title="Achievements"
+                                description="Add leadership roles, competitions, awards, editorial work, events, and other signals."
+                                items={profile.achievements_json || []}
+                                fields={listFields.achievements_json}
+                                onAdd={() => addListItem('achievements_json')}
+                                onChange={(index, key, value) => updateListItem('achievements_json', index, key, value)}
+                                onRemove={(index) => removeListItem('achievements_json', index)}
+                                emptyLabel="No achievements yet. Add leadership, event, or competition wins here."
+                            />
+                        </div>
+                    )}
+
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                         <button disabled={isSaving} className={`flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-[background-color,transform] duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 ${saveState === 'saved' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200'}`}>
                             {saveState === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
@@ -596,19 +802,6 @@ const ProfilePage = ({ currentUser }) => {
                     </div>
                 </form>
 
-                <aside className="space-y-4">
-                    <div className="saas-card p-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                            <UserRound className="h-5 w-5" />
-                        </div>
-                        <h2 className="mt-4 text-sm font-semibold text-slate-950 dark:text-white">Account</h2>
-                        <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{currentUser?.email || 'Signed in'}</p>
-                    </div>
-                    <div className="saas-card p-4">
-                        <h2 className="saas-section-title">Personalization</h2>
-                        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Planner inputs can sync back into this profile, and future dashboards use it to suggest better next actions.</p>
-                    </div>
-                </aside>
             </div>
         </div>
     );
