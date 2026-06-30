@@ -296,9 +296,24 @@ const LandingPage = ({ onLogin, onSignup, onGuest, theme, setTheme }) => {
                         <button onClick={toggleTheme} className="p-3 rounded-full bg-black/5 dark:bg-white/10" aria-label="Toggle theme">{theme === 'dark' ? <LandingIcon name="sun" className="h-4 w-4" /> : <LandingIcon name="moon" className="h-4 w-4" />}</button>
                     </div>
 
-                    <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-2 rounded-full bg-black/5 dark:bg-white/10" aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}>
-                        {mobileNavOpen ? <LandingIcon name="x" className="h-5 w-5" /> : <LandingIcon name="menu" className="h-5 w-5" />}
-                    </button>
+                    <div className="flex items-center gap-2 lg:hidden">
+                        <button
+                            onClick={toggleTheme}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-white/10"
+                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            type="button"
+                        >
+                            {theme === 'dark' ? <LandingIcon name="sun" className="h-4 w-4" /> : <LandingIcon name="moon" className="h-4 w-4" />}
+                        </button>
+                        <button
+                            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-white/10"
+                            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+                            type="button"
+                        >
+                            {mobileNavOpen ? <LandingIcon name="x" className="h-5 w-5" /> : <LandingIcon name="menu" className="h-5 w-5" />}
+                        </button>
+                    </div>
                 </nav>
 
                 {mobileNavOpen && (
