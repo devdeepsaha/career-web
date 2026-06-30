@@ -73,28 +73,21 @@ const LibraryPage = ({ currentUser }) => {
         chats: '/chat-sessions',
     }), []);
 
-    const counts = useMemo(() => ({
-        roadmaps: data.roadmaps.length,
-        questions: data.questions.length,
-        mocks: data.mocks.length,
-        scholarships: data.scholarships.length,
-        revision: data.questions.length,
-        resources: resources.length,
-        chats: data.chats.length,
-    }), [data, resources]);
-
     const activeMeta = tabs.find((tab) => tab.id === activeTab) || tabs[0];
     const tabLabel = useCallback((tab) => t(`library_tab_${tab.id}`, tab.label), [t]);
-    const activeCount = counts[activeTab] || 0;
     const searchable = useMemo(() => ({
-        roadmaps: data.roadmaps,
-        questions: data.questions,
-        mocks: data.mocks,
-        scholarships: data.scholarships,
-        revision: data.questions,
+        roadmaps: Array.isArray(data.roadmaps) ? data.roadmaps : [],
+        questions: Array.isArray(data.questions) ? data.questions : [],
+        mocks: Array.isArray(data.mocks) ? data.mocks : [],
+        scholarships: Array.isArray(data.scholarships) ? data.scholarships : [],
+        revision: Array.isArray(data.questions) ? data.questions : [],
         resources,
-        chats: data.chats,
+        chats: Array.isArray(data.chats) ? data.chats : [],
     }), [data, resources]);
+
+    const counts = useMemo(() => Object.fromEntries(
+        tabs.map((tab) => [tab.id, (searchable[tab.id] || []).length])
+    ), [searchable]);
 
     const filtered = useMemo(() => {
         const needle = debouncedQuery.trim().toLowerCase();
@@ -102,6 +95,10 @@ const LibraryPage = ({ currentUser }) => {
         if (!needle) return source;
         return source.filter((item) => JSON.stringify(item).toLowerCase().includes(needle));
     }, [activeTab, debouncedQuery, searchable]);
+    const activeCount = filtered.length;
+    const tabCount = useCallback((tabId) => (
+        tabId === activeTab ? filtered.length : (searchable[tabId] || []).length
+    ), [activeTab, filtered.length, searchable]);
 
     const normalizeList = (payload, key) => {
         if (Array.isArray(payload)) return payload;
@@ -427,15 +424,15 @@ const LibraryPage = ({ currentUser }) => {
                 <div className="saas-card grid grid-cols-3 gap-2 p-3">
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                         <p className="saas-meta">{t('library_stat_plans', 'Plans')}</p>
-                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.roadmaps}</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{tabCount('roadmaps')}</p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                         <p className="saas-meta">{t('library_stat_practice', 'Practice')}</p>
-                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.questions}</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{tabCount('questions')}</p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                         <p className="saas-meta">{t('library_stat_mocks', 'Mocks')}</p>
-                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.mocks}</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{tabCount('mocks')}</p>
                     </div>
                 </div>
             </div>
@@ -471,7 +468,7 @@ const LibraryPage = ({ currentUser }) => {
                             <button key={tab.id} onClick={() => switchTab(tab.id)} className={`flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
                                 <Icon className="h-4 w-4" />
                                 {tabLabel(tab)}
-                                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.68rem] tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">{counts[tab.id] || 0}</span>
+                                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.68rem] tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">{tabCount(tab.id)}</span>
                             </button>
                         );
                     })}

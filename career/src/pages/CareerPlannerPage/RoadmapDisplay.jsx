@@ -6,6 +6,14 @@ import EmptyStateGraphic from './EmptyStateGraphic';
 const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, sendMessageToChatbot, currentUser, onOpenStage }) => {
     const { t } = useTranslation();
     const [visibleCards, setVisibleCards] = useState([]);
+    const normalizeSteps = (value) => {
+        if (Array.isArray(value)) return value.filter(Boolean);
+        if (!value || typeof value !== 'object') return [];
+        for (const key of ['roadmap', 'roadmap_json', 'steps', 'items', 'data']) {
+            if (Array.isArray(value[key])) return value[key].filter(Boolean);
+        }
+        return [];
+    };
 
     const handleChatTrigger = (query) => {
         if (setChatVisible && sendMessageToChatbot) {
@@ -19,7 +27,7 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
     };
 
     useEffect(() => {
-        setVisibleCards(Array.isArray(roadmap) ? roadmap.filter(Boolean) : []);
+        setVisibleCards(normalizeSteps(roadmap));
     }, [roadmap]);
 
     return (

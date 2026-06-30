@@ -171,8 +171,26 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                 return;
             }
             try {
-                const response = await fetch(`${API_URL}/question-attempts?wrong_only=true`, { credentials: 'include' });
-                if (response.ok) setWeakQueue(await response.json());
+                const [attemptResponse, savedResponse] = await Promise.all([
+                    fetch(`${API_URL}/question-attempts?wrong_only=true`, { credentials: 'include' }),
+                    fetch(`${API_URL}/saved-questions`, { credentials: 'include' }),
+                ]);
+                const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
+                const savedQuestions = savedResponse.ok ? await savedResponse.json() : [];
+                const mistakeQuestions = (Array.isArray(savedQuestions) ? savedQuestions : [])
+                    .filter((item) => item?.source === 'mistake')
+                    .map((item) => ({
+                        ...item,
+                        saved_question_id: item.id,
+                        source: 'mistake',
+                    }));
+                const queueMap = new globalThis.Map();
+                [...(Array.isArray(attempts) ? attempts : []), ...mistakeQuestions].forEach((item) => {
+                    const key = String(item.question_text || item.question || '').trim().toLowerCase();
+                    if (!key || queueMap.has(key)) return;
+                    queueMap.set(key, item);
+                });
+                setWeakQueue(Array.from(queueMap.values()));
             } catch (err) {
                 console.error('Failed to load weak queue:', err);
             }

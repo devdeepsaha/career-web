@@ -16,6 +16,14 @@ const isControlCharacter = (char) => {
 const hasControlCharacters = (value = '') => Array.from(String(value)).some(isControlCharacter);
 const hasUnsafeMarkup = (value = '') => /[<>]/.test(String(value));
 const cleanInput = (value = '') => Array.from(String(value)).map((char) => (isControlCharacter(char) ? ' ' : char)).join('').replace(/\s+/g, ' ').trim();
+const normalizeRoadmapSteps = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (!value || typeof value !== 'object') return [];
+    for (const key of ['roadmap', 'roadmap_json', 'steps', 'items', 'data']) {
+        if (Array.isArray(value[key])) return value[key].filter(Boolean);
+    }
+    return [];
+};
 
 const roadmapInputWarning = (value, label) => {
     const text = cleanInput(value);
@@ -91,7 +99,7 @@ const CareerPlannerPage = ({ currentUser, showAuth, onNavigate }) => {
             const response = await fetch(`${API_URL}/roadmaps/${id}`, { credentials: 'include' });
             if (!response.ok) throw new Error('Failed to open roadmap');
             const data = await response.json();
-            setRoadmap(data.roadmap_json || []);
+            setRoadmap(normalizeRoadmapSteps(data.roadmap_json || data.roadmap || data));
             setSavedRoadmapMeta(data);
             setIsRoadmapVisible(true);
             setInputsCollapsed(true);
@@ -174,7 +182,7 @@ const CareerPlannerPage = ({ currentUser, showAuth, onNavigate }) => {
 
             if (!response.ok) throw new Error('Network response was not ok');
             const payload = await response.json();
-            const generatedSteps = Array.isArray(payload) ? payload : payload.roadmap;
+            const generatedSteps = normalizeRoadmapSteps(payload);
             setRoadmap(generatedSteps);
             setSavedRoadmapMeta(Array.isArray(payload) ? null : payload.saved_roadmap);
             if (currentUser?.is_guest) {
