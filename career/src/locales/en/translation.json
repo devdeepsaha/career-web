@@ -316,5 +316,195 @@
   "library_tab_resources": "Resources",
   "library_tab_chats": "Chats",
   "roadmapDisplay_canvasLabel": "Roadmap Canvas",
-  "roadmapDisplay_stageCount": "{{count}} stages"
+  "roadmapDisplay_stageCount": "{{count}} stages",
+  "teamProfile_title": "People building the platform",
+  "teamProfile_subtitle": "A focused view of roles, strengths, motivations, and working styles behind Potho-Prodorshok.",
+  "teamProfile_contributors": "{{count}} contributors",
+  "teamProfile_workingStyle": "Working Style",
+  "teamProfile_frictionPoints": "Friction Points",
+  "team_members": {
+    "devdeep": {
+      "name": "Devdeep Saha",
+      "role": "Developer / Designer",
+      "tagline": "Building meaningful experiences through technology, design, and creativity",
+      "bio": "Devdeep is the main architect and lead developer of the Potho Prodorshok website. Beyond software, Devdeep explores 3D design with Blender and creates digital art, while also pursuing his passion for music with ukulele, guitar, synth, flute, and kalimba. His vision is to combine technology, design, and creativity to craft solutions that are innovative, accessible, and inspiring.",
+      "motivations": [
+        {
+          "label": "Impact"
+        },
+        {
+          "label": "Innovation"
+        },
+        {
+          "label": "Learning"
+        }
+      ],
+      "personality": [
+        {
+          "label": "Extrovert"
+        },
+        {
+          "label": "Analytical / Creative"
+        },
+        {
+          "label": "Active"
+        }
+      ],
+      "frustrations": [
+        "Lack of recognition for creative efforts",
+        "Overly rigid systems that block innovation",
+        "Blender crashing after hours of work"
+      ],
+      "goals": [
+        "Collaborate with companies like Netflix for design and creative roles",
+        "Build a portfolio of impactful projects",
+        "Mentor junior developers"
+      ],
+      "skills": [
+        "React",
+        "Node.js",
+        "Python",
+        "Cloud (AWS)",
+        "UI/UX Design",
+        "Blender",
+        "Video Editing",
+        "Music"
+      ]
+    },
+    "imran": {
+      "name": "Imran Mollick",
+      "role": "Frontend Specialist",
+      "tagline": "Crafting digital experiences with precision and passion.",
+      "bio": "Imran is a meticulous frontend specialist who excels at turning complex designs into smooth, pixel-perfect user experiences. He has a keen eye for detail and a passion for writing clean, maintainable code that ensures the app is both beautiful and performant.",
+      "motivations": [
+        {
+          "label": "Aesthetics"
+        },
+        {
+          "label": "Performance"
+        },
+        {
+          "label": "User Joy"
+        }
+      ],
+      "personality": [
+        {
+          "label": "Extrovert"
+        },
+        {
+          "label": "Creative"
+        },
+        {
+          "label": "Active"
+        }
+      ],
+      "frustrations": [
+        "Inconsistent design systems",
+        "Slow API response times",
+        "Cross-browser CSS bugs"
+      ],
+      "goals": [
+        "Expand knowledge in AI/ML",
+        "Contribute to open-source projects",
+        "Mentor junior developers"
+      ],
+      "skills": [
+        "React",
+        "Tailwind CSS",
+        "JavaScript",
+        "Animation",
+        "UI Testing"
+      ]
+    },
+    "debasish": {
+      "name": "Debasish Ghosh",
+      "role": "QA & Bug Fixes",
+      "tagline": "Striving for perfection, one bug at a time.",
+      "bio": "Debasish is the guardian of quality for Potho-Prodorshok. He identifies elusive bugs and helps keep the application stable and reliable for users. His methodical approach to testing and debugging is crucial to the platform success.",
+      "motivations": [
+        {
+          "label": "Stability"
+        },
+        {
+          "label": "Problem Solving"
+        },
+        {
+          "label": "User Trust"
+        }
+      ],
+      "personality": [
+        {
+          "label": "Extrovert"
+        },
+        {
+          "label": "Creative"
+        },
+        {
+          "label": "Active"
+        }
+      ],
+      "frustrations": [
+        "Undocumented features",
+        "Non-reproducible bugs",
+        "Last-minute code changes"
+      ],
+      "goals": [
+        "Expand knowledge in AI/ML",
+        "Contribute to open-source projects",
+        "Mentor junior developers"
+      ],
+      "skills": [
+        "QA Testing",
+        "Debugging",
+        "Python",
+        "JavaScript",
+        "Automation"
+      ]
+    },
+    "ritobhas": {
+      "name": "Ritabhas Ghosh",
+      "role": "Creative Idea Giver",
+      "tagline": "Imagining a better future for student guidance.",
+      "bio": "Ritabhas is the creative force behind innovative Potho-Prodorshok features. He brainstorms new ideas and imagines how the platform can better serve students. His out-of-the-box thinking helps push the boundaries of what the app can do.",
+      "motivations": [
+        {
+          "label": "Innovation"
+        },
+        {
+          "label": "User Needs"
+        },
+        {
+          "label": "Blue-Sky Thinking"
+        }
+      ],
+      "personality": [
+        {
+          "label": "Extrovert"
+        },
+        {
+          "label": "Creative"
+        },
+        {
+          "label": "Active"
+        }
+      ],
+      "frustrations": [
+        "Technical limitations",
+        "Sticking to the status quo",
+        "Ideas without execution"
+      ],
+      "goals": [
+        "Expand knowledge in AI/ML",
+        "Contribute to open-source projects",
+        "Mentor junior developers"
+      ],
+      "skills": [
+        "Brainstorming",
+        "Market Research",
+        "Product Vision",
+        "User Stories",
+        "Creative Strategy"
+      ]
+    }
+  }
 }

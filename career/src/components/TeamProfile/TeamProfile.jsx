@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BadgeCheck, BriefcaseBusiness, Lightbulb, Sparkles, Target, UsersRound } from 'lucide-react';
 import teamData from '../../data/teamData';
 
@@ -53,7 +54,36 @@ const Section = ({ title, icon, children }) => (
     </section>
 );
 
-const ProfileCard = ({ member }) => {
+const getInitialMemberId = () => {
+    const memberId = new URLSearchParams(window.location.search).get('member');
+    return teamData.some((member) => member.id === memberId) ? memberId : teamData[0]?.id;
+};
+
+const translateArray = (t, key, fallback) => {
+    const value = t(key, { returnObjects: true, defaultValue: fallback });
+    return Array.isArray(value) ? value : fallback;
+};
+
+const translateMember = (member, t) => ({
+    ...member,
+    name: t(`team_members.${member.id}.name`, member.name),
+    role: t(`team_members.${member.id}.role`, member.role),
+    tagline: t(`team_members.${member.id}.tagline`, member.tagline),
+    bio: t(`team_members.${member.id}.bio`, member.bio),
+    skills: translateArray(t, `team_members.${member.id}.skills`, member.skills),
+    goals: translateArray(t, `team_members.${member.id}.goals`, member.goals),
+    frustrations: translateArray(t, `team_members.${member.id}.frustrations`, member.frustrations),
+    motivations: member.motivations.map((item, index) => ({
+        ...item,
+        label: t(`team_members.${member.id}.motivations.${index}.label`, item.label),
+    })),
+    personality: member.personality.map((item, index) => ({
+        ...item,
+        label: t(`team_members.${member.id}.personality.${index}.label`, item.label),
+    })),
+});
+
+const ProfileCard = ({ member, t }) => {
     const accent = accentMap[member.accentColor] || accentMap.blue;
 
     return (
@@ -75,7 +105,7 @@ const ProfileCard = ({ member }) => {
                     </div>
 
                     <div className="mt-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">Skills</p>
+                        <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">{t('teamProfile_skills')}</p>
                         <div className="flex flex-wrap gap-2">
                             {member.skills.map((skill) => (
                                 <span key={skill} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${accent.bg} ${accent.text}`}>
@@ -88,11 +118,11 @@ const ProfileCard = ({ member }) => {
 
                 <div className="saas-card min-w-0 p-5">
                     <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
-                        <Section title="Bio" icon={BriefcaseBusiness}>
+                        <Section title={t('teamProfile_bio')} icon={BriefcaseBusiness}>
                             <p className="text-pretty text-sm leading-6 text-slate-700 dark:text-slate-300">{member.bio}</p>
                         </Section>
 
-                        <Section title="Goals" icon={Target}>
+                        <Section title={t('teamProfile_goals')} icon={Target}>
                             <div className="space-y-2">
                                 {member.goals.map((goal) => (
                                     <div key={goal} className="flex gap-2 text-sm leading-5 text-slate-700 dark:text-slate-300">
@@ -103,7 +133,7 @@ const ProfileCard = ({ member }) => {
                             </div>
                         </Section>
 
-                        <Section title="Motivations" icon={Sparkles}>
+                        <Section title={t('teamProfile_motivations')} icon={Sparkles}>
                             <div className="space-y-3">
                                 {member.motivations.map((item) => (
                                     <StatBar key={item.label} label={item.label} value={item.value} colorClass={accent.bar} />
@@ -111,7 +141,7 @@ const ProfileCard = ({ member }) => {
                             </div>
                         </Section>
 
-                        <Section title="Working Style" icon={Lightbulb}>
+                        <Section title={t('teamProfile_workingStyle', 'Working Style')} icon={Lightbulb}>
                             <div className="space-y-3">
                                 {member.personality.map((item) => (
                                     <StatBar key={item.label} label={item.label} value={item.value} colorClass={accent.bar} />
@@ -120,7 +150,7 @@ const ProfileCard = ({ member }) => {
                         </Section>
                     </div>
 
-                    <Section title="Friction Points" icon={UsersRound}>
+                    <Section title={t('teamProfile_frictionPoints', 'Friction Points')} icon={UsersRound}>
                         <div className="grid gap-2 md:grid-cols-3">
                             {member.frustrations.map((item) => (
                                 <div key={item} className="rounded-md border border-slate-200 bg-white p-3 text-sm leading-5 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
@@ -135,33 +165,50 @@ const ProfileCard = ({ member }) => {
 };
 
 const TeamProfile = () => {
-    const [activeId, setActiveId] = useState(teamData[0]?.id);
-    const activeMember = useMemo(() => teamData.find((member) => member.id === activeId) || teamData[0], [activeId]);
+    const { t } = useTranslation();
+    const [activeId, setActiveId] = useState(getInitialMemberId);
+    const translatedTeam = useMemo(() => teamData.map((member) => translateMember(member, t)), [t]);
+    const activeMember = useMemo(() => translatedTeam.find((member) => member.id === activeId) || translatedTeam[0], [activeId, translatedTeam]);
+
+    useEffect(() => {
+        const syncMemberFromUrl = () => setActiveId(getInitialMemberId());
+        window.addEventListener('popstate', syncMemberFromUrl);
+        return () => window.removeEventListener('popstate', syncMemberFromUrl);
+    }, []);
+
+    const selectMember = (memberId) => {
+        setActiveId(memberId);
+        const nextPath = `/team?member=${encodeURIComponent(memberId)}`;
+        const currentPath = `${window.location.pathname}${window.location.search}`;
+        if (currentPath !== nextPath) {
+            window.history.replaceState({ tab: 'team', member: memberId }, '', nextPath);
+        }
+    };
 
     return (
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             <div className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 dark:border-slate-800 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Team</p>
-                    <h1 className="pp-page-title">People building the platform</h1>
-                    <p className="pp-page-copy mt-1 max-w-3xl">A focused view of roles, strengths, motivations, and working styles behind Potho-Prodorshok.</p>
+                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('teamProfile_team')}</p>
+                    <h1 className="pp-page-title">{t('teamProfile_title', 'People building the platform')}</h1>
+                    <p className="pp-page-copy mt-1 max-w-3xl">{t('teamProfile_subtitle', 'A focused view of roles, strengths, motivations, and working styles behind Potho-Prodorshok.')}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold tabular-nums text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-                    {teamData.length} contributors
+                    {t('teamProfile_contributors', '{{count}} contributors', { count: teamData.length })}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
                 <aside className="saas-card p-2 xl:sticky xl:top-16 xl:self-start">
                     <div className="flex gap-2 overflow-x-auto xl:block xl:space-y-1">
-                        {teamData.map((member) => {
+                        {translatedTeam.map((member) => {
                             const accent = accentMap[member.accentColor] || accentMap.blue;
                             const isActive = member.id === activeMember.id;
 
                             return (
                                 <button
                                     key={member.id}
-                                    onClick={() => setActiveId(member.id)}
+                                    onClick={() => selectMember(member.id)}
                                     className={`flex min-w-56 items-center gap-3 rounded-lg p-2 text-left transition-[background-color,transform] duration-150 active:scale-[0.96] xl:w-full xl:min-w-0 ${
                                         isActive ? 'bg-slate-100 dark:bg-slate-900' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'
                                     }`}
@@ -177,7 +224,7 @@ const TeamProfile = () => {
                     </div>
                 </aside>
 
-                <ProfileCard member={activeMember} />
+                <ProfileCard key={activeMember.id} member={activeMember} t={t} />
             </div>
         </div>
     );
