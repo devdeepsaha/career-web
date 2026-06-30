@@ -459,9 +459,27 @@ const translateValue = (value, language) => {
 };
 
 const translateTextNode = (node, language) => {
-  const base = originalText.get(node) ?? node.nodeValue;
+  const current = node.nodeValue;
+  const storedBase = originalText.get(node);
+  let base = storedBase ?? current;
   if (!normalize(base)) return;
-  if (!originalText.has(node)) originalText.set(node, base);
+
+  if (storedBase) {
+    const baseNeedle = normalize(storedBase);
+    const expectedTranslation = translateValue(baseNeedle, language);
+    const expectedValue = storedBase.replace(baseNeedle, expectedTranslation);
+    const currentNormalized = normalize(current);
+    const expectedNormalized = normalize(expectedValue);
+    const storedNormalized = normalize(storedBase);
+
+    if (currentNormalized && currentNormalized !== expectedNormalized && currentNormalized !== storedNormalized) {
+      base = current;
+      originalText.set(node, current);
+    }
+  } else {
+    originalText.set(node, current);
+  }
+
   const translated = translateValue(normalize(base), language);
   node.nodeValue = base.replace(normalize(base), translated);
 };
