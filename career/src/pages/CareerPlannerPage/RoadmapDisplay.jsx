@@ -26,7 +26,7 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
         <div className="saas-card min-h-[540px] p-4">
             <div className="mb-4 flex flex-col justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800 md:flex-row md:items-center">
                 <div>
-                    <p className="saas-meta">Roadmap Canvas</p>
+                    <p className="saas-meta">{t('roadmapDisplay_canvasLabel', 'Roadmap Canvas')}</p>
                     <h2 className="saas-section-title mt-1">
                         {t('roadmapDisplay_title')}
                     </h2>
@@ -37,7 +37,7 @@ const RoadmapDisplay = ({ isLoading, roadmap, savedRoadmapMeta, setChatVisible, 
                 <div className="flex flex-wrap gap-2">
                     {savedRoadmapMeta && <span className="ios-pill w-fit">Saved · {savedRoadmapMeta.status}</span>}
                     <span className="ios-pill w-fit tabular-nums">
-                        {visibleCards.length} active steps
+                        {t('roadmapDisplay_stageCount', '{{count}} stages', { count: visibleCards.length })}
                     </span>
                 </div>
             </div>

@@ -447,10 +447,10 @@ const ProfilePage = ({ currentUser }) => {
     }
 
     return (
-        <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950">
+        <div className="py-3 pl-3 pr-3 sm:pr-4 lg:pr-5 xl:pl-0 2xl:pr-6">
+            <div className="overflow-hidden border-y border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
             <div className="grid grid-cols-1 xl:grid-cols-[240px_minmax(0,1fr)]">
-                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:border-b-0 xl:border-r">
+                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:min-h-[calc(100dvh-5.5rem)] xl:border-b-0 xl:border-r">
                     <div className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0">
                         {profileSections.map((section) => {
                             const Icon = section.icon;

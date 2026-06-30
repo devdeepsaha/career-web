@@ -7,7 +7,6 @@
   "sidebar_menu": "Menu",
   "sidebar_team": "Our Team",
   "sidebar_language": "Change Language",
-
   "login_button": "Get Started for Free",
   "signup_button": "Sign Up",
   "logout_button": "Logout",
@@ -22,7 +21,6 @@
     "logout": "Logout",
     "getStarted": "Login/Sign Up"
   },
-
   "aiTutor_title": "AI Tutor for Competitive Exams ",
   "aiTutor_subtitle": "Personalized practice and instant doubt clarification for JEE, NEET, UPSC, and more.",
   "aiTutor_tab_practice": "Practice Questions",
@@ -53,16 +51,14 @@
   "aiTutor_button_startTest": "Start Mock Test",
   "aiTutor_chatbot_initialMessage": "Have a doubt? Ask me anything!",
   "aiTutor_error_chatbotConnect": "Sorry, I'm having trouble connecting.",
-
-    "mockTest_loading": "Loading Test...",
+  "mockTest_loading": "Loading Test...",
   "mockTest_title": "Mock Test: Question {{current}} of {{total}}",
   "mockTest_endButton": "End Test",
   "mockTest_prevButton": "Previous",
   "mockTest_nextButton": "Next",
   "mockTest_submitButton": "Submit Test",
   "mockTest_submittingButton": "Submitting...",
-
-    "perfDash_title": "Test Performance Dashboard",
+  "perfDash_title": "Test Performance Dashboard",
   "perfDash_subtitle": "Here's a detailed breakdown of your results.",
   "perfDash_score_title": "Overall Score",
   "perfDash_score_details": "{{correct}} out of {{total}} correct",
@@ -75,19 +71,14 @@
   "perfDash_review_incorrectTag": "Incorrect",
   "perfDash_review_yourAnswer": "(Your Answer)",
   "perfDash_retakeButton": "Take Another Test",
-
   "careerPlanner_title": "Potho Prodorshok",
   "careerPlanner_subtitle": "You Dream, We Plan.",
   "careerPlanner_error_fillFields": "Please fill out all fields.",
   "careerPlanner_error_generateFailed": "Sorry, we couldn't generate your roadmap. Please try again.",
-
   "emptyState_roadmapText": "Your personalized roadmap will appear here...",
-
   "roadmapDisplay_title": "Your Personalized Roadmap",
   "roadmapDisplay_subtitle": "Follow these steps to achieve your career goals. Each step is a building block for your future.",
-
   "roadmapCard_learnMore": "Learn More from {{source}}",
-
   "scholarship_title": "Smart Scholarship Finder",
   "scholarship_subtitle": "Find scholarships that match your profile, for studies in India and abroad.",
   "scholarship_error_fetchFailed": "Could not find scholarships. Please ensure the backend is running.",
@@ -108,13 +99,10 @@
   "scholarship_results_officialLink": "Official Link",
   "scholarship_results_searchGoogle": "Search on Google",
   "scholarship_emptyStateText": "Enter your details to find matching scholarships.",
-
-
   "stepType_course": "Recommended Course",
   "stepType_project": "Hands-on Project",
   "stepType_skill": "Skill to Acquire",
   "stepType_mentor": "Networking & Mentorship",
-
   "userInput_title": "Create Your Path",
   "userInput_subtitle": "Tell us about yourself for a hyper-detailed, actionable career plan.",
   "userInput_skillsLabel": "Your Current Skills",
@@ -137,7 +125,6 @@
   "userInput_targetPlaceholder": "e.g., Samsung, AIIMS Delhi, Civil Services",
   "userInput_button_generating": "Generating...",
   "userInput_button_generate": "Generate My Detailed Plan",
-
   "chatbot_initialMessage": "Hi! How can I help you with your career path today?",
   "chatbot_errorMessage": "Sorry, I'm having trouble connecting. Please try again later.",
   "chatbot_toggleAriaLabel": "Toggle Chat",
@@ -145,22 +132,18 @@
   "chatbot_typing": "Typing...",
   "chatbot_placeholder": "Ask a question...",
   "chatbot_sendButton": "Send",
-
   "doubtChat_toggleAriaLabel": "Toggle Doubt Solver Chat",
   "doubtChat_header": "Instant Doubt Solver",
   "doubtChat_thinking": "Thinking...",
   "doubtChat_placeholder": "Ask a doubt...",
   "doubtChat_sendButton": "Send",
-
   "teamProfile_personality": "Personality Traits",
   "teamProfile_bio": "Bio",
-  "teamProfile_motivations": "Motivations", 
+  "teamProfile_motivations": "Motivations",
   "teamProfile_frustrations": "Frustrations",
   "teamProfile_skills": "Skills",
   "teamProfile_team": "Our Team",
   "teamProfile_goals": "Goals",
-
-  
   "nav_support": "Support",
   "support_seo_title": "Support & FAQ | Potho-Prodorshok",
   "support_seo_desc": "Get help, find answers to frequently asked questions, and contact the Potho-Prodorshok team.",
@@ -178,8 +161,6 @@
   "support_form_email": "Your Email",
   "support_form_message": "Message",
   "support_form_button": "Send Message",
-
-
   "policies_seo_title": "Privacy Policy & Terms | Potho-Prodorshok",
   "policies_seo_desc": "Read our Privacy Policy and Terms of Service to understand how we handle your data and our commitment to your privacy and security.",
   "policies_main_title": "Policies",
@@ -309,6 +290,31 @@
   "landing_ask_answer_practice": "The AI Tutor generates practice questions and mock tests. Wrong answers become revision material so you can return to the exact mistakes later.",
   "landing_ask_answer_scholarship": "Scholarship search can use profile context, then saved opportunities become an application tracker with status and deadlines.",
   "landing_ask_answer_guest": "Guest mode opens a preview workspace. You can explore key flows, but saved roadmaps, mock history, profile memory, and library data need an account.",
-  "landing_ask_answer_default": "Potho Prodorshok is a logged-in career workspace: plan your path, practice for exams, save useful outputs, and return to your progress from one dashboard."
-
+  "landing_ask_answer_default": "Potho Prodorshok is a logged-in career workspace: plan your path, practice for exams, save useful outputs, and return to your progress from one dashboard.",
+  "library_eyebrow": "Saved Library",
+  "library_title": "Everything you have built",
+  "library_subtitle": "Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.",
+  "library_stat_plans": "Plans",
+  "library_stat_practice": "Practice",
+  "library_stat_mocks": "Mocks",
+  "library_review_cards": "{{count}} review cards",
+  "library_review_detail": "Jump straight into mistakes and saved questions.",
+  "library_no_roadmap": "No roadmap saved yet",
+  "library_roadmap_detail": "Latest career plan and saved stages.",
+  "library_latest_mock": "{{score}}% latest mock",
+  "library_no_mock": "No mock yet",
+  "library_mock_detail": "Open full score review without hunting.",
+  "library_no_scholarship": "No scholarship saved yet",
+  "library_scholarship_detail": "Applications and opportunity tracking.",
+  "library_current_view": "Current view",
+  "library_search_placeholder": "Search {{label}}...",
+  "library_tab_roadmaps": "Roadmaps",
+  "library_tab_questions": "Questions",
+  "library_tab_mocks": "Mock tests",
+  "library_tab_scholarships": "Scholarships",
+  "library_tab_revision": "Revision",
+  "library_tab_resources": "Resources",
+  "library_tab_chats": "Chats",
+  "roadmapDisplay_canvasLabel": "Roadmap Canvas",
+  "roadmapDisplay_stageCount": "{{count}} stages"
 }

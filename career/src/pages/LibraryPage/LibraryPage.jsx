@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, BookMarked, Boxes, CalendarDays, ExternalLink, GraduationCap, Map, MessageSquare, Plus, Search, Trash2, Trophy, X } from 'lucide-react';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from '../AITutorPage/mathText';
 import { useDebouncedValue } from '../../utils/timing';
+import { getGuestWorkspace } from '../../utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -43,6 +45,7 @@ const getInitialView = () => {
 };
 
 const LibraryPage = ({ currentUser }) => {
+    const { t } = useTranslation();
     const storageOwner = currentUser?.id || currentUser?.email || currentUser?.name || 'guest';
     const resourceStorageKey = `resource_vault_${storageOwner}`;
     const [activeTab, setActiveTab] = useState(getInitialView);
@@ -80,6 +83,7 @@ const LibraryPage = ({ currentUser }) => {
     }), [data, resources]);
 
     const activeMeta = tabs.find((tab) => tab.id === activeTab) || tabs[0];
+    const tabLabel = useCallback((tab) => t(`library_tab_${tab.id}`, tab.label), [t]);
     const activeCount = counts[activeTab] || 0;
     const searchable = useMemo(() => ({
         roadmaps: data.roadmaps,
@@ -98,14 +102,64 @@ const LibraryPage = ({ currentUser }) => {
         return source.filter((item) => JSON.stringify(item).toLowerCase().includes(needle));
     }, [activeTab, debouncedQuery, searchable]);
 
+    const normalizeList = (payload, key) => {
+        if (Array.isArray(payload)) return payload;
+        if (!payload || typeof payload !== 'object') return [];
+        const aliases = {
+            roadmaps: ['roadmaps', 'items', 'data'],
+            questions: ['questions', 'saved_questions', 'savedQuestions', 'items', 'data'],
+            mocks: ['mocks', 'mock_tests', 'mockTests', 'items', 'data'],
+            scholarships: ['scholarships', 'saved_scholarships', 'savedScholarships', 'items', 'data'],
+            chats: ['chats', 'chat_sessions', 'chatSessions', 'items', 'data'],
+        }[key] || [key, 'items', 'data'];
+        for (const alias of aliases) {
+            if (Array.isArray(payload[alias])) return payload[alias];
+        }
+        return [];
+    };
+
+    const getGuestLibraryData = () => {
+        const workspace = getGuestWorkspace();
+        const savedQuestions = Array.isArray(workspace.savedQuestions) ? workspace.savedQuestions : [];
+        const wrongAttempts = (workspace.questionAttempts || [])
+            .filter((item) => item && item.is_correct === false)
+            .map((item) => ({
+                ...item,
+                id: item.id || item.guest_id,
+                source: item.source || 'mistake',
+                correct_answer: item.correct_answer || item.answer,
+            }));
+        return {
+            roadmaps: (workspace.roadmaps || []).map((item) => ({
+                ...item,
+                id: item.id || item.guest_id,
+                step_count: item.step_count ?? item.roadmap_json?.length ?? item.roadmap?.length ?? 0,
+            })),
+            questions: [...savedQuestions, ...wrongAttempts].map((item) => ({
+                ...item,
+                id: item.id || item.guest_id,
+                question_text: item.question_text || item.question,
+                correct_answer: item.correct_answer || item.answer,
+            })),
+            mocks: (workspace.mockTests || []).map((item) => ({ ...item, id: item.id || item.guest_id })),
+            scholarships: (workspace.savedScholarships || []).map((item) => ({ ...item, id: item.id || item.guest_id })),
+            chats: [],
+        };
+    };
+
     const loadAll = useCallback(async () => {
         setIsLoading(true);
         setError('');
+        if (currentUser?.is_guest) {
+            setData(getGuestLibraryData());
+            setIsLoading(false);
+            return;
+        }
         try {
             const entries = await Promise.all(Object.entries(endpoints).map(async ([key, endpoint]) => {
                 const response = await fetch(`${API_URL}${endpoint}`, { credentials: 'include' });
                 if (!response.ok) return [key, []];
-                return [key, await response.json()];
+                return [key, normalizeList(await response.json(), key)];
             }));
             setData(Object.fromEntries(entries));
         } catch (err) {
@@ -114,11 +168,18 @@ const LibraryPage = ({ currentUser }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [endpoints]);
+    }, [currentUser?.is_guest, endpoints]);
 
     useEffect(() => {
         loadAll();
     }, [loadAll]);
+
+    useEffect(() => {
+        if (!currentUser?.is_guest) return undefined;
+        const syncGuestLibrary = () => setData(getGuestLibraryData());
+        window.addEventListener('potho-guest-workspace-updated', syncGuestLibrary);
+        return () => window.removeEventListener('potho-guest-workspace-updated', syncGuestLibrary);
+    }, [currentUser?.is_guest]);
 
     useEffect(() => {
         try {
@@ -329,21 +390,21 @@ const LibraryPage = ({ currentUser }) => {
         <div className="px-3 py-4 sm:px-4 lg:px-5 2xl:px-6">
             <div className="mb-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="saas-card p-4">
-                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">Saved Library</p>
-                    <h1 className="pp-page-title">Everything you have built</h1>
-                    <p className="pp-page-copy mt-1 hidden max-w-3xl sm:block">Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.</p>
+                    <p className="mb-1 text-xs font-medium text-blue-600 dark:text-blue-400">{t('library_eyebrow', 'Saved Library')}</p>
+                    <h1 className="pp-page-title">{t('library_title', 'Everything you have built')}</h1>
+                    <p className="pp-page-copy mt-1 hidden max-w-3xl sm:block">{t('library_subtitle', 'Roadmaps, questions, mocks, scholarships, resources, and chats stay organized as searchable workspace objects.')}</p>
                 </div>
                 <div className="saas-card grid grid-cols-3 gap-2 p-3">
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                        <p className="saas-meta">Plans</p>
+                        <p className="saas-meta">{t('library_stat_plans', 'Plans')}</p>
                         <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.roadmaps}</p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                        <p className="saas-meta">Practice</p>
+                        <p className="saas-meta">{t('library_stat_practice', 'Practice')}</p>
                         <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.questions}</p>
                     </div>
                     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                        <p className="saas-meta">Mocks</p>
+                        <p className="saas-meta">{t('library_stat_mocks', 'Mocks')}</p>
                         <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{counts.mocks}</p>
                     </div>
                 </div>
@@ -352,25 +413,25 @@ const LibraryPage = ({ currentUser }) => {
             {error && <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
 
             <div className="mb-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                <QuickAccessCard icon={BookMarked} title={`${mistakeCount || counts.questions} review cards`} detail="Jump straight into mistakes and saved questions." onClick={() => switchTab('revision')} />
-                <QuickAccessCard icon={Map} title={latestRoadmap?.title || 'No roadmap saved yet'} detail="Latest career plan and saved stages." onClick={() => switchTab('roadmaps')} />
-                <QuickAccessCard icon={Trophy} title={latestMock ? `${latestMock.score || 0}% latest mock` : 'No mock yet'} detail="Open full score review without hunting." onClick={() => switchTab('mocks')} />
-                <QuickAccessCard icon={GraduationCap} title={latestScholarship?.scholarship_json?.name || 'No scholarship saved yet'} detail="Applications and opportunity tracking." onClick={() => switchTab('scholarships')} />
+                <QuickAccessCard icon={BookMarked} title={t('library_review_cards', '{{count}} review cards', { count: mistakeCount || counts.questions })} detail={t('library_review_detail', 'Jump straight into mistakes and saved questions.')} onClick={() => switchTab('revision')} />
+                <QuickAccessCard icon={Map} title={latestRoadmap?.title || t('library_no_roadmap', 'No roadmap saved yet')} detail={t('library_roadmap_detail', 'Latest career plan and saved stages.')} onClick={() => switchTab('roadmaps')} />
+                <QuickAccessCard icon={Trophy} title={latestMock ? t('library_latest_mock', '{{score}}% latest mock', { score: latestMock.score || 0 }) : t('library_no_mock', 'No mock yet')} detail={t('library_mock_detail', 'Open full score review without hunting.')} onClick={() => switchTab('mocks')} />
+                <QuickAccessCard icon={GraduationCap} title={latestScholarship?.scholarship_json?.name || t('library_no_scholarship', 'No scholarship saved yet')} detail={t('library_scholarship_detail', 'Applications and opportunity tracking.')} onClick={() => switchTab('scholarships')} />
             </div>
 
             <div className="mb-3 saas-card p-3">
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div>
-                        <p className="saas-meta">Current view</p>
+                        <p className="saas-meta">{t('library_current_view', 'Current view')}</p>
                         <div className="mt-1 flex items-center gap-2">
                             {React.createElement(activeMeta.icon, { className: 'h-4 w-4 text-slate-500 dark:text-slate-400' })}
-                            <p className="text-sm font-semibold text-slate-950 dark:text-white">{activeMeta.label}</p>
+                            <p className="text-sm font-semibold text-slate-950 dark:text-white">{tabLabel(activeMeta)}</p>
                             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-500 dark:bg-slate-900 dark:text-slate-400">{activeCount}</span>
                         </div>
                     </div>
                     <label className="relative block w-full xl:max-w-md">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input value={query} onChange={(event) => setQuery(event.target.value)} className="pp-input pl-9" placeholder={`Search ${activeMeta.label.toLowerCase()}...`} />
+                        <input value={query} onChange={(event) => setQuery(event.target.value)} className="pp-input pl-9" placeholder={t('library_search_placeholder', 'Search {{label}}...', { label: tabLabel(activeMeta).toLowerCase() })} />
                     </label>
                 </div>
                 <div className="mt-3 flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
@@ -379,7 +440,7 @@ const LibraryPage = ({ currentUser }) => {
                         return (
                             <button key={tab.id} onClick={() => switchTab(tab.id)} className={`flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${activeTab === tab.id ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-950 dark:text-white' : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'}`}>
                                 <Icon className="h-4 w-4" />
-                                {tab.label}
+                                {tabLabel(tab)}
                                 <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.68rem] tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">{counts[tab.id] || 0}</span>
                             </button>
                         );

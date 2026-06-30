@@ -16,7 +16,6 @@
     "logout": "लॉगआउट",
     "getStarted": "शुरू करें"
   },
-
   "aiTutor_title": "प्रतियोगी परीक्षाओं के लिए AI Tutor",
   "aiTutor_subtitle": "जेईई, नीट, यूपीएससी और अन्य के लिए व्यक्तिगत अभ्यास और त्वरित संदेह स्पष्टीकरण।",
   "aiTutor_tab_practice": "अभ्यास प्रश्न",
@@ -47,16 +46,14 @@
   "aiTutor_button_startTest": "मॉक टेस्ट शुरू करें",
   "aiTutor_chatbot_initialMessage": "कोई शक है? मुझसे कुछ भी पूछें!",
   "aiTutor_error_chatbotConnect": "क्षमा करें, मुझे कनेक्ट करने में समस्या हो रही है।",
-
-    "mockTest_loading": "टेस्ट लोड हो रहा है...",
+  "mockTest_loading": "टेस्ट लोड हो रहा है...",
   "mockTest_title": "मॉक टेस्ट: प्रश्न {{current}} / {{total}}",
   "mockTest_endButton": "टेस्ट समाप्त करें",
   "mockTest_prevButton": "पिछला",
   "mockTest_nextButton": "अगला",
   "mockTest_submitButton": "टेस्ट सबमिट करें",
   "mockTest_submittingButton": "सबमिट हो रहा है...",
-
-    "perfDash_title": "टेस्ट प्रदर्शन डैशबोर्ड",
+  "perfDash_title": "टेस्ट प्रदर्शन डैशबोर्ड",
   "perfDash_subtitle": "यहाँ आपके परिणामों का विस्तृत विवरण है।",
   "perfDash_score_title": "कुल स्कोर",
   "perfDash_score_details": "{{total}} में से {{correct}} सही",
@@ -69,19 +66,14 @@
   "perfDash_review_incorrectTag": "गलत",
   "perfDash_review_yourAnswer": "(आपका उत्तर)",
   "perfDash_retakeButton": "दूसरा टेस्ट दें",
-
   "careerPlanner_title": "पथ-प्रदर्शक",
   "careerPlanner_subtitle": "आपका सपना, हमारा अपना",
   "careerPlanner_error_fillFields": "कृपया सभी फ़ील्ड भरें।",
   "careerPlanner_error_generateFailed": "क्षमा करें, हम आपका रोडमैप नहीं बना सके। कृपया पुनः प्रयास करें।",
-
   "emptyState_roadmapText": "आपका व्यक्तिगत रोडमैप यहाँ दिखाई देगा...",
-
   "roadmapDisplay_title": "आपका व्यक्तिगत रोडमैप",
   "roadmapDisplay_subtitle": "अपने करियर के लक्ष्यों को प्राप्त करने के लिए इन चरणों का पालन करें। प्रत्येक चरण आपके भविष्य के लिए एक बिल्डिंग ब्लॉक है।",
-
   "roadmapCard_learnMore": "{{source}} से और जानें",
-
   "scholarship_title": "स्मार्ट स्कॉलरशिप खोजक",
   "scholarship_subtitle": "भारत और विदेश में पढ़ाई के लिए अपनी प्रोफाइल से मेल खाने वाली स्कॉलरशिप खोजें।",
   "scholarship_error_fetchFailed": "स्कॉलरशिप नहीं मिल सकी। कृपया सुनिश्चित करें कि बैकएंड चल रहा है।",
@@ -102,12 +94,10 @@
   "scholarship_results_officialLink": "आधिकारिक लिंक",
   "scholarship_results_searchGoogle": "गूगल पर खोजें",
   "scholarship_emptyStateText": "मिलने वाली स्कॉलरशिप खोजने के लिए अपनी जानकारी दर्ज करें।",
-
   "stepType_course": "अनुशंसित कोर्स",
   "stepType_project": "हैंड्स-ऑन प्रोजेक्ट",
   "stepType_skill": "कौशल प्राप्त करें",
   "stepType_mentor": "नेटवर्किंग और मेंटरशिप",
-
   "userInput_title": "अपना रास्ता बनाएं",
   "userInput_subtitle": "अत्यधिक विस्तृत, कार्रवाई योग्य करियर योजना के लिए हमें अपने बारे में बताएं।",
   "userInput_skillsLabel": "आपके वर्तमान कौशल",
@@ -130,7 +120,6 @@
   "userInput_targetPlaceholder": "उदा., सैमसंग, एम्स दिल्ली, सिविल सेवा",
   "userInput_button_generating": "उत्पन्न हो रहा है...",
   "userInput_button_generate": "मेरी विस्तृत योजना बनाएं",
-
   "chatbot_initialMessage": "नमस्ते! मैं आज आपके करियर पथ में आपकी कैसे मदद कर सकता हूँ?",
   "chatbot_errorMessage": "क्षमा करें, मुझे कनेक्ट करने में समस्या हो रही है। कृपया बाद में पुनः प्रयास करें।",
   "chatbot_toggleAriaLabel": "चैट टॉगल करें",
@@ -138,14 +127,11 @@
   "chatbot_typing": "लिख रहा है...",
   "chatbot_placeholder": "एक प्रश्न पूछें...",
   "chatbot_sendButton": "भेजें",
-
   "doubtChat_toggleAriaLabel": "संदेह समाधान चैट टॉगल करें",
   "doubtChat_header": "तुरंत संदेह समाधान",
   "doubtChat_thinking": "सोच रहा है...",
   "doubtChat_placeholder": "एक संदेह पूछें...",
   "doubtChat_sendButton": "भेजें",
-  
-  
   "policies_seo_title": "गोपनीयता नीति और शर्तें | पथ-प्रदर्शक",
   "policies_seo_desc": "यह समझने के लिए हमारी गोपनीयता नीति और सेवा की शर्तें पढ़ें कि हम आपके डेटा को कैसे संभालते हैं और आपकी गोपनीयता और सुरक्षा के प्रति हमारी प्रतिबद्धता।",
   "policies_main_title": "नीतियां",
@@ -275,6 +261,31 @@
   "landing_ask_answer_practice": "AI Tutor अभ्यास प्रश्न और मॉक टेस्ट बनाता है। गलत उत्तर रिविजन सामग्री बन जाते हैं ताकि आप बाद में वही गलतियां दोहरा सकें।",
   "landing_ask_answer_scholarship": "स्कॉलरशिप खोज प्रोफाइल संदर्भ का उपयोग कर सकती है, फिर सेव्ड अवसर स्टेटस और डेडलाइन वाले आवेदन ट्रैकर बनते हैं।",
   "landing_ask_answer_guest": "Guest mode preview workspace खोलता है। Key flows explore कर सकते हैं, लेकिन saved roadmaps, mock history, profile memory और library data के लिए account चाहिए।",
-  "landing_ask_answer_default": "Potho Prodorshok एक लॉगिन वाला करियर वर्कस्पेस है: अपना पथ प्लान करें, परीक्षा अभ्यास करें, उपयोगी आउटपुट सेव करें, और एक डैशबोर्ड से अपनी प्रगति पर लौटें।"
-
+  "landing_ask_answer_default": "Potho Prodorshok एक लॉगिन वाला करियर वर्कस्पेस है: अपना पथ प्लान करें, परीक्षा अभ्यास करें, उपयोगी आउटपुट सेव करें, और एक डैशबोर्ड से अपनी प्रगति पर लौटें।",
+  "library_eyebrow": "सेव लाइब्रेरी",
+  "library_title": "आपने जो बनाया है",
+  "library_subtitle": "रोडमैप, प्रश्न, मॉक, छात्रवृत्ति, संसाधन और चैट searchable workspace objects की तरह व्यवस्थित रहते हैं।",
+  "library_stat_plans": "प्लान",
+  "library_stat_practice": "प्रैक्टिस",
+  "library_stat_mocks": "मॉक",
+  "library_review_cards": "{{count}} रिव्यू कार्ड",
+  "library_review_detail": "गलतियों और सेव किए गए प्रश्नों पर सीधे जाएं।",
+  "library_no_roadmap": "अभी कोई रोडमैप सेव नहीं है",
+  "library_roadmap_detail": "नया career plan और saved stages.",
+  "library_latest_mock": "{{score}}% नवीनतम मॉक",
+  "library_no_mock": "अभी कोई मॉक नहीं",
+  "library_mock_detail": "पूरा score review बिना ढूंढे खोलें।",
+  "library_no_scholarship": "अभी कोई छात्रवृत्ति सेव नहीं है",
+  "library_scholarship_detail": "Application और opportunity tracking.",
+  "library_current_view": "वर्तमान दृश्य",
+  "library_search_placeholder": "{{label}} खोजें...",
+  "library_tab_roadmaps": "रोडमैप",
+  "library_tab_questions": "प्रश्न",
+  "library_tab_mocks": "मॉक टेस्ट",
+  "library_tab_scholarships": "छात्रवृत्ति",
+  "library_tab_revision": "रिविजन",
+  "library_tab_resources": "संसाधन",
+  "library_tab_chats": "चैट",
+  "roadmapDisplay_canvasLabel": "रोडमैप कैनवास",
+  "roadmapDisplay_stageCount": "{{count}} चरण"
 }

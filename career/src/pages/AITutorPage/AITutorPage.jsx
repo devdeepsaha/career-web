@@ -6,7 +6,7 @@ import PerformanceDashboard from './PerformanceDashboard';
 import DoubtSolverChatbot from '../../components/chat/DoubtSolverChatbot';
 import Latex from '../../components/shared/LatexWrapper';
 import { formatMathText } from './mathText';
-import { addGuestWorkspaceItem } from '../../utils/guestWorkspace';
+import { addGuestWorkspaceItem, getGuestWorkspace } from '../../utils/guestWorkspace';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 const EXAM_OPTIONS = [
@@ -164,7 +164,12 @@ const AITutorPage = ({ currentUser, showAuth }) => {
 
     React.useEffect(() => {
         const loadWeakQueue = async () => {
-            if (!currentUser || currentUser?.is_guest) return;
+            if (!currentUser) return;
+            if (currentUser?.is_guest) {
+                const workspace = getGuestWorkspace();
+                setWeakQueue((workspace.questionAttempts || []).filter((item) => item?.is_correct === false));
+                return;
+            }
             try {
                 const response = await fetch(`${API_URL}/question-attempts?wrong_only=true`, { credentials: 'include' });
                 if (response.ok) setWeakQueue(await response.json());
