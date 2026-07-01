@@ -448,9 +448,9 @@ const ProfilePage = ({ currentUser }) => {
 
     return (
         <div className="py-3 pl-3 pr-3 sm:pr-4 lg:pr-5 xl:pl-0 2xl:pr-6">
-            <div className="overflow-hidden border-y border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-            <div className="grid grid-cols-1 xl:grid-cols-[240px_minmax(0,1fr)]">
-                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:sticky xl:top-0 xl:min-h-[calc(100dvh-5.5rem)] xl:self-start xl:border-b-0 xl:border-r">
+            <div className="overflow-hidden border-y border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 xl:h-[calc(100dvh-1.5rem)]">
+            <div className="grid grid-cols-1 xl:h-full xl:grid-cols-[240px_minmax(0,1fr)]">
+                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:h-full xl:self-stretch xl:border-b-0 xl:border-r">
                     <div className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0">
                         {profileSections.map((section) => {
                             const Icon = section.icon;
@@ -476,7 +476,7 @@ const ProfilePage = ({ currentUser }) => {
                         })}
                     </div>
                 </aside>
-                <form onSubmit={saveProfile} className="min-w-0 p-4">
+                <form onSubmit={saveProfile} className="min-w-0 p-4 xl:h-full xl:overflow-y-auto">
 
                     {(activeSection === 'identity' || activeSection === 'resume') && (
                     <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
