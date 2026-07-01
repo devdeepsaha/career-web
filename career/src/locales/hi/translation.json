@@ -130,6 +130,7 @@
   "doubtChat_toggleAriaLabel": "संदेह समाधान चैट टॉगल करें",
   "doubtChat_header": "तुरंत संदेह समाधान",
   "doubtChat_thinking": "सोच रहा है...",
+  "doubtChat_initialMessage": "नमस्ते! मैं आपके संदेहों के समाधान में आपकी सहायता करने के लिए यहाँ हूँ। कृपया अपना प्रश्न या समस्या बताएं, और मैं अपनी सबसे अच्छी कोशिश करूँगा।",
   "doubtChat_placeholder": "एक संदेह पूछें...",
   "doubtChat_sendButton": "भेजें",
   "policies_seo_title": "गोपनीयता नीति और शर्तें | पथ-प्रदर्शक",

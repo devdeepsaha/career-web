@@ -136,6 +136,7 @@
   "doubtChat_header": "Instant Doubt Solver",
   "doubtChat_thinking": "Thinking...",
   "doubtChat_placeholder": "Ask a doubt...",
+  "doubtChat_initialMessage": "Hi! I'm here to help you with your doubts. Please describe your question or problem, and I'll do my best to assist you.",  
   "doubtChat_sendButton": "Send",
   "teamProfile_personality": "Personality Traits",
   "teamProfile_bio": "Bio",
