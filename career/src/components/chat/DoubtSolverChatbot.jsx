@@ -17,6 +17,11 @@ const normalizeQuestionPayload = (payload) => {
     return '';
 };
 
+const translateWithFallback = (t, key, fallback) => {
+    const value = t(key, { defaultValue: fallback });
+    return value && value !== key ? value : fallback;
+};
+
 const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoading: propLoading, handleSend: propHandleSend }) => {
     const { t, i18n } = useTranslation();
     const [input, setInput] = useState('');
@@ -36,7 +41,7 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     const inputRef = useRef(null);
     const starterMessage = () => ({
         sender: 'ai',
-        text: t('doubtChat_initialMessage') || 'Ask me a doubt, paste a question, or tap See how to solve it from AI Tutor.',
+        text: translateWithFallback(t, 'doubtChat_initialMessage', 'Ask me a doubt, paste a question, or tap See how to solve it from AI Tutor.'),
     });
 
     // Use prop messages or local messages

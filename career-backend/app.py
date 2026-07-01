@@ -1711,7 +1711,7 @@ def chat():
     file_context = format_chat_context_files(data.get('context_files', []))
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}{file_context}"]}]
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}{file_context}\n\nFormatting rules: do not use Markdown symbols such as #, *, **, ---, or code fences. Use clean short sections with plain headings, numbered steps, and concise paragraphs."]}]
     for msg in history:
         role = 'user' if msg.get('sender') == 'user' else 'model'
         messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})
@@ -1767,7 +1767,7 @@ def solve_doubt_chat():
     file_context = format_chat_context_files(data.get('context_files', []))
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory and attached file context for personalization when relevant: {mentor_context}{file_context}"]}]
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory and attached file context for personalization when relevant: {mentor_context}{file_context}\n\nFormatting rules: do not use Markdown symbols such as #, *, **, ---, or code fences. Use clean short sections with plain headings, numbered steps, and concise paragraphs."]}]
     for msg in history:
         role = 'user' if msg.get('sender') == 'user' else 'model'
         messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})
