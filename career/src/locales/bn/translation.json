@@ -16,7 +16,7 @@
     "logout": "লগআউট",
     "getStarted": "শুরু করুন"
   },
-  "aiTutor_title": "প্রতিযোগিতামূলক পরীক্ষার জন্য AI Tutor",
+  "aiTutor_title": "প্রতিযোগিতামূলক পরীক্ষার জন্য এআই টিউটর",
   "aiTutor_subtitle": "জেইই, নিট, ইউপিএসসি এবং আরও অনেক কিছুর জন্য ব্যক্তিগতকৃত অনুশীলন এবং তাত্ক্ষণিক সন্দেহ নিরসন।",
   "aiTutor_tab_practice": "অনুশীলন প্রশ্ন",
   "aiTutor_tab_mockTests": "মক টেস্ট",
@@ -67,7 +67,7 @@
   "perfDash_review_yourAnswer": "(আপনার উত্তর)",
   "perfDash_retakeButton": "আবার পরীক্ষা দিন",
   "careerPlanner_title": "পথ-প্রদর্শক",
-  "careerPlanner_subtitle": "আপনার স্বপ্ন, আমাদের দিকনির্দেশন",
+  "careerPlanner_subtitle": "আপনার স্বপ্ন, আমাদের দিকনির্দেশনা",
   "careerPlanner_error_fillFields": "অনুগ্রহ করে সমস্ত ক্ষেত্র পূরণ করুন।",
   "careerPlanner_error_generateFailed": "দুঃখিত, আমরা আপনার রোডম্যাপ তৈরি করতে পারিনি। অনুগ্রহ করে আবার চেষ্টা করুন।",
   "emptyState_roadmapText": "আপনার ব্যক্তিগত রোডম্যাপ এখানে প্রদর্শিত হবে...",
@@ -80,7 +80,7 @@
   "scholarship_form_title": "আপনার প্রোফাইল",
   "scholarship_form_marksLabel": "মার্কস (শতাংশ/জিপিএ)",
   "scholarship_form_marksPlaceholder": "যেমন, ৮৫% বা ৩.৮ জিপিএ",
-  "scholarship_form_incomeLabel": "বার্ষিক পারিবারিক আয় (INR)",
+  "scholarship_form_incomeLabel": "বার্ষিক পারিবারিক আয় (আইএনআর)",
   "scholarship_form_incomePlaceholder": "যেমন, ৫০০০০০",
   "scholarship_form_regionLabel": "আপনার অঞ্চল (রাজ্য/দেশ)",
   "scholarship_form_regionPlaceholder": "যেমন, মহারাষ্ট্র বা ভারত",
@@ -153,10 +153,10 @@
   "policies_terms_use_title": "গ্রহণযোগ্য ব্যবহার",
   "policies_terms_use_desc": "আপনি পরিষেবার অপব্যবহার না করতে বা অন্য কাউকে তা করতে সাহায্য না করতে সম্মত। এই পরিষেবাটি শুধুমাত্র ব্যক্তিগত, অ-বাণিজ্যিক ব্যবহারের জন্য।",
   "policies_terms_disclaimer_title": "দাবিত্যাগ",
-  "policies_terms_disclaimer_desc": "এআই-জেনারেটেড সামগ্রী শুধুমাত্র তথ্যের উদ্দেশ্যে এবং পেশাদার পরামর্শের বিকল্প নয়। আমরা উত্পন্ন তথ্যের নির্ভুলতার গ্যারান্টি দিই অ্যাকাউন্টের।",
-  "aiTutor_seo_title": "JEE, NEET এবং UPSC-এর জন্য বিনামূল্যে MCQ অনুশীলন | Potho-Prodorshok",
-  "aiTutor_seo_desc": "AI-তৈরি প্রশ্ন, মক টেস্ট, তাৎক্ষণিক ফিডব্যাক এবং ডাউট সলভিং দিয়ে প্রতিযোগিতামূলক পরীক্ষার প্রস্তুতি নিন।",
-  "aiTutor_eyebrow": "AI পরীক্ষা স্টুডিও",
+  "policies_terms_disclaimer_desc": "এআই-জেনারেটেড সামগ্রী শুধুমাত্র তথ্যের উদ্দেশ্যে এবং পেশাদার পরামর্শের বিকল্প নয়। আমরা উত্পন্ন তথ্যের নির্ভুলতার গ্যারান্টি দিই না।",
+  "aiTutor_seo_title": "জেইই, নিট এবং ইউপিএসসি-এর জন্য বিনামূল্যে এমসিকিউ অনুশীলন | পথ-প্রদর্শক",
+  "aiTutor_seo_desc": "এআই-তৈরি প্রশ্ন, মক টেস্ট, তাৎক্ষণিক ফিডব্যাক এবং ডাউট সলভিং দিয়ে প্রতিযোগিতামূলক পরীক্ষার প্রস্তুতি নিন।",
+  "aiTutor_eyebrow": "এআই পরীক্ষা স্টুডিও",
   "aiTutor_button_adaptiveQuestion": "দুর্বল বিষয়ের অনুকূল প্রশ্ন",
   "aiTutor_answer_correct": "সঠিক।",
   "aiTutor_answer_incorrect": "পুরোপুরি ঠিক নয়।",
@@ -177,31 +177,33 @@
   "perfDash_strengths_title": "যেখানে আপনি ভালো করেছেন",
   "perfDash_weaknesses_title": "যে দুর্বল জায়গা রিভিউ দরকার",
   "perfDash_nextActions_title": "এরপর কী করবেন",
-  "perfDash_fullAnalysis": "সম্পূর্ণ AI বিশ্লেষণ পড়ুন",
+  "perfDash_fullAnalysis": "সম্পূর্ণ এআই বিশ্লেষণ পড়ুন",
   "perfDash_no_strengths": "এখনও পরিষ্কার শক্তির প্যাটার্ন নেই। ভালো সিগন্যালের জন্য বড় মক টেস্ট দিন।",
   "perfDash_no_weaknesses": "এই চেষ্টায় বড় দুর্বলতা পাওয়া যায়নি।",
   "perfDash_recommendation_review": "এই ভুল প্রশ্নটি রিভিউ করুন:",
   "perfDash_recommendation_maintain": "গতি বজায় রাখুন: আরেকটি ছোট মক দিন এবং নির্ভুলতা ধরে রাখুন।",
-  "landing_brand": "Potho Prodorshok",
+  "landing_brand": "পথ-প্রদর্শক",
   "landing_nav_features": "ফিচার",
+  "landing_nav_how": "কীভাবে কাজ করে",
+  "landing_nav_guest": "গেস্ট মোড",
   "landing_nav_pathway": "পাথওয়ে",
   "landing_nav_login": "লগ ইন",
   "landing_join": "জয়েন",
   "landing_getStarted": "শুরু করুন",
-  "landing_eyebrow": "AI-চালিত ক্যারিয়ার ইন্টেলিজেন্স",
+  "landing_eyebrow": "এআই-চালিত ক্যারিয়ার ইন্টেলিজেন্স",
   "landing_headline_1": "আপনি স্বপ্ন দেখুন।",
   "landing_headline_2": "আমরা রাস্তা বানাই।",
-  "landing_subtitle": "স্কিল, আগ্রহ, পরীক্ষা এবং লক্ষ্যকে AI রোডম্যাপ, টিউটরিং, মক টেস্ট এবং স্কলারশিপ খোঁজার মাধ্যমে পরিষ্কার ক্যারিয়ার যাত্রায় বদলে দিন।",
+  "landing_subtitle": "স্কিল, আগ্রহ, পরীক্ষা এবং লক্ষ্যকে এআই রোডম্যাপ, টিউটরিং, মক টেস্ট এবং স্কলারশিপ খোঁজার মাধ্যমে পরিষ্কার ক্যারিয়ার যাত্রায় বদলে দিন।",
   "landing_primaryCta": "আপনার যাত্রা শুরু করুন",
   "landing_secondaryCta": "আমার ইতিমধ্যে অ্যাকাউন্ট আছে",
   "landing_stat_roadmaps": "ব্যক্তিগত রোডম্যাপ",
-  "landing_stat_practice": "AI পরীক্ষা অনুশীলন",
+  "landing_stat_practice": "এআই পরীক্ষা অনুশীলন",
   "landing_stat_scholarships": "স্কলারশিপ ম্যাচ",
   "landing_features_eyebrow": "নির্ভুল টুলস",
   "landing_features_title": "প্রথম ধাপের পরে ছাত্রদের যা দরকার, সব এক জায়গায়।",
   "landing_feature_planner_title": "ক্যারিয়ার প্ল্যানার",
   "landing_feature_planner_text": "আপনার স্কিল, আগ্রহ, অবস্থা এবং লক্ষ্য থেকে ধাপে ধাপে রোডম্যাপ তৈরি করুন।",
-  "landing_feature_tutor_title": "AI Tutor",
+  "landing_feature_tutor_title": "এআই টিউটর",
   "landing_feature_tutor_text": "প্র্যাকটিস প্রশ্ন, মক টেস্ট, ব্যাখ্যা এবং পারফরম্যান্স ফিডব্যাক।",
   "landing_feature_scholarship_title": "স্কলারশিপ ফাইন্ডার",
   "landing_feature_scholarship_text": "মার্কস, আয়, অঞ্চল এবং গন্তব্য অনুযায়ী সুযোগ খুঁজুন।",
@@ -209,15 +211,26 @@
   "landing_feature_chats_text": "লগইনের পরে ক্যারিয়ার এবং ডাউট সলভিং কথোপকথন সাজিয়ে রাখুন।",
   "landing_pathway_eyebrow": "স্বপ্ন থেকে ড্যাশবোর্ড",
   "landing_pathway_title": "একবার লগইন করুন, তারপর পুরো প্ল্যানিং ওয়ার্কস্পেস খুলুন।",
-  "landing_pathway_text": "ল্যান্ডিং পেজ যাত্রা শুরু করে। রেজিস্ট্রেশনের পর ড্যাশবোর্ড, প্ল্যানার, AI Tutor এবং স্কলারশিপ ফাইন্ডার খুলে যায়।",
+  "landing_pathway_text": "ল্যান্ডিং পেজ যাত্রা শুরু করে। রেজিস্ট্রেশনের পর ড্যাশবোর্ড, প্ল্যানার, এআই টিউটর এবং স্কলারশিপ ফাইন্ডার খুলে যায়।",
   "landing_step_1": "অ্যাকাউন্ট তৈরি করুন বা লগ ইন করুন",
   "landing_step_2": "আপনার ক্যারিয়ার রোডম্যাপ তৈরি করুন",
   "landing_step_3": "অনুশীলন করুন, প্রশ্ন করুন এবং স্কলারশিপ খুঁজুন",
-  "landing_step_caption": "Potho Prodorshok যাত্রার একটি পরিষ্কার ধাপ।",
+  "landing_step_caption": "পথ-প্রদর্শক যাত্রার একটি পরিষ্কার ধাপ।",
   "landing_nav_platform": "প্ল্যাটফর্ম",
-  "landing_hero_phrase": "আপনার স্বপ্ন, আমাদের দিকনির্দেশন",
+  "landing_hero_phrase": "আপনার স্বপ্ন, আমাদের দিকনির্দেশনা",
   "landing_hero_cta_phrase": "আপনার যাত্রা শুরু করুন",
   "landing_hero_cta_hint": "শুরু করতে ক্লিক করুন",
+  "landing_guest_cta": "গেস্ট হিসেবে চালিয়ে যান",
+  "landing_audience_label": "যাদের জন্য তৈরি",
+  "landing_workflow_title": "আপনার সম্পূর্ণ ক্যারিয়ার প্রোগ্রাম, একটি সংযুক্ত ওয়ার্কফ্লোতে",
+  "landing_workflow_tab_1": "পরিকল্পনা",
+  "landing_workflow_tab_2": "অনুশীলন",
+  "landing_workflow_tab_3": "বিশ্লেষণ",
+  "landing_workflow_tab_4": "সংরক্ষণ",
+  "landing_workflow_card_1_title": "আপনার প্রোফাইল সেট আপ করুন",
+  "landing_workflow_card_1_body": "পরীক্ষা, শাখা, দক্ষতা, লক্ষ্য এবং টার্গেট কোম্পানি অনুযায়ী সঠিক দিকনির্দেশনা পান।",
+  "landing_workflow_card_2_title": "প্রয়োজনীয় ডেটা সেভ করুন",
+  "landing_workflow_card_2_body": "রোডম্যাপ, ভুল উত্তর, মক ফলাফল, স্টেজ গাইড এবং চ্যাটগুলো পুনরায় ব্যবহারযোগ্য মেমরি হিসেবে রাখুন।",
   "landing_stack_heading": "ছাত্রের যাত্রাকে কেন্দ্র করে এক স্ট্যাকড ওয়ার্কস্পেস।",
   "landing_stack_label_1": "প্ল্যান",
   "landing_stack_label_2": "অনুশীলন",
@@ -230,53 +243,40 @@
   "landing_stack_stat_4": "স্থায়ী ছাত্র মেমরি",
   "landing_stack_final_label": "আপনি প্রস্তুত হলেই",
   "landing_stack_final_title": "একটি প্রোফাইল দিয়ে শুরু করুন। ওয়ার্কস্পেস প্রতি সপ্তাহে আরও স্মার্ট হবে।",
-  "landing_ask_title": "QA Ai",
-  "landing_ask_subtitle": "Potho Prodorshok Q&A agent",
+  "landing_guest_label": "গেস্ট অ্যাক্সেস",
+  "landing_guest_title": "কোনো ডেটা সেভ না করেই পুরো প্ল্যাটফর্ম ব্যবহার করে দেখুন",
+  "landing_guest_body": "গেস্ট মোডে ড্যাশবোর্ড, প্ল্যানার, টিউটর এবং স্কলারশিপ ফ্লো লিমিটসহ এক্সপ্লোর করা যায়। সেভ করা হিস্ট্রি, প্রোফাইল মেমরি এবং অ্যানালিটিক্স আনলক করতে একটি অ্যাকাউন্ট তৈরি করুন।",
+  "landing_guest_free_1": "ড্যাশবোর্ড, প্ল্যানার, টিউটর এবং স্কলারশিপ ফিচার ব্যবহার করুন।",
+  "landing_guest_free_2": "রোডম্যাপ এবং অনুশীলনের নির্দেশিকা প্রিভিউ করুন।",
+  "landing_guest_locked_1": "ডেটা সেভ এবং দীর্ঘমেয়াদী অ্যানালিটিক্সের জন্য সাইন ইন করুন।",
+  "landing_ask_title": "কিউএ এআই",
+  "landing_ask_subtitle": "পথ-প্রদর্শক কিউঅ্যান্ডএ এজেন্ট",
   "landing_ask_placeholder": "রোডম্যাপ, মক, স্কলারশিপ জিজ্ঞাসা করুন...",
   "landing_ask_submit": "জিজ্ঞাসা করুন",
   "landing_ask_intro": "এই প্ল্যাটফর্ম কী সেভ করে, পরীক্ষায় কীভাবে সাহায্য করে, বা রোডম্যাপ কীভাবে অ্যাকশনে বদলায় তা জিজ্ঞাসা করুন।",
   "landing_ask_quick_1": "রোডম্যাপ কীভাবে কাজ করে?",
   "landing_ask_quick_2": "এটি কি মক টেস্টে সাহায্য করবে?",
   "landing_ask_quick_3": "আমার অগ্রগতি কি সেভ হবে?",
-  "landing_ask_answer_roadmap": "রোডম্যাপ আপনার প্রোফাইল, স্কিল, পরীক্ষা এবং ক্যারিয়ার লক্ষ্য থেকে স্টেজ তৈরি করে। প্রতিটি স্টেজ সেভড AI গাইড হতে পারে যেখানে অ্যাকশন, রিসোর্স এবং চেকলিস্ট থাকে।",
-  "landing_ask_answer_practice": "AI Tutor অনুশীলন প্রশ্ন এবং মক টেস্ট তৈরি করে। ভুল উত্তর রিভিশন উপাদান হয়ে যায় যাতে পরে সেই ভুলগুলো আবার দেখা যায়।",
+  "landing_ask_answer_roadmap": "রোডম্যাপ আপনার প্রোফাইল, স্কিল, পরীক্ষা এবং ক্যারিয়ার লক্ষ্য থেকে স্টেজ তৈরি করে। প্রতিটি স্টেজ সেভড এআই গাইড হতে পারে যেখানে অ্যাকশন, রিসোর্স এবং চেকলিস্ট থাকে।",
+  "landing_ask_answer_practice": "এআই টিউটর অনুশীলন প্রশ্ন এবং মক টেস্ট তৈরি করে। ভুল উত্তর রিভিশন উপাদান হয়ে যায় যাতে পরে সেই ভুলগুলো আবার দেখা যায়।",
   "landing_ask_answer_scholarship": "স্কলারশিপ সার্চ প্রোফাইল প্রসঙ্গ ব্যবহার করতে পারে, তারপর সেভড সুযোগগুলো স্ট্যাটাস ও ডেডলাইনসহ অ্যাপ্লিকেশন ট্র্যাকার হয়।",
-  "landing_ask_answer_default": "Potho Prodorshok একটি লগইন করা career workspace: পথ পরিকল্পনা করুন, পরীক্ষার অনুশীলন করুন, দরকারি আউটপুট সেভ করুন, এবং এক ড্যাশবোর্ড থেকে অগ্রগতিতে ফিরে আসুন।",
-  "landing_nav_how": "কীভাবে কাজ করে",
-  "landing_nav_guest": "গেস্ট মোড",
-  "landing_guest_cta": "গেস্ট হিসেবে চালিয়ে যান",
-  "landing_audience_label": "যাদের জন্য তৈরি",
-  "landing_workflow_title": "আপনার সম্পূর্ণ ক্যারিয়ার প্রোগ্রাম, একটি সংযুক্ত ওয়ার্কফ্লোতে",
-  "landing_workflow_tab_1": "পরিকল্পনা",
-  "landing_workflow_tab_2": "অনুশীলন",
-  "landing_workflow_tab_3": "বিশ্লেষণ",
-  "landing_workflow_tab_4": "সংরক্ষণ",
-  "landing_workflow_card_1_title": "আপনার প্রোফাইল সেট আপ করুন",
-  "landing_workflow_card_1_body": "পরীক্ষা, শাখা, দক্ষতা, লক্ষ্য এবং টার্গেট কোম্পানি অনুযায়ী সঠিক দিকনির্দেশনা পান।",
-  "landing_workflow_card_2_title": "প্রয়োজনীয় ডেটা সেভ করুন",
-  "landing_workflow_card_2_body": "রোডম্যাপ, ভুল উত্তর, মক ফলাফল, স্টেজ গাইড এবং চ্যাটগুলো পুনরায় ব্যবহারযোগ্য মেমরি হিসেবে রাখুন।",
-  "landing_guest_label": "গেস্ট অ্যাক্সেস",
-  "landing_guest_title": "কোনো ডেটা সেভ না করেই পুরো প্ল্যাটফর্ম ব্যবহার করে দেখুন",
-  "landing_guest_body": "গেস্ট মোডে ড্যাশবোর্ড, প্ল্যানার, টিউটর এবং স্কলারশিপ ফ্লো লিমিটসহ এক্সপ্লোর করা যায়। সেভ করা হিস্ট্রি, প্রোফাইল মেমরি এবং অ্যানালিটিক্স আনলক করতে একটি অ্যাকাউন্ট তৈরি করুন।",
-  "landing_guest_free_1": "ড্যাশবোর্ড, প্ল্যানার, টিউটর এবং স্কলারশিপ ফিচার ব্যবহার করুন।",
-  "landing_guest_free_2": "রোডম্যাপ এবং অনুশীলনের নির্দেশিকা প্রিভিউ করুন।",
-  "landing_guest_locked_1": "ডেটা সেভ এবং দীর্ঘমেয়াদী অ্যানালিটিক্সের জন্য সাইন ইন করুন।",
-  "landing_ask_answer_guest": "গেস্ট মোড দিয়ে প্ল্যাটফর্ম প্রিভিউ করা যায়। আপনার সেভ করা রোডম্যাপ, মক হিস্ট্রি, প্রোফাইল মেমরি এবং লাইব্রেরি ডেটা অ্যাক্সেস করতে আপনাকে একটি অ্যাকাউন্ট তৈরি করতে হবে।",
+  "landing_ask_answer_guest": "গেস্ট মোড দিয়ে প্ল্যাটফর্ম প্রিভিউ করা যায়। আপনার সেভ করা রোডম্যাপ, মক হিস্ট্রি, প্রোফাইল মেমরি এবং লাইব্রেরি ডেটা অ্যাক্সেস করতে আপনাকে একটি অ্যাকাউন্ট তৈরি করতে হবে।",
+  "landing_ask_answer_default": "পথ-প্রদর্শক একটি লগইন করা ক্যারিয়ার ওয়ার্কস্পেস: পথ পরিকল্পনা করুন, পরীক্ষার অনুশীলন করুন, দরকারি আউটপুট সেভ করুন, এবং এক ড্যাশবোর্ড থেকে অগ্রগতিতে ফিরে আসুন।",
   "library_eyebrow": "সেভড লাইব্রেরি",
   "library_title": "আপনি যা তৈরি করেছেন",
-  "library_subtitle": "রোডম্যাপ, প্রশ্ন, মক, স্কলারশিপ, রিসোর্স এবং চ্যাট searchable workspace objects হিসেবে সাজানো থাকে।",
+  "library_subtitle": "রোডম্যাপ, প্রশ্ন, মক, স্কলারশিপ, রিসোর্স এবং চ্যাট সার্চেবল ওয়ার্কস্পেস অবজেক্টস হিসেবে সাজানো থাকে।",
   "library_stat_plans": "প্ল্যান",
   "library_stat_practice": "প্র্যাকটিস",
   "library_stat_mocks": "মক",
   "library_review_cards": "{{count}} রিভিউ কার্ড",
   "library_review_detail": "ভুল এবং সেভ করা প্রশ্নে সরাসরি যান।",
   "library_no_roadmap": "এখনও কোনও রোডম্যাপ সেভ নেই",
-  "library_roadmap_detail": "সর্বশেষ career plan এবং saved stages.",
+  "library_roadmap_detail": "সর্বশেষ ক্যারিয়ার প্ল্যান এবং সেভড স্টেজেস।",
   "library_latest_mock": "{{score}}% সর্বশেষ মক",
   "library_no_mock": "এখনও কোনও মক নেই",
-  "library_mock_detail": "খুঁজে না ঘুরে পুরো score review খুলুন।",
+  "library_mock_detail": "খুঁজে না ঘুরে পুরো স্কোর রিভিউ খুলুন।",
   "library_no_scholarship": "এখনও কোনও স্কলারশিপ সেভ নেই",
-  "library_scholarship_detail": "Application এবং opportunity tracking.",
+  "library_scholarship_detail": "অ্যাপ্লিকেশন এবং অপর্চুনিটি ট্র্যাকিং।",
   "library_current_view": "বর্তমান ভিউ",
   "library_search_placeholder": "{{label}} খুঁজুন...",
   "library_tab_roadmaps": "রোডম্যাপ",
@@ -288,193 +288,193 @@
   "library_tab_chats": "চ্যাট",
   "roadmapDisplay_canvasLabel": "রোডম্যাপ ক্যানভাস",
   "roadmapDisplay_stageCount": "{{count}} ধাপ",
-  "teamProfile_title": "???? ????????????? ???? ????",
-  "teamProfile_subtitle": "Potho-Prodorshok-?? ?????? ??????, ?????, ?????????? ??? ????? ??? ?? ???????",
-  "teamProfile_contributors": "{{count}} ?? ??????",
-  "teamProfile_workingStyle": "????? ???",
-  "teamProfile_frictionPoints": "?????????",
+  "teamProfile_title": "প্ল্যাটফর্মটি যারা তৈরি করছেন",
+  "teamProfile_subtitle": "পথ-প্রদর্শক-এর পেছনের ভূমিকা, শক্তি, প্রেরণা এবং কাজের শৈলীর একটি দৃষ্টিকোণ।",
+  "teamProfile_contributors": "{{count}} জন অবদানকারী",
+  "teamProfile_workingStyle": "কাজের ধরন",
+  "teamProfile_frictionPoints": "সমস্যার জায়গা",
   "team_members": {
     "devdeep": {
-      "name": "?????? ????",
-      "role": "???????? / ????????",
-      "tagline": "?????????, ?????? ??? ????????? ???? meaningful experiences ???? ???",
-      "bio": "?????? Potho Prodorshok ?????????? main architect ??? lead developer? Software-?? ???????? ???? Blender ???? 3D design ? digital art explore ????, ??? ukulele, guitar, synth, flute ? kalimba ??????? ??????? ???? vision ??? technology, design ??? creativity ?????? innovative, accessible ??? inspiring solutions ???? ????",
+      "name": "দেবদীপ সাহা",
+      "role": "ডেভেলপার / ডিজাইনার",
+      "tagline": "প্রযুক্তি, ডিজাইন এবং সৃজনশীলতার মাধ্যমে অর্থবহ অভিজ্ঞতা তৈরি করা",
+      "bio": "দেবদীপ পথ-প্রদর্শক ওয়েবসাইটের প্রধান আর্কিটেক্ট এবং লিড ডেভেলপার। সফটওয়্যারের বাইরে, দেবদীপ ব্লেন্ডার দিয়ে থ্রিডি ডিজাইন এবং ডিজিটাল আর্ট এক্সপ্লোর করেন, পাশাপাশি ইউকুলেলে, গিটার, সিন্থ, বাঁশি এবং কালিম্বা বাজানোর শখ পূরণ করেন। তার লক্ষ্য হলো প্রযুক্তি, ডিজাইন এবং সৃজনশীলতার সমন্বয়ে এমন সমাধান তৈরি করা যা উদ্ভাবনী, সহজলভ্য এবং অনুপ্রেরণামূলক।",
       "motivations": [
         {
-          "label": "??????"
+          "label": "প্রভাব"
         },
         {
-          "label": "???????"
+          "label": "উদ্ভাবন"
         },
         {
-          "label": "????"
+          "label": "শেখা"
         }
       ],
       "personality": [
         {
-          "label": "Extrovert"
+          "label": "বহির্মুখী"
         },
         {
-          "label": "Analytical / Creative"
+          "label": "বিশ্লেষণাত্মক / সৃজনশীল"
         },
         {
-          "label": "Active"
+          "label": "সক্রিয়"
         }
       ],
       "frustrations": [
-        "Creative effort-?? recognition ?? ?????",
-        "???????? rigid systems ?? innovation ?????",
-        "?????? ????? ??? Blender crash ???"
+        "সৃজনশীল কাজের স্বীকৃতির অভাব",
+        "অত্যধিক কঠোর সিস্টেম যা উদ্ভাবনে বাধা দেয়",
+        "ঘণ্টার পর ঘণ্টা কাজ করার পর ব্লেন্ডার ক্র্যাশ করা"
       ],
       "goals": [
-        "Netflix-?? ??? companies-?? ????? design ??? creative roles-? collaborate ???",
-        "Impactful projects-?? portfolio ???? ???",
-        "Junior developers-?? mentor ???"
+        "ডিজাইন এবং সৃজনশীল ভূমিকার জন্য নেটফ্লিক্সের মতো কোম্পানির সাথে সহযোগিতা করা",
+        "প্রভাবশালী প্রজেক্টের একটি পোর্টফোলিও তৈরি করা",
+        "জুনিয়র ডেভেলপারদের মেন্টর করা"
       ],
       "skills": [
-        "React",
-        "Node.js",
-        "Python",
-        "Cloud (AWS)",
-        "UI/UX Design",
-        "Blender",
-        "Video Editing",
-        "Music"
+        "রিঅ্যাক্ট",
+        "নোড.জেএস",
+        "পাইথন",
+        "ক্লাউড (এডব্লিউএস)",
+        "ইউআই/ইউএক্স ডিজাইন",
+        "ব্লেন্ডার",
+        "ভিডিও এডিটিং",
+        "মিউজিক"
       ]
     },
     "imran": {
-      "name": "????? ???????",
-      "role": "Frontend Specialist",
-      "tagline": "Precision ??? passion ???? digital experiences ???? ????",
-      "bio": "????? ???? meticulous frontend specialist, ???? complex designs-?? smooth, pixel-perfect user experiences-? ????? ????? Detail-?? ????? ???? ???? ??? ??? ??? clean, maintainable code ????? passion ???, ???? app ?????? ??? performant ?????",
+      "name": "ইমরান মল্লিক",
+      "role": "ফ্রন্টএন্ড স্পেশালিস্ট",
+      "tagline": "নির্ভুলতা এবং আবেগের সাথে ডিজিটাল অভিজ্ঞতা তৈরি করা।",
+      "bio": "ইমরান একজন সূক্ষ্ম ফ্রন্টএন্ড স্পেশালিস্ট, যিনি জটিল ডিজাইনগুলোকে মসৃণ, পিক্সেল-পারফেক্ট ইউজার এক্সপেরিয়েন্সে রূপান্তর করতে দক্ষ। তার ডিটেইলের প্রতি তীক্ষ্ণ নজর রয়েছে এবং তিনি ক্লিন, মেইনটেইনেবল কোড লিখতে ভালোবাসেন, যা নিশ্চিত করে যে অ্যাপটি সুন্দর এবং পারফরম্যান্ট।",
       "motivations": [
         {
-          "label": "Aesthetics"
+          "label": "নান্দনিকতা"
         },
         {
-          "label": "Performance"
+          "label": "পারফরম্যান্স"
         },
         {
-          "label": "User Joy"
+          "label": "ব্যবহারকারীর আনন্দ"
         }
       ],
       "personality": [
         {
-          "label": "Extrovert"
+          "label": "বহির্মুখী"
         },
         {
-          "label": "Creative"
+          "label": "সৃজনশীল"
         },
         {
-          "label": "Active"
+          "label": "সক্রিয়"
         }
       ],
       "frustrations": [
-        "Inconsistent design systems",
-        "Slow API response times",
-        "Cross-browser CSS bugs"
+        "অসামঞ্জস্যপূর্ণ ডিজাইন সিস্টেম",
+        "ধীর এপিআই রেসপন্স টাইম",
+        "ক্রস-ব্রাউজার সিএসএস বাগ"
       ],
       "goals": [
-        "AI/ML ???????? knowledge ??????",
-        "Open-source projects-? contribute ???",
-        "Junior developers-?? mentor ???"
+        "এআই/এমএল এ জ্ঞান প্রসারিত করা",
+        "ওপেন-সোর্স প্রজেক্টে অবদান রাখা",
+        "জুনিয়র ডেভেলপারদের মেন্টর করা"
       ],
       "skills": [
-        "React",
-        "Tailwind CSS",
-        "JavaScript",
-        "Animation",
-        "UI Testing"
+        "রিঅ্যাক্ট",
+        "টেইলউইন্ড সিএসএস",
+        "জাভাস্ক্রিপ্ট",
+        "অ্যানিমেশন",
+        "ইউআই টেস্টিং"
       ]
     },
     "debasish": {
-      "name": "??????? ???",
-      "role": "QA ? Bug Fixes",
-      "tagline": "??????? bug ??? ??? perfection-?? ???? ??????",
-      "bio": "??????? Potho-Prodorshok-?? quality guardian? ???? elusive bugs ????? ??? ???? ??? app-?? users-?? ???? stable ? reliable ????? ??????? ????? Testing ? debugging-?? ???? methodical approach platform-?? success-?? ???? ?????????????",
+      "name": "দেবাশীষ ঘোষ",
+      "role": "কিউএ এবং বাগ ফিক্সিং",
+      "tagline": "নিখুঁত করার প্রচেষ্টা, একবারে একটি বাগ।",
+      "bio": "দেবাশীষ পথ-প্রদর্শক-এর কোয়ালিটি গার্ডিয়ান। তিনি অধরা বাগগুলো খুঁজে বের করেন এবং ব্যবহারকারীদের জন্য অ্যাপটিকে স্থিতিশীল ও নির্ভরযোগ্য রাখতে সাহায্য করেন। টেস্টিং এবং ডিবাগিং-এর প্রতি তার নিয়মতান্ত্রিক পদ্ধতি প্ল্যাটফর্মের সাফল্যের জন্য অত্যন্ত গুরুত্বপূর্ণ।",
       "motivations": [
         {
-          "label": "Stability"
+          "label": "স্থিতিশীলতা"
         },
         {
-          "label": "Problem Solving"
+          "label": "সমস্যা সমাধান"
         },
         {
-          "label": "User Trust"
+          "label": "ব্যবহারকারীর আস্থা"
         }
       ],
       "personality": [
         {
-          "label": "Extrovert"
+          "label": "বহির্মুখী"
         },
         {
-          "label": "Creative"
+          "label": "সৃজনশীল"
         },
         {
-          "label": "Active"
+          "label": "সক্রিয়"
         }
       ],
       "frustrations": [
-        "Undocumented features",
-        "Non-reproducible bugs",
-        "Last-minute code changes"
+        "আনডকুমেন্টেড ফিচার",
+        "নন-রিপ্রোডিউসিবল বাগ",
+        "শেষ মুহূর্তের কোড পরিবর্তন"
       ],
       "goals": [
-        "AI/ML ???????? knowledge ??????",
-        "Open-source projects-? contribute ???",
-        "Junior developers-?? mentor ???"
+        "এআই/এমএল এ জ্ঞান প্রসারিত করা",
+        "ওপেন-সোর্স প্রজেক্টে অবদান রাখা",
+        "জুনিয়র ডেভেলপারদের মেন্টর করা"
       ],
       "skills": [
-        "QA Testing",
-        "Debugging",
-        "Python",
-        "JavaScript",
-        "Automation"
+        "কিউএ টেস্টিং",
+        "ডিবাগিং",
+        "পাইথন",
+        "জাভাস্ক্রিপ্ট",
+        "অটোমেশন"
       ]
     },
     "ritobhas": {
-      "name": "??????? ???",
-      "role": "Creative Idea Giver",
-      "tagline": "Student guidance-?? ??? ???? future ?????? ????",
-      "bio": "??????? Potho-Prodorshok-?? innovative features-?? creative force? ???? ???? ideas brainstorm ???? ??? ????? platform ?????? students-?? ??? ???????? ??????? ???? ????? ???? out-of-the-box thinking app-?? possibilities-?? ????? ????? ????",
+      "name": "ঋতভাস ঘোষ",
+      "role": "সৃজনশীল আইডিয়া দাতা",
+      "tagline": "শিক্ষার্থীদের নির্দেশনার জন্য আরও ভালো ভবিষ্যতের কল্পনা করা।",
+      "bio": "ঋতভাস পথ-প্রদর্শক-এর উদ্ভাবনী ফিচারের পেছনের সৃজনশীল শক্তি। তিনি নতুন আইডিয়া নিয়ে চিন্তাভাবনা করেন এবং প্ল্যাটফর্মটি কীভাবে শিক্ষার্থীদের আরও ভালোভাবে সেবা দিতে পারে তা কল্পনা করেন। তার আউট-অফ-দ্য-বক্স চিন্তাভাবনা অ্যাপটি কী করতে পারে তার সীমানা ছাড়িয়ে যেতে সাহায্য করে।",
       "motivations": [
         {
-          "label": "Innovation"
+          "label": "উদ্ভাবন"
         },
         {
-          "label": "User Needs"
+          "label": "ব্যবহারকারীর প্রয়োজন"
         },
         {
-          "label": "Blue-Sky Thinking"
+          "label": "ব্লু-স্কাই থিঙ্কিং"
         }
       ],
       "personality": [
         {
-          "label": "Extrovert"
+          "label": "বহির্মুখী"
         },
         {
-          "label": "Creative"
+          "label": "সৃজনশীল"
         },
         {
-          "label": "Active"
+          "label": "সক্রিয়"
         }
       ],
       "frustrations": [
-        "Technical limitations",
-        "Status quo-?? ???? ????",
-        "Execution ???? ideas"
+        "প্রযুক্তিগত সীমাবদ্ধতা",
+        "স্ট্যাটাস কো-তে আটকে থাকা",
+        "বাস্তবায়ন ছাড়া আইডিয়া"
       ],
       "goals": [
-        "AI/ML ???????? knowledge ??????",
-        "Open-source projects-? contribute ???",
-        "Junior developers-?? mentor ???"
+        "এআই/এমএল এ জ্ঞান প্রসারিত করা",
+        "ওপেন-সোর্স প্রজেক্টে অবদান রাখা",
+        "জুনিয়র ডেভেলপারদের মেন্টর করা"
       ],
       "skills": [
-        "Brainstorming",
-        "Market Research",
-        "Product Vision",
-        "User Stories",
-        "Creative Strategy"
+        "ব্রেনস্টর্মিং",
+        "মার্কেট রিসার্চ",
+        "প্রোডাক্ট ভিশন",
+        "ইউজার স্টোরিজ",
+        "ক্রিয়েটিভ স্ট্র্যাটেজি"
       ]
     }
   }
