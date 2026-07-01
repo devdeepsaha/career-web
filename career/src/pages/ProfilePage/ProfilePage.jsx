@@ -70,7 +70,6 @@ const profileSections = [
     { id: 'identity', label: 'Identity', detail: 'Name, contacts, links', icon: IdCard },
     { id: 'career', label: 'Career', detail: 'Goals, skills, targets', icon: Target },
     { id: 'scholarship', label: 'Scholarships', detail: 'Eligibility and documents', icon: GraduationCap },
-    { id: 'resume', label: 'Resume', detail: 'Upload and extracted memory', icon: FileText },
     { id: 'projects', label: 'Projects', detail: 'Portfolio evidence', icon: BriefcaseBusiness },
     { id: 'education', label: 'Education', detail: 'Academic records', icon: BookOpen },
     { id: 'credentials', label: 'Credentials', detail: 'Certificates and wins', icon: Trophy },
@@ -244,17 +243,28 @@ const serializeProfile = (profile) => {
     };
 };
 
-const ProfileListEditor = ({ title, description, items = [], fields, onAdd, onChange, onRemove, emptyLabel }) => (
+const ResumeUploadAction = ({ onUpload, resumeState, label = 'Import PDF', tone = 'secondary' }) => (
+    <label className={`${tone === 'primary' ? 'pp-button' : 'pp-button-secondary'} inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 whitespace-nowrap`}>
+        <Upload className="h-4 w-4" />
+        {resumeState === 'uploading' ? 'Reading...' : label}
+        <input type="file" accept="application/pdf,.pdf" onChange={onUpload} className="sr-only" disabled={resumeState === 'uploading'} />
+    </label>
+);
+
+const ProfileListEditor = ({ title, description, items = [], fields, onAdd, onChange, onRemove, emptyLabel, onUploadResume, resumeState }) => (
     <section className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h2 className="saas-section-title">{title}</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p>
             </div>
-            <button type="button" onClick={onAdd} className="pp-button-secondary inline-flex min-h-10 items-center justify-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add
-            </button>
+            <div className="flex flex-wrap gap-2">
+                {onUploadResume && <ResumeUploadAction onUpload={onUploadResume} resumeState={resumeState} />}
+                <button type="button" onClick={onAdd} className="pp-button-secondary inline-flex min-h-10 items-center justify-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add
+                </button>
+            </div>
         </div>
         <div className="mt-4 space-y-3">
             {items.length === 0 && (
@@ -447,10 +457,10 @@ const ProfilePage = ({ currentUser }) => {
     }
 
     return (
-        <div className="py-3 pl-3 pr-3 sm:pr-4 lg:pr-5 xl:pl-0 2xl:pr-6">
-            <div className="overflow-hidden border-y border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 xl:h-[calc(100dvh-1.5rem)]">
-            <div className="grid grid-cols-1 xl:h-full xl:grid-cols-[240px_minmax(0,1fr)]">
-                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:h-full xl:self-stretch xl:border-b-0 xl:border-r">
+        <div className="py-3 pl-3 pr-3 sm:pr-4 lg:pr-5 xl:h-[calc(100dvh-3.5rem)] xl:overflow-hidden xl:pl-0 2xl:pr-6">
+            <div className="h-full overflow-hidden border-y border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+            <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[240px_minmax(0,1fr)]">
+                <aside className="border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/40 xl:h-full xl:self-stretch xl:overflow-hidden xl:border-b-0 xl:border-r">
                     <div className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0">
                         {profileSections.map((section) => {
                             const Icon = section.icon;
@@ -476,28 +486,23 @@ const ProfilePage = ({ currentUser }) => {
                         })}
                     </div>
                 </aside>
-                <form onSubmit={saveProfile} className="min-w-0 p-4 xl:h-full xl:overflow-y-auto">
+                <form onSubmit={saveProfile} className="min-w-0 p-4 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain">
 
-                    {(activeSection === 'identity' || activeSection === 'resume') && (
-                    <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-start gap-3">
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                    {activeSection === 'identity' && (
+                    <div className="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/70 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-center gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-200">
                                     <FileText className="h-5 w-5" />
                                 </div>
-                                <div>
-                                    <h2 className="saas-section-title">Upload resume</h2>
-                                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">PDF only, up to 5 MB. The file is not stored; extracted text and structured profile fields are saved.</p>
-                                    {profile.resume_uploaded_at && <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Last extracted: {new Date(profile.resume_uploaded_at).toLocaleString()}</p>}
+                                <div className="min-w-0">
+                                    <h2 className="text-sm font-semibold text-slate-950 dark:text-white">Import from resume</h2>
+                                    <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                                        {profile.resume_uploaded_at ? `Last extracted: ${new Date(profile.resume_uploaded_at).toLocaleString()}` : 'PDF only, up to 5 MB. Details fill the sections below.'}
+                                    </p>
                                 </div>
-                            </div>
-                            <label className="pp-button inline-flex cursor-pointer items-center justify-center gap-2">
-                                <Upload className="h-4 w-4" />
-                                {resumeState === 'uploading' ? 'Reading...' : 'Upload PDF'}
-                                <input type="file" accept="application/pdf,.pdf" onChange={uploadResume} className="sr-only" disabled={resumeState === 'uploading'} />
-                            </label>
                         </div>
-                        {resumeMessage && <p className="mt-3 text-sm font-medium text-slate-600 dark:text-slate-300">{resumeMessage}</p>}
+                        <ResumeUploadAction onUpload={uploadResume} resumeState={resumeState} label="Upload PDF" tone="primary" />
+                        {resumeMessage && <p className="text-sm font-medium text-slate-600 dark:text-slate-300 sm:basis-full">{resumeMessage}</p>}
                     </div>
                     )}
 
@@ -739,6 +744,8 @@ const ProfilePage = ({ currentUser }) => {
                             onAdd={() => addListItem('projects_json')}
                             onChange={(index, key, value) => updateListItem('projects_json', index, key, value)}
                             onRemove={(index) => removeListItem('projects_json', index)}
+                            onUploadResume={uploadResume}
+                            resumeState={resumeState}
                             emptyLabel="No projects yet. Add at least one project so the AI can recommend stronger roadmap steps."
                         />
                     )}
@@ -752,6 +759,8 @@ const ProfilePage = ({ currentUser }) => {
                             onAdd={() => addListItem('education_json')}
                             onChange={(index, key, value) => updateListItem('education_json', index, key, value)}
                             onRemove={(index) => removeListItem('education_json', index)}
+                            onUploadResume={uploadResume}
+                            resumeState={resumeState}
                             emptyLabel="No education entries yet. Add your latest academic record first."
                         />
                     )}
@@ -766,6 +775,8 @@ const ProfilePage = ({ currentUser }) => {
                                 onAdd={() => addListItem('credentials_json')}
                                 onChange={(index, key, value) => updateListItem('credentials_json', index, key, value)}
                                 onRemove={(index) => removeListItem('credentials_json', index)}
+                                onUploadResume={uploadResume}
+                                resumeState={resumeState}
                                 emptyLabel="No credentials yet. Add internships, certificates, or courses here."
                             />
                             <ProfileListEditor
