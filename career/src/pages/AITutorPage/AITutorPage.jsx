@@ -589,9 +589,9 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                 {mockTopicWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{mockTopicWarning}</p>}
                                 <input type="text" value={mockTopic} onChange={e => { setMockTopic(e.target.value); setQuestionError(''); }} className="pp-input" maxLength={160} placeholder={t('aiTutor_form_topic_placeholder')} />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="pp-label">{t('aiTutor_form_difficulty')}</label>
+                            <div className="grid grid-cols-2 items-end gap-3">
+                                <div className="min-w-0">
+                                    <label className="pp-label flex min-h-9 items-end">{t('aiTutor_form_difficulty')}</label>
                                     <select value={mockDifficulty} onChange={e => setMockDifficulty(e.target.value)} className="pp-input">
                                         <option>{t('aiTutor_difficulty_all')}</option>
                                         <option>{t('aiTutor_difficulty_easy')}</option>
@@ -599,8 +599,8 @@ const AITutorPage = ({ currentUser, showAuth }) => {
                                         <option>{t('aiTutor_difficulty_hard')}</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="pp-label">{t('aiTutor_mockTest_numQuestions')}</label>
+                                <div className="min-w-0">
+                                    <label className="pp-label flex min-h-9 items-end">{t('aiTutor_mockTest_numQuestions')}</label>
                                     <select value={numQuestions} onChange={e => setNumQuestions(Number(e.target.value))} className="pp-input">
                                         <option value={5}>{t('aiTutor_mockTest_numQuestions_5')}</option>
                                         <option value={10}>{t('aiTutor_mockTest_numQuestions_10')}</option>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, Bell, Check, ChevronDown, CircleHelp, ExternalLink, GraduationCap, IndianRupee, Save, Search, Sparkles } from 'lucide-react';
+import { AlertCircle, Bell, Check, ChevronDown, ExternalLink, GraduationCap, IndianRupee, Save, Search } from 'lucide-react';
 import ScholarshipEmptyState from './ScholarshipEmptyState';
 import { addGuestWorkspaceItem, setGuestScholarshipProfile } from '../../utils/guestWorkspace';
 import { debounce } from '../../utils/timing';
@@ -128,17 +128,6 @@ const storeScholarshipDetail = (scholarship, index = 0) => {
 const getScholarshipResultsStorageKey = (user) => `${scholarshipResultsStorageBaseKey}_${user?.id || user?.email || user?.name || 'guest'}`;
 const getScholarshipFormStorageKey = (user) => `${scholarshipFormStorageBaseKey}_${user?.id || user?.email || user?.name || 'guest'}`;
 
-const answerScholarshipQuestion = (scholarship, question) => {
-    const text = question.toLowerCase();
-    const answers = scholarship.smart_answers || {};
-    if (text.includes('eligible')) return answers.am_i_eligible || scholarship.eligibility || 'Check the matched and missing criteria before applying.';
-    if (text.includes('why') || text.includes('not')) return answers.why_not || (scholarship.not_eligible_reasons || []).join(' ') || 'No hard blocker was found from your current profile.';
-    if (text.includes('next year')) return answers.next_year || scholarship.next_year_eligibility || 'You may be eligible next cycle if marks, course year, income, and document requirements match.';
-    if (text.includes('document')) return answers.documents || `Required documents: ${(scholarship.documents_required || []).join(', ') || 'check official notice'}.`;
-    if (text.includes('deadline') || text.includes('date')) return scholarship.deadline_signal?.label || scholarship.deadline || 'Check the official notice for the latest deadline.';
-    return answers.am_i_eligible || scholarship.description || 'Use the official link and verify eligibility before submitting.';
-};
-
 const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const { t, i18n } = useTranslation();
     const [form, setForm] = useState({
@@ -163,9 +152,6 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
     const [savedScholarshipKeys, setSavedScholarshipKeys] = useState({});
     const [studentProfile, setStudentProfile] = useState(null);
     const [activeScholarship, setActiveScholarship] = useState(null);
-    const [chatQuestion, setChatQuestion] = useState('');
-    const [chatAnswer, setChatAnswer] = useState('');
-    const [scholarshipBotOpen, setScholarshipBotOpen] = useState(false);
     const [filtersCollapsed, setFiltersCollapsed] = useState(false);
     const scholarshipFormStorageKey = useMemo(() => getScholarshipFormStorageKey(currentUser), [currentUser]);
     const scholarshipResultsStorageKey = useMemo(() => getScholarshipResultsStorageKey(currentUser), [currentUser]);
@@ -409,12 +395,6 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
         }
     };
 
-    const askScholarshipBot = (event) => {
-        event.preventDefault();
-        if (!activeScholarship) return;
-        setChatAnswer(answerScholarshipQuestion(activeScholarship, chatQuestion || 'Am I eligible?'));
-    };
-
     const openScholarshipDetail = (scholarship, index) => {
         setActiveScholarship(scholarship);
         const key = storeScholarshipDetail(scholarship, index);
@@ -432,10 +412,10 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                 <p className="pp-page-copy mt-1 max-w-3xl">See how strongly each scholarship fits you, what amount it may provide, what documents are missing, and when the form closes.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,390px)_minmax(0,1fr)]">
-                <aside className="space-y-4 xl:sticky xl:top-16 xl:self-start">
-                    <form onSubmit={findScholarships} className="saas-card p-4">
-                        <div className="flex items-center gap-3">
+            <div className={`grid grid-cols-1 gap-4 ${filtersCollapsed ? '' : 'xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]'}`}>
+                <aside className={`${filtersCollapsed ? '' : 'space-y-4 xl:sticky xl:top-16 xl:self-start'}`}>
+                    <form onSubmit={findScholarships} className={`saas-card p-4 ${filtersCollapsed ? 'xl:flex xl:items-center xl:gap-4' : ''}`}>
+                        <div className="flex min-w-0 items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                                 <GraduationCap className="h-4 w-4" />
                             </div>
@@ -449,14 +429,14 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                             <button
                                 type="button"
                                 onClick={() => setFiltersCollapsed((value) => !value)}
-                                className="mt-4 flex min-h-10 w-full items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300"
+                                className={`${filtersCollapsed ? 'mt-3 xl:mt-0 xl:w-auto xl:min-w-52' : 'mt-4 w-full'} flex min-h-10 items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-700 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300`}
                             >
                                 {filtersCollapsed ? 'Edit eligibility filters' : 'Hide filters and focus results'}
                                 <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${filtersCollapsed ? '' : 'rotate-180'}`} />
                             </button>
                         )}
                         {filtersCollapsed && (
-                            <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                            <p className="mt-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300 xl:mt-0 xl:flex-1">
                                 {[form.student_type, form.course_stream, form.gender, form.caste, form.region].filter(Boolean).slice(0, 5).join(' · ') || 'Eligibility filters saved'}
                             </p>
                         )}
@@ -479,24 +459,26 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="col-span-2">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <label className="pp-label">Marks</label>
-                                        <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-xs font-bold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                                            {marksModeOptions.map(([value, label]) => (
-                                                <button
-                                                    key={value}
-                                                    type="button"
-                                                    onClick={() => updateMarksMode(value)}
-                                                    className={`min-h-9 rounded-md px-3 transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${form.marks_mode === value ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white' : ''}`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
+                                    <label className="pp-label">Marks</label>
+                                    {marksWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{marksWarning}</p>}
+                                    <div className="rounded-lg border border-slate-200 bg-white p-1 transition-[border-color,box-shadow] duration-150 focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-blue-700">
+                                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1">
+                                            <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="h-11 min-w-0 bg-transparent px-3 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500" inputMode="decimal" maxLength={8} placeholder={form.marks_mode === 'cgpa' ? '7.6' : '85'} />
+                                            <div className="grid grid-cols-2 rounded-md bg-slate-100 p-1 text-xs font-bold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                                                {marksModeOptions.map(([value, label]) => (
+                                                    <button
+                                                        key={value}
+                                                        type="button"
+                                                        onClick={() => updateMarksMode(value)}
+                                                        className={`min-h-9 rounded px-2.5 transition-[background-color,color,transform] duration-150 active:scale-[0.96] ${form.marks_mode === value ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-800 dark:text-white' : ''}`}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                    {marksWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{marksWarning}</p>}
-                                    <input value={form.marks} onChange={(event) => updateForm('marks', event.target.value)} className="pp-input" inputMode="decimal" maxLength={8} placeholder={form.marks_mode === 'cgpa' ? '7.6' : '85'} />
-                                    {!marksWarning && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Do not type %, /10, or words. Choose the mode above.</p>}
+                                    {!marksWarning && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Do not type %, /10, or words.</p>}
                                 </div>
                                 <div className="col-span-2">
                                     <label className="pp-label">Income</label>
@@ -530,7 +512,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                     <input value={form.destination} onChange={(event) => updateForm('destination', event.target.value)} className="pp-input" maxLength={120} placeholder="India" />
                                 </div>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                                 <label className="pp-label">Religion / minority status</label>
                                 {religionWarning && <p className="mb-1 text-xs font-semibold text-red-600 dark:text-red-300">{religionWarning}</p>}
                                 <input value={form.religion} onChange={(event) => updateForm('religion', event.target.value)} className="pp-input" maxLength={120} placeholder="Optional" />
@@ -577,8 +559,7 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                     {!isLoading && !error && (!hasSearched || scholarships.length === 0) && <ScholarshipEmptyState />}
 
                     {!isLoading && scholarships.length > 0 && (
-                        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
-                            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-1">
+                        <div className={`grid gap-3 lg:grid-cols-2 ${filtersCollapsed ? '2xl:grid-cols-3' : '2xl:grid-cols-2'}`}>
                                 {scholarships.map((scholarship, index) => {
                                     const readiness = getReadiness(scholarship);
                                     const deadlineClass = deadlineToneClass[scholarship.deadline_signal?.tone] || deadlineToneClass.neutral;
@@ -634,65 +615,6 @@ const ScholarshipFinderPage = ({ currentUser, showAuth, onNavigate }) => {
                                         </article>
                                     );
                                 })}
-                            </div>
-
-                            <aside className="space-y-4">
-                                {activeScholarship && (
-                                    <div className="saas-card p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-blue-600 dark:text-blue-300">Selected scholarship</p>
-                                                <h2 className="mt-1 text-sm font-semibold leading-6 text-slate-950 dark:text-white">{activeScholarship.name}</h2>
-                                            </div>
-                                            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-200">{activeScholarship.match_score || 0}%</span>
-                                        </div>
-
-                                        <div className="mt-3 grid grid-cols-2 gap-2">
-                                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">Amount</p>
-                                                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{activeScholarship.amount || 'Amount not confirmed'}</p>
-                                            </div>
-                                            <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">Docs ready</p>
-                                                <p className="mt-1 text-sm font-semibold tabular-nums text-slate-950 dark:text-white">{getReadiness(activeScholarship)}%</p>
-                                            </div>
-                                        </div>
-
-                                        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Open the full page for amount basis, document checklist, eligibility blockers, and clickable portal steps.</p>
-                                        <button onClick={() => openScholarshipDetail(activeScholarship, scholarships.indexOf(activeScholarship))} className="pp-button mt-3 flex w-full items-center justify-center gap-2">
-                                            Open eligibility report <ExternalLink className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                )}
-
-                                <div className="saas-card p-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setScholarshipBotOpen((value) => !value)}
-                                        className="flex min-h-10 w-full items-center justify-between rounded-lg bg-slate-50 px-3 text-sm font-semibold text-slate-800 transition-[background-color,transform] duration-150 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-100"
-                                    >
-                                        <span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-300" /> Ask about this scholarship</span>
-                                        <ChevronDown className={`h-4 w-4 transition-transform duration-150 ${scholarshipBotOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {scholarshipBotOpen && activeScholarship && (
-                                        <div className="mt-3">
-                                            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Ask if you are eligible, what documents are missing, or how to apply.</p>
-                                            <form onSubmit={askScholarshipBot} className="mt-3 grid gap-2">
-                                                <input value={chatQuestion} onChange={(event) => setChatQuestion(event.target.value)} className="pp-input" maxLength={240} placeholder="Am I eligible?" />
-                                                <button className="pp-button flex w-full items-center justify-center gap-2"><CircleHelp className="h-4 w-4" /> Ask</button>
-                                            </form>
-                                            <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                                {chatAnswer || 'Ask if you are eligible, what documents are missing, or how to apply.'}
-                                            </div>
-                                            <div className="mt-3 grid gap-2">
-                                                {['Am I eligible?', 'Why am I not eligible?', 'Will I be eligible next year?', 'What documents do I need?'].map((question) => (
-                                                    <button key={question} onClick={() => { setChatQuestion(question); setChatAnswer(answerScholarshipQuestion(activeScholarship, question)); }} className="rounded-lg bg-slate-50 p-2 text-left text-xs font-semibold text-slate-600 transition-[background-color,transform] duration-150 hover:bg-slate-100 active:scale-[0.96] dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">{question}</button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </aside>
                         </div>
                     )}
                 </main>
