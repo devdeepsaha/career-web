@@ -5,6 +5,7 @@ import google.generativeai as genai
 import json, os
 from dotenv import load_dotenv
 from collections import deque
+from io import BytesIO
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -310,6 +311,9 @@ DOCUMENT_LABELS = {
 
 MINORITY_RELIGIONS = {"muslim", "christian", "sikh", "buddhist", "jain", "parsi", "zoroastrian"}
 CATEGORY_VALUES = {"sc", "st", "obc", "ews", "general", "minority", "pwd"}
+CHAT_CONTEXT_MAX_BYTES = 2 * 1024 * 1024
+CHAT_CONTEXT_MAX_CHARS = 12000
+CHAT_CONTEXT_ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md", ".csv", ".json", ".log"}
 
 def clean_user_text(value, max_length=500):
     if value is None:
@@ -330,6 +334,46 @@ def valid_prompt_text(value, allow_all=False):
     if allow_all and text.lower() == "all":
         return True
     return bool(text and has_letter(text) and not input_has_markup(text))
+
+def extract_chat_context_file(file_storage):
+    filename = clean_user_text(file_storage.filename or "context-file", 180)
+    extension = os.path.splitext(filename.lower())[1]
+    if extension not in CHAT_CONTEXT_ALLOWED_EXTENSIONS:
+        raise ValueError("Upload PDF, TXT, MD, CSV, JSON, or LOG files only.")
+
+    raw = file_storage.read(CHAT_CONTEXT_MAX_BYTES + 1)
+    if len(raw) > CHAT_CONTEXT_MAX_BYTES:
+        raise ValueError("File must be 2 MB or smaller.")
+
+    if extension == ".pdf":
+        if PdfReader is None:
+            raise ValueError("PDF reading is not available on this server.")
+        reader = PdfReader(BytesIO(raw))
+        pages = []
+        for page in reader.pages[:12]:
+            try:
+                pages.append(page.extract_text() or "")
+            except Exception:
+                pages.append("")
+        text = "\n".join(pages)
+    else:
+        text = raw.decode("utf-8", errors="ignore")
+
+    text = clean_user_text(text, CHAT_CONTEXT_MAX_CHARS)
+    if not text:
+        raise ValueError("Could not read useful text from this file.")
+    return {"name": filename, "text": text, "chars": len(text)}
+
+def format_chat_context_files(files):
+    cleaned_files = []
+    for item in files or []:
+        name = clean_user_text(item.get("name", "Context file"), 160)
+        text = clean_user_text(item.get("text", ""), 6000)
+        if name and text:
+            cleaned_files.append(f"File: {name}\n{text}")
+    if not cleaned_files:
+        return ""
+    return "\n\nAttached file context. Use this when relevant and cite the file name in your reasoning:\n" + "\n\n---\n\n".join(cleaned_files[:3])
 
 def normalize_token(value):
     return re.sub(r"[^a-z0-9]+", " ", clean_user_text(value, 120).lower()).strip()
@@ -1565,6 +1609,19 @@ def save_message(session_id):
 
 # ------------------- Other Routes -------------------
 
+@app.route('/chat-context-file', methods=['POST'])
+def chat_context_file():
+    file = request.files.get('file')
+    if not file:
+        return jsonify({"error": "No file uploaded."}), 400
+    try:
+        return jsonify(extract_chat_context_file(file))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except Exception as error:
+        print("Chat context file error:", error)
+        return jsonify({"error": "Could not read this file."}), 500
+
 @app.route('/generate-roadmap', methods=['POST'])
 def generate_roadmap():
     data = request.get_json()
@@ -1651,9 +1708,10 @@ def chat():
     language = get_language_name(data)
     history = (data.get('history', []) or [])[-12:]
     session_id = data.get('session_id')
+    file_context = format_chat_context_files(data.get('context_files', []))
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}"]}]
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI career coach. Respond only in {language}. Use this context when relevant, but do not mention private data unless useful: {mentor_context}{file_context}"]}]
     for msg in history:
         role = 'user' if msg.get('sender') == 'user' else 'model'
         messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})
@@ -1706,9 +1764,10 @@ def solve_doubt_chat():
     language = get_language_name(data)
     history = (data.get('history', []) or [])[-12:]
     session_id = data.get('session_id')
+    file_context = format_chat_context_files(data.get('context_files', []))
     
     mentor_context = mentor_context_text(current_user.id) if current_user.is_authenticated else ""
-    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory for personalization when relevant: {mentor_context}"]}]
+    messages = [{'role': 'user', 'parts': [f"You are a helpful AI tutor that explains concepts clearly. Respond only in {language}. Use this student memory and attached file context for personalization when relevant: {mentor_context}{file_context}"]}]
     for msg in history:
         role = 'user' if msg.get('sender') == 'user' else 'model'
         messages.append({'role': role, 'parts': [clean_user_text(msg.get('text', ''), 1600)]})

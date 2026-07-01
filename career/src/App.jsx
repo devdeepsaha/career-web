@@ -153,6 +153,7 @@ const setDocumentMeta = (tabName) => {
 const pathToTab = Object.fromEntries(Object.entries(tabToPath).map(([tab, path]) => [path, tab]));
 const publicTabs = new Set(['team', 'support', 'policies', 'thankyou']);
 const guestAllowedTabs = new Set(['dashboard', 'planner', 'tutor', 'scholarship', 'scholarshipDetail', 'team', 'support', 'policies']);
+const persistentWorkspaceTabs = ['dashboard', 'planner', 'tutor', 'scholarship', 'library', 'profile'];
 const guestUser = {
     email: 'Guest workspace',
     name: 'Guest workspace',
@@ -194,6 +195,7 @@ export default function App() {
     const [commandQuery, setCommandQuery] = useState('');
     const debouncedCommandQuery = useDebouncedValue(commandQuery, 300);
     const [commandResults, setCommandResults] = useState([]);
+    const [visitedWorkspaceTabs, setVisitedWorkspaceTabs] = useState(() => new Set([tabFromLocation()]));
     const languageOptions = [
         { value: 'en', label: 'EN' },
         { value: 'hi', label: 'हिं' },
@@ -218,7 +220,14 @@ export default function App() {
     useEffect(() => {
         setDocumentMeta(activeTab);
         sendAnalyticsPageview(`/${activeTab}`, activeTab);
+        if (persistentWorkspaceTabs.includes(activeTab)) {
+            setVisitedWorkspaceTabs((prev) => new Set([...prev, activeTab]));
+        }
     }, [activeTab]);
+
+    useEffect(() => {
+        setVisitedWorkspaceTabs(new Set([activeTab]));
+    }, [currentUser?.id, currentUser?.email, currentUser?.is_guest]);
 
     useEffect(() => {
         const load = () => loadDeferredFonts();
@@ -478,17 +487,9 @@ export default function App() {
         return null;
     };
 
-    const renderActiveTab = () => {
+    const renderTabPage = (tabName) => {
         const pageProps = { currentUser, showAuth };
-        if (currentUser?.is_guest && !guestAllowedTabs.has(activeTab)) {
-            return (
-                <GuestUpgrade
-                    showAuth={showAuth}
-                    onGuestHome={() => navigateTo('dashboard', { replace: true })}
-                />
-            );
-        }
-        switch (activeTab) {
+        switch (tabName) {
             case 'dashboard': return <DashboardPage {...pageProps} onNavigate={navigateTo} />;
             case 'tutor': return <AITutorPage {...pageProps} />;
             case 'scholarship': return <ScholarshipFinderPage {...pageProps} onNavigate={navigateTo} />;
@@ -503,6 +504,32 @@ export default function App() {
             case 'planner':
             default: return <CareerPlannerPage {...pageProps} onNavigate={navigateTo} />;
         }
+    };
+
+    const renderActiveTab = () => {
+        if (currentUser?.is_guest && !guestAllowedTabs.has(activeTab)) {
+            return (
+                <GuestUpgrade
+                    showAuth={showAuth}
+                    onGuestHome={() => navigateTo('dashboard', { replace: true })}
+                />
+            );
+        }
+        return renderTabPage(activeTab);
+    };
+
+    const renderWorkspaceTabs = () => {
+        if (!persistentWorkspaceTabs.includes(activeTab) || (currentUser?.is_guest && !guestAllowedTabs.has(activeTab))) {
+            return renderActiveTab();
+        }
+        return persistentWorkspaceTabs
+            .filter((tabName) => visitedWorkspaceTabs.has(tabName))
+            .filter((tabName) => !currentUser?.is_guest || guestAllowedTabs.has(tabName))
+            .map((tabName) => (
+                <section key={`${currentUser?.id || currentUser?.email || 'guest'}-${tabName}`} className={activeTab === tabName ? 'block' : 'hidden'} aria-hidden={activeTab !== tabName}>
+                    {renderTabPage(tabName)}
+                </section>
+            ));
     };
 
     const dashboardNavItems = [
@@ -743,7 +770,7 @@ export default function App() {
 
                 <main className="min-w-0 flex-1 pb-20 lg:pb-0">
                     <Suspense fallback={<div className="p-12 text-center dark:text-white">Loading...</div>}>
-                        {renderActiveTab()}
+                        {renderWorkspaceTabs()}
                     </Suspense>
                 </main>
             </div>

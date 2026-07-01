@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import SimpleMarkdownRenderer from '../shared/SimpleMarkdownRenderer';
 import { MessageSquareIcon } from '../icons/MessageSquareIcon';
 import { XIcon } from '../icons/XIcon';
-import { Maximize, Minimize, Copy, Plus, Trash2, Clock, Menu } from 'lucide-react';
+import { Maximize, Minimize, Copy, Plus, Trash2, Clock, Menu, Paperclip, X } from 'lucide-react';
 import { throttle } from '../../utils/timing';
+import { fileContextSummary, uploadChatContextFile } from '../../utils/chatContextFiles';
 
 const API_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000';
 
@@ -27,6 +28,9 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [localMessages, setLocalMessages] = useState([]);
     const [localLoading, setLocalLoading] = useState(false);
+    const [contextFiles, setContextFiles] = useState([]);
+    const [contextError, setContextError] = useState('');
+    const [isUploadingContext, setIsUploadingContext] = useState(false);
     const chatEndRef = useRef(null);
     const chatContainerRef = useRef(null);
     const inputRef = useRef(null);
@@ -247,7 +251,8 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
                 body: JSON.stringify({ 
                     history: [...localMessages, userMessage],
                     language: i18n.language,
-                    session_id: sessionId
+                    session_id: sessionId,
+                    context_files: fileContextSummary(contextFiles),
                 })
             });
 
@@ -304,7 +309,8 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
                 body: JSON.stringify({ 
                     history: [...localMessages, userMessage],
                     language: i18n.language,
-                    session_id: sessionId
+                    session_id: sessionId,
+                    context_files: fileContextSummary(contextFiles),
                 })
             });
 
@@ -332,6 +338,22 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
         navigator.clipboard.writeText(text);
         setCopiedIndex(index);
         setTimeout(() => setCopiedIndex(null), 1500);
+    };
+
+    const handleContextFile = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        setContextError('');
+        setIsUploadingContext(true);
+        try {
+            const extracted = await uploadChatContextFile(file);
+            setContextFiles((prev) => [...prev.filter((item) => item.name !== extracted.name), extracted].slice(-3));
+        } catch (error) {
+            setContextError(error.message || 'Could not read this file.');
+        } finally {
+            setIsUploadingContext(false);
+        }
     };
 
     return (
@@ -598,19 +620,37 @@ const DoubtSolverChatbot = ({ isOpen, setIsOpen, messages: propMessages, isLoadi
 
                         {/* Input Section */}
                         <form onSubmit={onFormSubmit} className="p-2 border-t border-slate-200 dark:border-slate-800 flex-shrink-0" ref={inputRef}>
+                            {(contextFiles.length > 0 || contextError) && (
+                                <div className="mb-2 flex flex-wrap items-center gap-2">
+                                    {contextFiles.map((file) => (
+                                        <span key={file.name} className="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                                            <Paperclip className="h-3 w-3 shrink-0" />
+                                            <span className="max-w-40 truncate">{file.name}</span>
+                                            <button type="button" onClick={() => setContextFiles((prev) => prev.filter((item) => item.name !== file.name))} className="rounded p-0.5 transition-[background-color,transform] duration-150 hover:bg-slate-200 active:scale-[0.96] dark:hover:bg-slate-800" aria-label={`Remove ${file.name}`}>
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        </span>
+                                    ))}
+                                    {contextError && <span className="text-xs font-semibold text-red-600 dark:text-red-300">{contextError}</span>}
+                                </div>
+                            )}
                             <div className="flex items-center space-x-2">
+                                <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-[background-color,transform] duration-150 hover:bg-slate-50 active:scale-[0.96] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800" title="Attach context file" aria-label="Attach context file">
+                                    <Paperclip className="h-4 w-4" />
+                                    <input type="file" accept=".pdf,.txt,.md,.csv,.json,.log,application/pdf,text/*" className="sr-only" onChange={handleContextFile} disabled={isLoading || isUploadingContext} />
+                                </label>
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     className="flex-1 p-2 text-sm bg-white dark:bg-slate-700 border pp-input"
-                                    placeholder={t('doubtChat_placeholder')}
-                                    disabled={isLoading}
+                                    placeholder={isUploadingContext ? 'Reading file...' : t('doubtChat_placeholder')}
+                                    disabled={isLoading || isUploadingContext}
                                 />
                                 <button
                                     type="submit"
                                     className="pp-button flex-shrink-0 px-3 py-2 text-sm"
-                                    disabled={isLoading}
+                                    disabled={isLoading || isUploadingContext}
                                 >
                                     {t('doubtChat_sendButton')}
                                 </button>
